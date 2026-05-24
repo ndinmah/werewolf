@@ -29,7 +29,7 @@ export const VotePanel = () => {
 
   if (phase !== currentPhase) {
     setCurrentPhase(phase);
-    if (phase !== 'VotingPhase') {
+    if (phase !== 'voting') {
       setSelectedPlayerId(null);
       setHasVoted(false);
       setVoteData({ tally: {}, totalVoters: 0 });
@@ -37,19 +37,19 @@ export const VotePanel = () => {
   }
 
   const handleVote = () => {
-    if (!selectedPlayerId || hasVoted || phase !== 'VotingPhase' || !myPlayer?.isAlive) return;
+    if (!selectedPlayerId || hasVoted || phase !== 'voting' || !myPlayer?.isAlive) return;
     
     socket.emit('CAST_VOTE', { roomId, targetId: selectedPlayerId });
     setHasVoted(true);
   };
 
-  const canVote = phase === 'VotingPhase' && myPlayer?.isAlive && !hasVoted;
+  const canVote = phase === 'voting' && myPlayer?.isAlive && !hasVoted;
 
   return (
     <div className="bg-dark/50 p-6 rounded-xl border border-gray-800">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Danh sách người chơi</h2>
-        {phase === 'VotingPhase' && (
+        {phase === 'voting' && (
           <div className="text-yellow-500 font-medium">
             Đang bỏ phiếu ({Object.values(voteData.tally).reduce((a,b)=>a+b, 0)}/{voteData.totalVoters})
           </div>
@@ -85,7 +85,7 @@ export const VotePanel = () => {
         })}
       </div>
 
-      {phase === 'VotingPhase' && myPlayer?.isAlive && (
+      {phase === 'voting' && myPlayer?.isAlive && (
         <div className="mt-8 flex justify-center">
           <Button 
             size="lg" 

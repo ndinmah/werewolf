@@ -1,6 +1,12 @@
+import { useGame } from '../../context/GameContext';
+
 export const PlayerCard = ({ player }) => {
+  const { seerVisions } = useGame();
   const isDisconnected = player.disconnected;
   const isDead = !player.isAlive;
+
+  // Kiểm tra xem Tiên tri đã soi người này chưa
+  const myVision = seerVisions?.find(v => v.targetId === player.id);
 
   return (
     <div className={`relative bg-darker p-4 rounded-xl border transition-all duration-300 ${
@@ -9,7 +15,19 @@ export const PlayerCard = ({ player }) => {
       'border-gray-700 hover:border-gray-500'
     }`}>
       {/* Icon trạng thái */}
-      <div className="absolute top-2 right-2 text-xl z-10">
+      <div className="absolute top-2 right-2 text-base z-10 flex gap-1 items-center">
+        {myVision && (
+          <span 
+            className={`px-1 rounded-full text-xs font-bold border ${
+              myVision.isWerewolf 
+                ? 'bg-red-950/80 border-red-500/30 text-red-400' 
+                : 'bg-green-950/80 border-green-500/30 text-green-400'
+            }`}
+            title={myVision.isWerewolf ? 'Phe Sói' : 'Phe Dân'}
+          >
+            {myVision.isWerewolf ? '🐺' : '✅'}
+          </span>
+        )}
         {isDead && '💀'}
         {isDisconnected && !isDead && '🔌'}
       </div>

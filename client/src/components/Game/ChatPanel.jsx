@@ -30,7 +30,7 @@ export const ChatPanel = () => {
 
   const tabs = useMemo(() => {
     const t = [{ id: 'general', label: 'Chung' }];
-    if (myPlayer?.role === 'werewolf') t.push({ id: 'wolves', label: 'Sói' });
+    if (myPlayer?.role === 'WEREWOLF') t.push({ id: 'wolves', label: 'Sói' });
     if (myPlayer && !myPlayer.isAlive) t.push({ id: 'ghost', label: 'Cõi Chết' });
     return t;
   }, [myPlayer]);
@@ -40,9 +40,13 @@ export const ChatPanel = () => {
 
   const isInputDisabled = () => {
     if (!myPlayer) return true;
-    if (currentTab === 'general' && (!myPlayer.isAlive || phase === 'night')) return true;
-    if (currentTab === 'wolves' && phase !== 'night') return true;
-    return false;
+    if (currentTab === 'general') {
+      return !myPlayer.isAlive || (phase !== 'dayDiscuss' && phase !== 'voting');
+    }
+    if (currentTab === 'wolves') {
+      return myPlayer.role !== 'WEREWOLF' || !myPlayer.isAlive || phase !== 'night';
+    }
+    return myPlayer.isAlive; // Chỉ người chết mới chat được cõi chết
   };
 
   return (
