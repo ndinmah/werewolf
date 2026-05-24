@@ -1,12 +1,36 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { Button } from '../components/UI/Button';
+import { useGame } from '../context/GameContext';
 
 export const LobbyPage = () => {
+  const { id: roomId } = useParams();
   const socket = useSocket();
   const navigate = useNavigate();
   const [room, setRoom] = useState(null);
+  const { gameState } = useGame();
+
+  // Chuyển hướng sang trang game nếu game đã bắt đầu (gameState đã có dữ liệu và không phải lobby)
+  useEffect(() => {
+    if (gameState && gameState.phase && gameState.phase !== 'lobby') {
+      navigate(`/room/${roomId}/game`);
+    }
+  }, [gameState, navigate, roomId]);
+
+  // Fetch thông tin phòng ban đầu từ server khi vừa vào trang
+  useEffect(() => {
+    if (!socket || !roomId) return;
+
+    socket.emit('GET_ROOM', { roomId }, (response) => {
+      if (response.success) {
+        setRoom(response.room);
+      } else {
+        alert(response.error || 'Phòng không tồn tại');
+        navigate('/');
+      }
+    });
+  }, [socket, roomId, navigate]);
 
   useEffect(() => {
     if (!socket) return;
@@ -20,18 +44,13 @@ export const LobbyPage = () => {
     };
   }, [socket]);
 
-  // Handle case where we directly navigate to the room url (without joining via socket first)
-  // Trong thực tế, cần xử lý logic tự động xin lại dữ liệu hoặc redirect về home
-  useEffect(() => {
-    if (!room && socket) {
-      // Tạm thời nếu ko có room data thì back về home
-      // navigate('/');
-    }
-  }, [room, socket, navigate]);
-
   if (!room) return <div className="pt-20 text-center">Đang tải phòng...</div>;
 
   const isHost = room.hostId === socket?.id;
+
+  const handleStartGame = () => {
+    socket.emit('START_GAME', { roomId: room.id });
+  };
 
   return (
     <div className="min-h-screen pt-20 px-4 container mx-auto max-w-4xl">
@@ -45,7 +64,7 @@ export const LobbyPage = () => {
           </p>
         </div>
         {isHost && (
-          <Button size="lg" className="px-8 shadow-lg shadow-wolf/20">
+          <Button size="lg" className="px-8 shadow-lg shadow-wolf/20" onClick={handleStartGame}>
             BẮT ĐẦU GAME
           </Button>
         )}
