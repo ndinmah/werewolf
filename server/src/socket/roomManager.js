@@ -84,3 +84,12 @@ export const updateRoomSettings = (roomId, settings) => {
   }
   return null;
 };
+
+export const updateRoomStatus = (roomId, status) => {
+  const room = rooms.get(roomId);
+  if (room) {
+    room.status = status;
+    return room;
+  }
+  return null;
+};
