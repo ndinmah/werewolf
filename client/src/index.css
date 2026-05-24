@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", sans-serif;
+
+  --color-dark: #0f172a;
+  --color-darker: #020617;
+
+  --color-wolf-light: #f87171;
+  --color-wolf: #dc2626;
+  --color-wolf-dark: #991b1b;
+
+  --color-villager-light: #60a5fa;
+  --color-villager: #2563eb;
+  --color-villager-dark: #1e3a8a;
+
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer utilities {
+  .stars-bg {
+    background-image:
+      radial-gradient(2px 2px at 20px 30px, #eee, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 130px 80px, #fff, rgba(0, 0, 0, 0)),
+      radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0, 0, 0, 0));
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    animation: stars-move 100s linear infinite;
+  }
+}
+
+@keyframes stars-move {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 1000px 500px;
+  }
+}
