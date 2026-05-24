@@ -1,7 +1,7 @@
-import { createActor } from 'xstate';
+import { createActor, assign } from 'xstate';
 import { gameMachine } from './gameMachine.js';
 
-// Map lưu trữ: roomId -> { machine, actor, chatLogs, votes, disconnectTimers }
+// Map lưu trữ: roomId -> { machine, actor, chatLogs, votes, disconnectTimers, phaseTimer, lastProtectedId, seerVisions }
 const gameRooms = new Map();
 
 export const createGameActor = (roomId, io) => {
@@ -9,17 +9,143 @@ export const createGameActor = (roomId, io) => {
     return gameRooms.get(roomId).actor;
   }
 
-  // Tùy chỉnh action notifyPlayers cho từng phòng để phát socket
+  // Cấu hình các action có tương tác socket/timer thực tế
   const machineWithActions = gameMachine.provide({
     actions: {
       notifyPlayers: ({ context }) => {
         if (io) {
-          io.to(roomId).emit('GAME_STATE_UPDATE', {
-            phase: context.phase,
-            dayCount: context.dayCount,
-            players: context.players, // Có thể lọc bớt các role trước khi gửi nếu cần
+          io.to(roomId).fetchSockets().then(sockets => {
+            sockets.forEach(s => {
+              const myPlayer = context.players.find(p => p.id === s.id);
+
+              const personalizedPlayers = context.players.map(p => {
+                const isSelf = p.id === s.id;
+                const isDead = !p.isAlive;
+                const isWolfTeam = myPlayer?.role === 'WEREWOLF' && p.role === 'WEREWOLF';
+                const isGameOver = context.phase === 'gameOver';
+
+                // Chỉ hiển thị role của bản thân, người đã chết, đồng bọn sói hoặc khi kết thúc game
+                if (isSelf || isDead || isWolfTeam || isGameOver) {
+                  return p;
+                }
+                return {
+                  ...p,
+                  role: undefined,
+                  faction: undefined
+                };
+              });
+
+              s.emit('GAME_STATE_UPDATE', {
+                phase: context.phase,
+                dayCount: context.dayCount,
+                players: personalizedPlayers,
+                nightDeaths: context.nightDeaths,
+                dayDeath: context.dayDeath,
+                winner: context.winner,
+                timerDuration: context.timerDuration,
+                timerStartAt: context.timerStartAt
+              });
+            });
           });
         }
+      },
+      runNightStart: () => {
+        import('../socket/nightManager.js').then(({ startNight }) => {
+          startNight(roomId, io);
+        });
+      },
+      startDayStartTimer: assign(({ context }) => {
+        const duration = (context.settings?.dayStartDuration || 8) * 1000;
+        setGameTimer(roomId, duration, () => {
+          const actor = getGameActor(roomId);
+          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
+        });
+        return {
+          timerDuration: duration,
+          timerStartAt: Date.now()
+        };
+      }),
+      startDayDiscussTimer: assign(({ context }) => {
+        const duration = (context.settings?.discussionTime || 120) * 1000;
+        setGameTimer(roomId, duration, () => {
+          const actor = getGameActor(roomId);
+          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
+        });
+        return {
+          timerDuration: duration,
+          timerStartAt: Date.now()
+        };
+      }),
+      startVotingTimer: assign(({ context }) => {
+        const duration = (context.settings?.voteTime || 60) * 1000;
+        setGameTimer(roomId, duration, () => {
+          const actor = getGameActor(roomId);
+          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
+        });
+        return {
+          timerDuration: duration,
+          timerStartAt: Date.now()
+        };
+      }),
+      runHunterRetaliationStart: assign(({ context }) => {
+        const isNightDeath = context.hunterNextPhase === 'dayStart';
+        const hunter = isNightDeath 
+          ? context.nightDeaths.find(d => d.role === 'HUNTER')
+          : (context.dayDeath?.role === 'HUNTER' ? context.dayDeath : null);
+
+        const duration = 30 * 1000;
+        setGameTimer(roomId, duration, () => {
+          const actor = getGameActor(roomId);
+          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
+        });
+
+        if (hunter && io) {
+          const socket = io.sockets.sockets.get(hunter.id);
+          if (socket) {
+            socket.emit('HUNTER_RETALIATION_PROMPT', {
+              targetablePlayers: context.players.filter(p => p.isAlive && p.id !== hunter.id).map(p => ({
+                id: p.id,
+                name: p.name
+              }))
+            });
+          }
+        }
+
+        return {
+          timerDuration: duration,
+          timerStartAt: Date.now()
+        };
+      }),
+      autoResolveVotes: () => {
+        import('../socket/voteManager.js').then(({ resolveVote }) => {
+          const gameData = gameRooms.get(roomId);
+          if (!gameData) return;
+
+          const eliminatedId = resolveVote(roomId);
+          const context = gameData.actor.getSnapshot().context;
+
+          let eliminatedPlayer = null;
+          if (eliminatedId) {
+            const p = context.players.find(x => x.id === eliminatedId);
+            if (p) {
+              eliminatedPlayer = { id: p.id, name: p.name, role: p.role };
+            }
+          }
+
+          // Emit kết quả vote về client
+          io.to(roomId).emit('VOTING_RESULT', {
+            eliminatedPlayer,
+            isTie: !eliminatedId && Object.keys(gameData.votes).length > 0
+          });
+
+          // Chờ 4s hiển thị kết quả rồi sang phase tiếp theo
+          setTimeout(() => {
+            gameData.actor.send({
+              type: 'VOTING_DONE',
+              eliminatedPlayer
+            });
+          }, 4000);
+        });
       }
     }
   });
@@ -36,7 +162,10 @@ export const createGameActor = (roomId, io) => {
       ghost: []
     },
     votes: {},
-    disconnectTimers: {}
+    disconnectTimers: {},
+    phaseTimer: null,
+    lastProtectedId: null,
+    seerVisions: {}
   });
 
   return actor;
@@ -51,11 +180,31 @@ export const getGameData = (roomId) => {
   return gameRooms.get(roomId);
 };
 
+export const setGameTimer = (roomId, duration, callback) => {
+  const room = gameRooms.get(roomId);
+  if (room) {
+    if (room.phaseTimer) {
+      clearTimeout(room.phaseTimer);
+    }
+    room.phaseTimer = setTimeout(callback, duration);
+  }
+};
+
+export const clearGameTimer = (roomId) => {
+  const room = gameRooms.get(roomId);
+  if (room && room.phaseTimer) {
+    clearTimeout(room.phaseTimer);
+    room.phaseTimer = null;
+  }
+};
+
 export const destroyGameActor = (roomId) => {
   const room = gameRooms.get(roomId);
   if (room) {
     room.actor.stop();
-    // Xóa các timeout nếu có
+    if (room.phaseTimer) {
+      clearTimeout(room.phaseTimer);
+    }
     for (const timer of Object.values(room.disconnectTimers)) {
       clearTimeout(timer);
     }

@@ -38,8 +38,17 @@ export const ROLES = {
     faction: FACTIONS.VILLAGER,
     strength: 3,
     priority: 30,
-    description: 'Thức dậy mỗi đêm để bảo vệ một người khỏi bị Sói cắn. Không thể bảo vệ cùng 1 người 2 đêm liên tiếp.',
+    description: 'Thậy dậy mỗi đêm để bảo vệ một người khỏi bị Sói cắn. Không thể bảo vệ cùng 1 người 2 đêm liên tiếp.',
     icon: 'Shield'
+  },
+  HUNTER: {
+    id: 'HUNTER',
+    name: 'Thợ săn',
+    faction: FACTIONS.VILLAGER,
+    strength: 2,
+    priority: 0,
+    description: 'Khi chết, được bắn chết 1 người khác.',
+    icon: 'Target'
   }
 };
 

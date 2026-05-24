@@ -22,14 +22,23 @@ export const checkWinCondition = (players) => {
     }
   }
   
-  // Sói thắng nếu số Sói >= số Dân (hoặc các phe khác)
-  if (aliveWolves >= aliveVillagers) {
-    return { isGameOver: true, winner: FACTIONS.WEREWOLF };
-  }
-  
+  // Sói thắng nếu số Sói >= số Dân
+  const wolvesWin = aliveWolves >= aliveVillagers;
   // Dân thắng nếu không còn Sói nào
-  if (aliveWolves === 0) {
-    return { isGameOver: true, winner: FACTIONS.VILLAGER };
+  const villagersWin = aliveWolves === 0;
+  
+  if (wolvesWin || villagersWin) {
+    // Kiểm tra xem có người chơi phe thứ 3 nào còn sống không
+    const aliveThirdParty = alivePlayers.some(p => {
+      const roleData = ROLES[p.role];
+      return roleData && roleData.faction === FACTIONS.THIRD_PARTY;
+    });
+    
+    if (aliveThirdParty) {
+      return { isGameOver: true, winner: FACTIONS.THIRD_PARTY };
+    }
+    
+    return { isGameOver: true, winner: wolvesWin ? FACTIONS.WEREWOLF : FACTIONS.VILLAGER };
   }
   
   return { isGameOver: false, winner: null };
