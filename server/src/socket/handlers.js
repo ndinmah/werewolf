@@ -39,6 +39,78 @@ export const setupHandlers = (io, socket) => {
     }
 
     if (room.status === 'InGame') {
+      // Hỗ trợ reconnect thủ công từ Home page bằng tên cũ
+      const existingPlayer = room.players.find(p => p.name === playerName);
+      const gameData = getGameData(roomId);
+      
+      if (existingPlayer && gameData) {
+        if (gameData.disconnectTimers[existingPlayer.id]) {
+          clearTimeout(gameData.disconnectTimers[existingPlayer.id]);
+          delete gameData.disconnectTimers[existingPlayer.id];
+        }
+
+        const oldId = existingPlayer.id;
+        existingPlayer.id = playerId;
+
+        if (room.hostId === oldId) {
+          room.hostId = playerId;
+        }
+
+        const mPlayer = gameData.actor.getSnapshot().context.players.find(p => p.name === playerName);
+        if (mPlayer) mPlayer.id = playerId;
+
+        socket.join(roomId);
+
+        io.to(roomId).emit('ROOM_UPDATED', room);
+
+        const myVisions = gameData.seerVisions?.[playerId] || [];
+        socket.emit('RECONNECT_SUCCESS', {
+          room,
+          gameState: gameData.actor.getSnapshot().context,
+          chatLogs: gameData.chatLogs,
+          seerVisions: myVisions
+        });
+
+        // Gửi prompt ban đêm nếu đang đến lượt
+        const snapshot = gameData.actor.getSnapshot();
+        const context = snapshot.context;
+        if (snapshot.value === 'NightPhase' && gameData.pendingNightRoles) {
+          const currentRole = gameData.pendingNightRoles[gameData.currentNightRoleIndex];
+          if (currentRole === mPlayer.role) {
+            const alivePlayers = snapshot.context.players.filter(p => p.isAlive);
+            socket.emit('NIGHT_ACTION_PROMPT', {
+              role: currentRole,
+              targetablePlayers: alivePlayers.map(p => ({
+                id: p.id,
+                name: p.name,
+                isAlive: p.isAlive
+              })),
+              excludeTargetId: currentRole === 'BODYGUARD' ? gameData.lastProtectedId : null
+            });
+          }
+        }
+
+        // Gửi prompt Hunter trả thù nếu là Hunter đã chết
+        if (snapshot.value === 'HunterRetaliation') {
+          const isNightDeath = context.hunterNextPhase === 'dayStart';
+          const hunter = isNightDeath 
+            ? context.nightDeaths.find(d => d.role === 'HUNTER')
+            : (context.dayDeath?.role === 'HUNTER' ? context.dayDeath : null);
+            
+          if (hunter && hunter.id === playerId) {
+            socket.emit('HUNTER_RETALIATION_PROMPT', {
+              targetablePlayers: context.players.filter(p => p.isAlive && p.id !== hunter.id).map(p => ({
+                id: p.id,
+                name: p.name
+              }))
+            });
+          }
+        }
+
+        if (callback) callback({ success: true, room });
+        return;
+      }
+
       if (callback) callback({ success: false, error: 'Phòng đã bắt đầu chơi' });
       return;
     }
@@ -253,6 +325,10 @@ export const setupHandlers = (io, socket) => {
         // Cập nhật socket id
         const oldId = player.id;
         player.id = playerId;
+        
+        if (room.hostId === oldId) {
+          room.hostId = playerId;
+        }
         
         // Cập nhật id của player trong machine context
         const mPlayer = gameData.actor.getSnapshot().context.players.find(p => p.name === playerName);

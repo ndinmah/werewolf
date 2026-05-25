@@ -23,8 +23,11 @@ export const GamePage = () => {
 
   useEffect(() => {
     if (!gameState) {
-      // Nếu không có state, thử về lobby
-      navigate(`/room/${roomId}`);
+      // Đợi 2 giây xem có reconnect được không trước khi quay về lobby
+      const timer = setTimeout(() => {
+        navigate(`/room/${roomId}`);
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [gameState, navigate, roomId]);
 

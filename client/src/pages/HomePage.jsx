@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { Button } from '../components/UI/Button';
@@ -9,11 +9,20 @@ export const HomePage = () => {
   const socket = useSocket();
   const navigate = useNavigate();
 
+  // Dọn dẹp session khi quay về trang chủ
+  useEffect(() => {
+    sessionStorage.removeItem('werewolf_session');
+  }, []);
+
   const handleCreateRoom = (e) => {
     e.preventDefault();
     if (!playerName.trim()) return;
     socket.emit('CREATE_ROOM', { playerName }, (response) => {
       if (response.success) {
+        sessionStorage.setItem('werewolf_session', JSON.stringify({
+          roomId: response.room.id,
+          playerName
+        }));
         navigate(`/room/${response.room.id}`);
       }
     });
@@ -25,6 +34,10 @@ export const HomePage = () => {
 
     socket.emit('JOIN_ROOM', { roomId: roomId.toUpperCase(), playerName }, (response) => {
       if (response.success) {
+        sessionStorage.setItem('werewolf_session', JSON.stringify({
+          roomId: response.room.id,
+          playerName
+        }));
         navigate(`/room/${response.room.id}`);
       } else {
         alert(response.error);
