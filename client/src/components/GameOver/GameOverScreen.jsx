@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
 import { useSocket } from '../../context/SocketContext';
@@ -9,6 +10,28 @@ export const GameOverScreen = () => {
   const navigate = useNavigate();
   const { gameState, myPlayer } = useGame();
   const socket = useSocket();
+  const [secondsLeft, setSecondsLeft] = useState(null);
+
+  useEffect(() => {
+    if (!gameState || gameState.phase !== 'gameOver' || !gameState.timerDuration || !gameState.timerStartAt) {
+      setSecondsLeft(null);
+      return;
+    }
+
+    const timerDuration = gameState.timerDuration;
+    const timerStartAt = gameState.timerStartAt;
+
+    const updateTimer = () => {
+      const elapsed = Date.now() - timerStartAt;
+      const remaining = Math.max(0, timerDuration - elapsed);
+      setSecondsLeft(Math.ceil(remaining / 1000));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 500);
+
+    return () => clearInterval(interval);
+  }, [gameState]);
 
   if (!gameState || gameState.phase !== 'gameOver') return null;
 
@@ -92,7 +115,7 @@ export const GameOverScreen = () => {
           </div>
           
           <h1 className="text-3xl md:text-5xl font-black tracking-widest uppercase">
-            {factionInfo.name} Chiển Thắng
+            {factionInfo.name} Chiến Thắng
           </h1>
           <p className="text-sm md:text-base text-gray-300 mt-2 font-medium">
             {isMyFactionWinner 
@@ -165,15 +188,21 @@ export const GameOverScreen = () => {
         </div>
 
         {/* Action Button */}
-        <div className="flex justify-center border-t border-gray-800 pt-6">
+        <div className="flex flex-col items-center gap-3 border-t border-gray-800 pt-6">
           <Button
             size="lg"
             onClick={handleBackToLobby}
+            disabled={secondsLeft !== null && secondsLeft > 0}
             className="bg-indigo-600 hover:bg-indigo-700 px-10 shadow-lg shadow-indigo-600/20 font-bold tracking-wider flex items-center gap-2"
           >
-            <RefreshCw className="w-5 h-5" />
-            <span>QUAY LẠI LOBBY</span>
+            <RefreshCw className={`w-5 h-5 ${secondsLeft !== null && secondsLeft > 0 ? 'animate-spin text-gray-400' : ''}`} />
+            <span>QUAY LẠI LOBBY {secondsLeft !== null && secondsLeft > 0 ? `(${secondsLeft}s)` : ''}</span>
           </Button>
+          {secondsLeft !== null && secondsLeft > 0 && (
+            <p className="text-gray-400 text-xs animate-pulse">
+              Vui lòng đợi, hệ thống tự động quay lại lobby sau {secondsLeft} giây...
+            </p>
+          )}
         </div>
 
       </div>

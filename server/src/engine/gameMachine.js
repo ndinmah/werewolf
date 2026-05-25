@@ -27,6 +27,9 @@ export const gameMachine = setup({
     runHunterRetaliationStart: () => {
       // Sẽ được inject từ bên ngoài
     },
+    startGameOverTimer: () => {
+      // Sẽ được inject từ bên ngoài
+    },
     setupGame: assign(({ context, event }) => {
       const playersList = event.players || context.players;
       const settings = event.settings || { roles: [] };
@@ -316,7 +319,7 @@ export const gameMachine = setup({
       }
     },
     GameOver: {
-      entry: ['notifyPlayers']
+      entry: ['startGameOverTimer', 'notifyPlayers']
     }
   }
 });

@@ -116,6 +116,26 @@ export const createGameActor = (roomId, io) => {
           timerStartAt: Date.now()
         };
       }),
+      startGameOverTimer: assign(({ context }) => {
+        const duration = 10 * 1000;
+        setGameTimer(roomId, duration, () => {
+          import('../socket/roomManager.js').then(({ getRoom, updateRoomStatus, getRooms }) => {
+            const room = getRoom(roomId);
+            if (room) {
+              updateRoomStatus(roomId, 'Lobby');
+              destroyGameActor(roomId);
+
+              io.to(roomId).emit('ROOM_UPDATED', room);
+              io.to(roomId).emit('GAME_RESET');
+              io.emit('ROOM_LIST', getRooms());
+            }
+          });
+        });
+        return {
+          timerDuration: duration,
+          timerStartAt: Date.now()
+        };
+      }),
       autoResolveVotes: () => {
         import('../socket/voteManager.js').then(({ resolveVote }) => {
           const gameData = gameRooms.get(roomId);
