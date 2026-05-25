@@ -31,7 +31,19 @@ export const LobbyPage = () => {
   useEffect(() => {
     if (!socket || !roomId) return;
 
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        alert('Không thể kết nối đến phòng. Vui lòng thử lại.');
+        navigate('/');
+      }
+    }, 5000);
+
     socket.emit('GET_ROOM', { roomId }, (response) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       if (response.success) {
         setRoom(response.room);
       } else {
@@ -39,6 +51,11 @@ export const LobbyPage = () => {
         navigate('/');
       }
     });
+
+    return () => {
+      settled = true;
+      clearTimeout(timer);
+    };
   }, [socket, roomId, navigate]);
 
   useEffect(() => {
