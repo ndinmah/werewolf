@@ -1,7 +1,8 @@
-import { createRoom, joinRoom, leaveRoom, getRoom, getRooms, updateRoomSettings, updateRoomStatus } from './roomManager.js';
-import { createGameActor, getGameData, destroyGameActor } from '../engine/gameStateManager.js';
-import { addMessage } from './chatManager.js';
-import { castVote, getVoteTally } from './voteManager.js';
+import { createRoom, joinRoom, leaveRoom, getRoom, getRooms, updateRoomSettings, updateRoomStatus } from './roomManager.ts';
+import { createGameActor, getGameData, destroyGameActor } from '../engine/gameStateManager.ts';
+import { addMessage } from './chatManager.ts';
+import { castVote, getVoteTally } from './voteManager.ts';
+import type { SlimPlayer } from '../types/game.ts';
 
 export const setupHandlers = (io, socket) => {
   const playerId = socket.id;
@@ -15,7 +16,7 @@ export const setupHandlers = (io, socket) => {
     if (room) {
       if (callback) callback({ success: true, room });
     } else {
-      if (callback) callback({ success: false, error: 'Phòng không tồn tại' });
+      if (callback) callback({ success: false, error: 'PhÃ²ng khÃ´ng tá»“n táº¡i' });
     }
   });
 
@@ -34,12 +35,12 @@ export const setupHandlers = (io, socket) => {
   socket.on('JOIN_ROOM', ({ roomId, playerName }, callback) => {
     const room = getRoom(roomId);
     if (!room) {
-      if (callback) callback({ success: false, error: 'Phòng không tồn tại' });
+      if (callback) callback({ success: false, error: 'PhÃ²ng khÃ´ng tá»“n táº¡i' });
       return;
     }
 
     if (room.status === 'InGame') {
-      // Hỗ trợ reconnect thủ công từ Home page bằng tên cũ
+      // Há»— trá»£ reconnect thá»§ cÃ´ng tá»« Home page báº±ng tÃªn cÅ©
       const existingPlayer = room.players.find(p => p.name === playerName);
       const gameData = getGameData(roomId);
       
@@ -71,7 +72,7 @@ export const setupHandlers = (io, socket) => {
           seerVisions: myVisions
         });
 
-        // Gửi prompt ban đêm nếu đang đến lượt
+        // Gá»­i prompt ban Ä‘Ãªm náº¿u Ä‘ang Ä‘áº¿n lÆ°á»£t
         const snapshot = gameData.actor.getSnapshot();
         const context = snapshot.context;
         if (snapshot.value === 'NightPhase' && gameData.pendingNightRoles) {
@@ -90,7 +91,7 @@ export const setupHandlers = (io, socket) => {
           }
         }
 
-        // Gửi prompt Hunter trả thù nếu là Hunter đã chết
+        // Gá»­i prompt Hunter tráº£ thÃ¹ náº¿u lÃ  Hunter Ä‘Ã£ cháº¿t
         if (snapshot.value === 'HunterRetaliation') {
           const isNightDeath = context.hunterNextPhase === 'dayStart';
           const hunter = isNightDeath 
@@ -111,7 +112,7 @@ export const setupHandlers = (io, socket) => {
         return;
       }
 
-      if (callback) callback({ success: false, error: 'Phòng đã bắt đầu chơi' });
+      if (callback) callback({ success: false, error: 'PhÃ²ng Ä‘Ã£ báº¯t Ä‘áº§u chÆ¡i' });
       return;
     }
 
@@ -141,11 +142,11 @@ export const setupHandlers = (io, socket) => {
       const wolfCount = roles.filter(r => r === 'WEREWOLF').length;
 
       if (wolfCount < 1) {
-        if (callback) callback({ success: false, error: '⚠️ Trận đấu phải có ít nhất 1 Ma Sói!' });
+        if (callback) callback({ success: false, error: 'âš ï¸ Tráº­n Ä‘áº¥u pháº£i cÃ³ Ã­t nháº¥t 1 Ma SÃ³i!' });
         return;
       }
       if (room.players.length < 2) {
-        if (callback) callback({ success: false, error: '⚠️ Trận đấu phải có ít nhất 2 người chơi!' });
+        if (callback) callback({ success: false, error: 'âš ï¸ Tráº­n Ä‘áº¥u pháº£i cÃ³ Ã­t nháº¥t 2 ngÆ°á»i chÆ¡i!' });
         return;
       }
 
@@ -178,10 +179,10 @@ export const setupHandlers = (io, socket) => {
 
         if (callback) callback({ success: true });
       } else {
-        if (callback) callback({ success: false, error: 'Chỉ chủ phòng mới có quyền thiết lập lại' });
+        if (callback) callback({ success: false, error: 'Chá»‰ chá»§ phÃ²ng má»›i cÃ³ quyá»n thiáº¿t láº­p láº¡i' });
       }
     } else {
-      if (callback) callback({ success: false, error: 'Phòng không tồn tại' });
+      if (callback) callback({ success: false, error: 'PhÃ²ng khÃ´ng tá»“n táº¡i' });
     }
   });
 
@@ -192,7 +193,7 @@ export const setupHandlers = (io, socket) => {
     const player = context.players.find(p => p.id === playerId);
     if (!player) return;
 
-    // Phân quyền chat theo Phase
+    // PhÃ¢n quyá»n chat theo Phase
     if (channel === 'general' && context.phase !== 'dayDiscuss' && context.phase !== 'voting') return;
     if (channel === 'wolves' && (context.phase !== 'night' || player.role !== 'WEREWOLF')) return;
     if (channel === 'ghost' && player.isAlive) return;
@@ -234,15 +235,15 @@ export const setupHandlers = (io, socket) => {
       if (gameData) {
         const votedCount = Object.keys(gameData.votes).length;
         if (votedCount >= totalVoters) {
-          import('../engine/gameStateManager.js').then(({ clearGameTimer }) => {
+          import('../engine/gameStateManager.ts').then(({ clearGameTimer }) => {
             clearGameTimer(roomId);
           });
           
-          import('./voteManager.js').then(({ resolveVote }) => {
+          import('./voteManager.ts').then(({ resolveVote }) => {
             const eliminatedId = resolveVote(roomId);
             const context = gameData.actor.getSnapshot().context;
 
-            let eliminatedPlayer = null;
+            let eliminatedPlayer: SlimPlayer | null = null;
             if (eliminatedId) {
               const p = context.players.find(x => x.id === eliminatedId);
               if (p) {
@@ -268,7 +269,7 @@ export const setupHandlers = (io, socket) => {
   });
 
   socket.on('NIGHT_ACTION', ({ roomId, targetId }) => {
-    import('./nightManager.js').then(({ submitNightAction }) => {
+    import('./nightManager.ts').then(({ submitNightAction }) => {
       submitNightAction(roomId, playerId, targetId, io);
     });
   });
@@ -292,7 +293,7 @@ export const setupHandlers = (io, socket) => {
     const target = context.players.find(p => p.id === targetId && p.isAlive);
     if (!target) return;
     
-    import('../engine/gameStateManager.js').then(({ clearGameTimer }) => {
+    import('../engine/gameStateManager.ts').then(({ clearGameTimer }) => {
       clearGameTimer(roomId);
     });
     
@@ -322,7 +323,7 @@ export const setupHandlers = (io, socket) => {
           delete gameData.disconnectTimers[player.id];
         }
         
-        // Cập nhật socket id
+        // Cáº­p nháº­t socket id
         const oldId = player.id;
         player.id = playerId;
         
@@ -330,7 +331,7 @@ export const setupHandlers = (io, socket) => {
           room.hostId = playerId;
         }
         
-        // Cập nhật id của player trong machine context
+        // Cáº­p nháº­t id cá»§a player trong machine context
         const mPlayer = gameData.actor.getSnapshot().context.players.find(p => p.name === playerName);
         if (mPlayer) mPlayer.id = playerId;
 
@@ -346,7 +347,7 @@ export const setupHandlers = (io, socket) => {
           seerVisions: myVisions
         });
 
-        // Nếu đang ở ban đêm và đến lượt người chơi này hành động, gửi lại prompt
+        // Náº¿u Ä‘ang á»Ÿ ban Ä‘Ãªm vÃ  Ä‘áº¿n lÆ°á»£t ngÆ°á»i chÆ¡i nÃ y hÃ nh Ä‘á»™ng, gá»­i láº¡i prompt
         const snapshot = gameData.actor.getSnapshot();
         const context = snapshot.context;
         if (snapshot.value === 'NightPhase' && gameData.pendingNightRoles) {
@@ -365,7 +366,7 @@ export const setupHandlers = (io, socket) => {
           }
         }
 
-        // Nếu đang ở phase HunterRetaliation và người chơi này là Thợ Săn đã chết, gửi lại prompt
+        // Náº¿u Ä‘ang á»Ÿ phase HunterRetaliation vÃ  ngÆ°á»i chÆ¡i nÃ y lÃ  Thá»£ SÄƒn Ä‘Ã£ cháº¿t, gá»­i láº¡i prompt
         if (snapshot.value === 'HunterRetaliation') {
           const isNightDeath = context.hunterNextPhase === 'dayStart';
           const hunter = isNightDeath 

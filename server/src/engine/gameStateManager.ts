@@ -1,7 +1,7 @@
 import { createActor, assign } from 'xstate';
-import { gameMachine } from './gameMachine.js';
+import { gameMachine } from './gameMachine.ts';
 
-// Map lưu trữ: roomId -> { machine, actor, chatLogs, votes, disconnectTimers, phaseTimer, lastProtectedId, seerVisions }
+// Map lÆ°u trá»¯: roomId -> { machine, actor, chatLogs, votes, disconnectTimers, phaseTimer, lastProtectedId, seerVisions }
 const gameRooms = new Map();
 
 export const createGameActor = (roomId, io) => {
@@ -9,7 +9,7 @@ export const createGameActor = (roomId, io) => {
     return gameRooms.get(roomId).actor;
   }
 
-  // Cấu hình các action có tương tác socket/timer thực tế
+  // Cáº¥u hÃ¬nh cÃ¡c action cÃ³ tÆ°Æ¡ng tÃ¡c socket/timer thá»±c táº¿
   const machineWithActions = gameMachine.provide({
     actions: {
       notifyPlayers: ({ context }) => {
@@ -24,7 +24,7 @@ export const createGameActor = (roomId, io) => {
                 const isWolfTeam = myPlayer?.role === 'WEREWOLF' && p.role === 'WEREWOLF';
                 const isGameOver = context.phase === 'gameOver';
 
-                // Chỉ hiển thị role của bản thân, người đã chết, đồng bọn sói hoặc khi kết thúc game
+                // Chá»‰ hiá»ƒn thá»‹ role cá»§a báº£n thÃ¢n, ngÆ°á»i Ä‘Ã£ cháº¿t, Ä‘á»“ng bá»n sÃ³i hoáº·c khi káº¿t thÃºc game
                 if (isSelf || isDead || isWolfTeam || isGameOver) {
                   return p;
                 }
@@ -50,7 +50,7 @@ export const createGameActor = (roomId, io) => {
         }
       },
       runNightStart: () => {
-        import('../socket/nightManager.js').then(({ startNight }) => {
+        import('../socket/nightManager.ts').then(({ startNight }) => {
           startNight(roomId, io);
         });
       },
@@ -119,7 +119,7 @@ export const createGameActor = (roomId, io) => {
       startGameOverTimer: assign(({ context }) => {
         const duration = 10 * 1000;
         setGameTimer(roomId, duration, () => {
-          import('../socket/roomManager.js').then(({ getRoom, updateRoomStatus, getRooms }) => {
+          import('../socket/roomManager.ts').then(({ getRoom, updateRoomStatus, getRooms }) => {
             const room = getRoom(roomId);
             if (room) {
               updateRoomStatus(roomId, 'Lobby');
@@ -137,14 +137,14 @@ export const createGameActor = (roomId, io) => {
         };
       }),
       autoResolveVotes: () => {
-        import('../socket/voteManager.js').then(({ resolveVote }) => {
+        import('../socket/voteManager.ts').then(({ resolveVote }) => {
           const gameData = gameRooms.get(roomId);
           if (!gameData) return;
 
           const eliminatedId = resolveVote(roomId);
           const context = gameData.actor.getSnapshot().context;
 
-          let eliminatedPlayer = null;
+          let eliminatedPlayer: { id: string; name: string; role?: string } | null = null;
           if (eliminatedId) {
             const p = context.players.find(x => x.id === eliminatedId);
             if (p) {
@@ -152,13 +152,13 @@ export const createGameActor = (roomId, io) => {
             }
           }
 
-          // Emit kết quả vote về client
+          // Emit káº¿t quáº£ vote vá» client
           io.to(roomId).emit('VOTING_RESULT', {
             eliminatedPlayer,
             isTie: !eliminatedId && Object.keys(gameData.votes).length > 0
           });
 
-          // Chờ 4s hiển thị kết quả rồi sang phase tiếp theo
+          // Chá» 4s hiá»ƒn thá»‹ káº¿t quáº£ rá»“i sang phase tiáº¿p theo
           setTimeout(() => {
             gameData.actor.send({
               type: 'VOTING_DONE',
@@ -226,7 +226,7 @@ export const destroyGameActor = (roomId) => {
       clearTimeout(room.phaseTimer);
     }
     for (const timer of Object.values(room.disconnectTimers)) {
-      clearTimeout(timer);
+      clearTimeout(timer as NodeJS.Timeout);
     }
     gameRooms.delete(roomId);
   }

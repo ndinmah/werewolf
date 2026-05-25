@@ -1,8 +1,9 @@
-import { getGameData } from '../engine/gameStateManager.js';
-import { ROLES } from '../roles/index.js';
+import { getGameData } from '../engine/gameStateManager.ts';
+import { ROLES } from '../roles/index.ts';
+import type { Player } from '../types/game.ts';
 
 /**
- * Bắt đầu pha ban đêm cho một phòng game
+ * Báº¯t Ä‘áº§u pha ban Ä‘Ãªm cho má»™t phÃ²ng game
  */
 export const startNight = (roomId, io) => {
   const gameData = getGameData(roomId);
@@ -12,9 +13,9 @@ export const startNight = (roomId, io) => {
   const context = snapshot.context;
   const alivePlayers = context.players.filter(p => p.isAlive);
 
-  // Lọc các role có priority > 0 và đang có người chơi còn sống sở hữu role đó
+  // Lá»c cÃ¡c role cÃ³ priority > 0 vÃ  Ä‘ang cÃ³ ngÆ°á»i chÆ¡i cÃ²n sá»‘ng sá»Ÿ há»¯u role Ä‘Ã³
   const activeRoles = [...new Set(alivePlayers.map(p => p.role))]
-    .filter(roleId => ROLES[roleId] && ROLES[roleId].priority > 0)
+    .filter((roleId): roleId is string => typeof roleId === 'string' && !!ROLES[roleId] && ROLES[roleId].priority > 0)
     .sort((a, b) => ROLES[b].priority - ROLES[a].priority); // Sort giảm dần (Bảo vệ -> Tiên tri -> Sói)
 
   gameData.nightActions = {};
@@ -28,7 +29,7 @@ export const startNight = (roomId, io) => {
 };
 
 /**
- * Gửi yêu cầu hành động cho role tiếp theo trong hàng đợi
+ * Gá»­i yÃªu cáº§u hÃ nh Ä‘á»™ng cho role tiáº¿p theo trong hÃ ng Ä‘á»£i
  */
 export const promptNextNightRole = (roomId, io) => {
   const gameData = getGameData(roomId);
@@ -36,7 +37,7 @@ export const promptNextNightRole = (roomId, io) => {
 
   const { pendingNightRoles, currentNightRoleIndex } = gameData;
 
-  // Nếu đã hết các role cần hành động
+  // Náº¿u Ä‘Ã£ háº¿t cÃ¡c role cáº§n hÃ nh Ä‘á»™ng
   if (!pendingNightRoles || currentNightRoleIndex >= pendingNightRoles.length) {
     resolveNight(roomId, io);
     return;
@@ -47,17 +48,17 @@ export const promptNextNightRole = (roomId, io) => {
   const context = snapshot.context;
   const alivePlayers = context.players.filter(p => p.isAlive);
 
-  // Tìm những người chơi còn sống có role này
+  // TÃ¬m nhá»¯ng ngÆ°á»i chÆ¡i cÃ²n sá»‘ng cÃ³ role nÃ y
   const rolePlayers = alivePlayers.filter(p => p.role === currentRole);
 
   if (rolePlayers.length === 0) {
-    // Không có ai có role này còn sống (an toàn), chuyển sang role tiếp theo
+    // KhÃ´ng cÃ³ ai cÃ³ role nÃ y cÃ²n sá»‘ng (an toÃ n), chuyá»ƒn sang role tiáº¿p theo
     gameData.currentNightRoleIndex++;
     promptNextNightRole(roomId, io);
     return;
   }
 
-  // Gửi prompt cho từng người chơi của role này
+  // Gá»­i prompt cho tá»«ng ngÆ°á»i chÆ¡i cá»§a role nÃ y
   rolePlayers.forEach(player => {
     const socket = io.sockets.sockets.get(player.id);
     if (socket) {
@@ -73,14 +74,14 @@ export const promptNextNightRole = (roomId, io) => {
     }
   });
 
-  // Thông báo chung cho phòng: Đang chờ role cụ thể hành động (ẩn tên người chơi)
+  // ThÃ´ng bÃ¡o chung cho phÃ²ng: Äang chá» role cá»¥ thá»ƒ hÃ nh Ä‘á»™ng (áº©n tÃªn ngÆ°á»i chÆ¡i)
   io.to(roomId).emit('NIGHT_STATUS_UPDATE', {
     currentRoleName: ROLES[currentRole]?.name || currentRole
   });
 };
 
 /**
- * Nhận hành động ban đêm từ một người chơi
+ * Nháº­n hÃ nh Ä‘á»™ng ban Ä‘Ãªm tá»« má»™t ngÆ°á»i chÆ¡i
  */
 export const submitNightAction = (roomId, actorId, targetId, io) => {
   const gameData = getGameData(roomId);
@@ -99,15 +100,15 @@ export const submitNightAction = (roomId, actorId, targetId, io) => {
   const target = context.players.find(p => p.id === targetId);
   if (targetId && (!target || !target.isAlive)) return false;
 
-  // Kiểm tra luật bảo vệ không được trùng 2 đêm liên tiếp
+  // Kiá»ƒm tra luáº­t báº£o vá»‡ khÃ´ng Ä‘Æ°á»£c trÃ¹ng 2 Ä‘Ãªm liÃªn tiáº¿p
   if (currentRole === 'BODYGUARD' && targetId === gameData.lastProtectedId) {
     return false;
   }
 
-  // Ghi nhận action
+  // Ghi nháº­n action
   gameData.nightActions[currentRole] = { actorId, targetId };
 
-  // Đối với Ma sói, thông báo cho các con sói khác biết target được chọn
+  // Äá»‘i vá»›i Ma sÃ³i, thÃ´ng bÃ¡o cho cÃ¡c con sÃ³i khÃ¡c biáº¿t target Ä‘Æ°á»£c chá»n
   if (currentRole === 'WEREWOLF') {
     const wolves = context.players.filter(p => p.role === 'WEREWOLF' && p.isAlive);
     wolves.forEach(w => {
@@ -120,14 +121,14 @@ export const submitNightAction = (roomId, actorId, targetId, io) => {
     });
   }
 
-  // Chuyển sang role tiếp theo
+  // Chuyá»ƒn sang role tiáº¿p theo
   gameData.currentNightRoleIndex++;
   promptNextNightRole(roomId, io);
   return true;
 };
 
 /**
- * Xử lý kết quả ban đêm
+ * Xá»­ lÃ½ káº¿t quáº£ ban Ä‘Ãªm
  */
 export const resolveNight = (roomId, io) => {
   const gameData = getGameData(roomId);
@@ -140,24 +141,25 @@ export const resolveNight = (roomId, io) => {
   let killedId = nightActions['WEREWOLF']?.targetId;
   let protectedId = nightActions['BODYGUARD']?.targetId;
 
-  // Cập nhật lastProtectedId
+  // Cáº­p nháº­t lastProtectedId
   gameData.lastProtectedId = protectedId || null;
 
-  const nightDeaths = [];
+  const nightDeaths: Player[] = [];
 
-  // Nếu có người bị cắn và người đó không được bảo vệ
+  // Náº¿u cÃ³ ngÆ°á»i bá»‹ cáº¯n vÃ  ngÆ°á»i Ä‘Ã³ khÃ´ng Ä‘Æ°á»£c báº£o vá»‡
   if (killedId && killedId !== protectedId) {
     const victim = context.players.find(p => p.id === killedId);
     if (victim) {
       nightDeaths.push({
         id: victim.id,
         name: victim.name,
-        role: victim.role
+        role: victim.role,
+        isAlive: false
       });
     }
   }
 
-  // Xử lý Tiên tri soi bài
+  // Xá»­ lÃ½ TiÃªn tri soi bÃ i
   if (nightActions['SEER']) {
     const seerAction = nightActions['SEER'];
     const seerPlayer = context.players.find(p => p.id === seerAction.actorId);
@@ -166,7 +168,7 @@ export const resolveNight = (roomId, io) => {
     if (seerPlayer && targetPlayer) {
       const isWerewolf = targetPlayer.role === 'WEREWOLF';
       
-      // Gửi kết quả soi về riêng cho Tiên tri
+      // Gá»­i káº¿t quáº£ soi vá» riÃªng cho TiÃªn tri
       const seerSocket = io.sockets.sockets.get(seerPlayer.id);
       if (seerSocket) {
         seerSocket.emit('SEER_RESULT', {
@@ -176,7 +178,7 @@ export const resolveNight = (roomId, io) => {
         });
       }
 
-      // Lưu trữ vision để phục vụ reconnect
+      // LÆ°u trá»¯ vision Ä‘á»ƒ phá»¥c vá»¥ reconnect
       if (!gameData.seerVisions) gameData.seerVisions = {};
       if (!gameData.seerVisions[seerPlayer.id]) gameData.seerVisions[seerPlayer.id] = [];
       gameData.seerVisions[seerPlayer.id].push({
@@ -187,7 +189,7 @@ export const resolveNight = (roomId, io) => {
     }
   }
 
-  // Gửi kết quả về Machine để chuyển trạng thái game
+  // Gá»­i káº¿t quáº£ vá» Machine Ä‘á»ƒ chuyá»ƒn tráº¡ng thÃ¡i game
   gameData.actor.send({
     type: 'ALL_NIGHT_ACTIONS_DONE',
     nightDeaths

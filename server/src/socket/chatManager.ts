@@ -1,4 +1,4 @@
-import { getGameData } from '../engine/gameStateManager.js';
+﻿import { getGameData } from '../engine/gameStateManager.ts';
 
 export const addMessage = (roomId, channel, message) => {
   const gameData = getGameData(roomId);

@@ -1,32 +1,32 @@
-// In-memory store cho các phòng
+﻿// In-memory store cho cÃ¡c phÃ²ng
 const rooms = new Map();
 
 /**
- * Lấy danh sách tất cả các phòng
+ * Láº¥y danh sÃ¡ch táº¥t cáº£ cÃ¡c phÃ²ng
  */
 export const getRooms = () => {
   return Array.from(rooms.values());
 };
 
 /**
- * Tìm phòng theo ID
+ * TÃ¬m phÃ²ng theo ID
  */
 export const getRoom = (roomId) => {
   return rooms.get(roomId);
 };
 
 /**
- * Tạo phòng mới
+ * Táº¡o phÃ²ng má»›i
  */
 export const createRoom = (roomId, hostId) => {
   const newRoom = {
     id: roomId,
     hostId: hostId,
-    players: [], // Danh sách người chơi
+    players: [], // Danh sÃ¡ch ngÆ°á»i chÆ¡i
     status: 'Lobby',
     settings: {
       turnDuration: 60,
-      roles: [], // Các role được chọn trong phòng
+      roles: [], // CÃ¡c role Ä‘Æ°á»£c chá»n trong phÃ²ng
     },
   };
   rooms.set(roomId, newRoom);
@@ -34,19 +34,19 @@ export const createRoom = (roomId, hostId) => {
 };
 
 /**
- * Xóa phòng
+ * XÃ³a phÃ²ng
  */
 export const deleteRoom = (roomId) => {
   rooms.delete(roomId);
 };
 
 /**
- * Thêm người chơi vào phòng
+ * ThÃªm ngÆ°á»i chÆ¡i vÃ o phÃ²ng
  */
 export const joinRoom = (roomId, player) => {
   const room = rooms.get(roomId);
   if (room) {
-    // Tránh trùng lặp
+    // TrÃ¡nh trÃ¹ng láº·p
     if (!room.players.find((p) => p.id === player.id)) {
       room.players.push(player);
     }
@@ -56,18 +56,18 @@ export const joinRoom = (roomId, player) => {
 };
 
 /**
- * Xóa người chơi khỏi phòng
+ * XÃ³a ngÆ°á»i chÆ¡i khá»i phÃ²ng
  */
 export const leaveRoom = (roomId, playerId) => {
   const room = rooms.get(roomId);
   if (room) {
     room.players = room.players.filter((p) => p.id !== playerId);
     if (room.players.length === 0) {
-      // Nếu phòng trống, xóa phòng luôn
+      // Náº¿u phÃ²ng trá»‘ng, xÃ³a phÃ²ng luÃ´n
       deleteRoom(roomId);
       return null;
     }
-    // Nếu host thoát, chuyển host cho người đầu tiên
+    // Náº¿u host thoÃ¡t, chuyá»ƒn host cho ngÆ°á»i Ä‘áº§u tiÃªn
     if (room.hostId === playerId && room.players.length > 0) {
       room.hostId = room.players[0].id;
     }

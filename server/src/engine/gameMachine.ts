@@ -1,12 +1,13 @@
 import { setup, assign } from 'xstate';
-import { checkWinCondition } from './winCondition.js';
-import { ROLES } from '../roles/index.js';
+import { checkWinCondition } from './winCondition.ts';
+import { ROLES } from '../roles/index.ts';
+import type { GameContext, GameEvent } from '../types/game.ts';
 
 // Định nghĩa state machine cho một phòng game Ma Sói Ma Sói
 export const gameMachine = setup({
   types: {
-    context: {},
-    events: {}
+    context: {} as GameContext,
+    events: {} as GameEvent
   },
   actions: {
     notifyPlayers: () => {
@@ -28,6 +29,9 @@ export const gameMachine = setup({
       // Sẽ được inject từ bên ngoài
     },
     startGameOverTimer: () => {
+      // Sẽ được inject từ bên ngoài
+    },
+    autoResolveVotes: () => {
       // Sẽ được inject từ bên ngoài
     },
     setupGame: assign(({ context, event }) => {
@@ -136,8 +140,8 @@ export const gameMachine = setup({
     setWinner: assign(({ context }) => {
       const winResult = checkWinCondition(context.players);
       return {
-        phase: 'gameOver',
-        winner: winResult.winner,
+        phase: 'gameOver' as const,
+        winner: winResult.winner as import('../types/game.ts').Faction | null,
         timerDuration: null,
         timerStartAt: null
       };
@@ -166,7 +170,7 @@ export const gameMachine = setup({
     dayCount: 0,
     nightDeaths: [],
     voteTally: {},
-    settings: {},
+    settings: { roles: [] }, // Default empty roles
     timerDuration: null,
     timerStartAt: null,
     winner: null,
