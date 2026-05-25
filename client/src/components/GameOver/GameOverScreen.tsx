@@ -10,7 +10,7 @@ export const GameOverScreen = () => {
   const navigate = useNavigate();
   const { gameState, myPlayer } = useGame();
   const socket = useSocket();
-  const [secondsLeft, setSecondsLeft] = useState(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   useEffect(() => {
     if (!gameState || gameState.phase !== 'gameOver' || !gameState.timerDuration || !gameState.timerStartAt) {
@@ -41,7 +41,7 @@ export const GameOverScreen = () => {
   // Xác định xem phe của bản thân có thắng không
   const isMyFactionWinner = myPlayer?.faction === winnerFaction;
 
-  const getFactionDisplay = (faction) => {
+  const getFactionDisplay = (faction: string | null | undefined) => {
     switch (faction) {
       case 'WEREWOLF':
         return {
@@ -76,13 +76,13 @@ export const GameOverScreen = () => {
 
   const factionInfo = getFactionDisplay(winnerFaction);
 
-  const getRoleName = (roleId) => {
+  const getRoleName = (roleId?: string): string => {
     switch (roleId) {
       case 'WEREWOLF': return 'Ma Sói';
       case 'SEER': return 'Tiên Tri';
       case 'BODYGUARD': return 'Bảo Vệ';
       case 'VILLAGER': return 'Dân Làng';
-      default: return roleId;
+      default: return roleId ?? '';
     }
   };
 

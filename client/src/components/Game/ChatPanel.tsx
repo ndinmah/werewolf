@@ -10,7 +10,7 @@ export const ChatPanel = () => {
   const { chatLogs, myPlayer, phase } = useGame();
   const [activeTab, setActiveTab] = useState('general');
   const [message, setMessage] = useState('');
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -20,7 +20,7 @@ export const ChatPanel = () => {
     scrollToBottom();
   }, [chatLogs, activeTab]);
 
-  const handleSend = (e) => {
+  const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !socket || !myPlayer) return;
 
@@ -41,7 +41,7 @@ export const ChatPanel = () => {
   const isInputDisabled = () => {
     if (!myPlayer) return true;
     if (currentTab === 'general') {
-      return !myPlayer.isAlive || (phase !== 'dayDiscuss' && phase !== 'voting');
+      return !myPlayer.isAlive || ((phase as string) !== 'dayDiscuss' && phase !== 'voting');
     }
     if (currentTab === 'wolves') {
       return myPlayer.role !== 'WEREWOLF' || !myPlayer.isAlive || phase !== 'night';

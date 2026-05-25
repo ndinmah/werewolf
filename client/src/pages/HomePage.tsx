@@ -14,10 +14,10 @@ export const HomePage = () => {
     sessionStorage.removeItem('werewolf_session');
   }, []);
 
-  const handleCreateRoom = (e) => {
+  const handleCreateRoom = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     if (!playerName.trim()) return;
-    socket.emit('CREATE_ROOM', { playerName }, (response) => {
+    socket.emit('CREATE_ROOM', { playerName }, (response: { success: boolean; room: { id: string } }) => {
       if (response.success) {
         sessionStorage.setItem('werewolf_session', JSON.stringify({
           roomId: response.room.id,
@@ -28,11 +28,11 @@ export const HomePage = () => {
     });
   };
 
-  const handleJoinRoom = (e) => {
+  const handleJoinRoom = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
     if (!playerName.trim() || !roomId.trim()) return;
 
-    socket.emit('JOIN_ROOM', { roomId: roomId.toUpperCase(), playerName }, (response) => {
+    socket.emit('JOIN_ROOM', { roomId: roomId.toUpperCase(), playerName }, (response: { success: boolean; room: { id: string }; error?: string }) => {
       if (response.success) {
         sessionStorage.setItem('werewolf_session', JSON.stringify({
           roomId: response.room.id,

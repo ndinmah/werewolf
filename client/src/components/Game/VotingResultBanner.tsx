@@ -6,7 +6,7 @@ export const VotingResultBanner = () => {
 
   if (!votingResult) return null;
 
-  const { eliminatedPlayer, isTie } = votingResult;
+  const { eliminated: eliminatedPlayer, isTie } = votingResult;
 
   return (
     <div className="fixed top-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-xl px-4 animate-slide-down">

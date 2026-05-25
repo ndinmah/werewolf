@@ -4,8 +4,17 @@ import { useSocket } from '../context/SocketContext';
 import { Button } from '../components/UI/Button';
 import { useGame } from '../context/GameContext';
 import { Plus, Minus, Clock, ShieldAlert } from 'lucide-react';
+import type { Room, Role } from '../types/game';
 
-const AVAILABLE_ROLES = [
+interface RoleConfig {
+  id: Role;
+  name: string;
+  strength: number;
+  icon: string;
+  color: string;
+}
+
+const AVAILABLE_ROLES: RoleConfig[] = [
   { id: 'WEREWOLF', name: 'Ma Sói', strength: -2, icon: '🐺', color: 'text-red-400' },
   { id: 'SEER', name: 'Tiên Tri', strength: 3, icon: '🔮', color: 'text-purple-400' },
   { id: 'BODYGUARD', name: 'Bảo Vệ', strength: 3, icon: '🛡️', color: 'text-green-400' },
@@ -14,15 +23,15 @@ const AVAILABLE_ROLES = [
 ];
 
 export const LobbyPage = () => {
-  const { id: roomId } = useParams();
+  const { id: roomId } = useParams<{ id: string }>();
   const socket = useSocket();
   const navigate = useNavigate();
-  const [room, setRoom] = useState(null);
+  const [room, setRoom] = useState<Room | null>(null);
   const { gameState } = useGame();
 
   // Chuyển hướng sang trang game nếu game đã bắt đầu
   useEffect(() => {
-    if (gameState && gameState.phase && gameState.phase !== 'lobby') {
+    if (gameState && gameState.phase && gameState.phase !== 'lobby' as string) {
       navigate(`/room/${roomId}/game`);
     }
   }, [gameState, navigate, roomId]);
@@ -40,7 +49,7 @@ export const LobbyPage = () => {
       }
     }, 5000);
 
-    socket.emit('GET_ROOM', { roomId }, (response) => {
+    socket.emit('GET_ROOM', { roomId }, (response: { success: boolean; room: Room; error?: string }) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -61,7 +70,7 @@ export const LobbyPage = () => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('ROOM_UPDATED', (updatedRoom) => {
+    socket.on('ROOM_UPDATED', (updatedRoom: Room) => {
       setRoom(updatedRoom);
     });
 
@@ -77,8 +86,8 @@ export const LobbyPage = () => {
   const handleStartGame = () => {
     // Validate bài trước khi chơi
     const roles = room.settings?.roles || [];
-    const wolfCount = roles.filter(r => r === 'WEREWOLF').length;
-    
+    const wolfCount = roles.filter((r) => r === 'WEREWOLF').length;
+
     if (wolfCount < 1) {
       alert('⚠️ Trận đấu phải có ít nhất 1 Ma Sói!');
       return;
@@ -88,41 +97,42 @@ export const LobbyPage = () => {
       return;
     }
 
-    socket.emit('START_GAME', { roomId: room.id }, (response) => {
+    socket.emit('START_GAME', { roomId: room.id }, (response: { success: boolean; error?: string }) => {
       if (response && !response.success) {
         alert(response.error);
       }
     });
   };
 
-  const handleUpdateSettings = (updatedFields) => {
+  const handleUpdateSettings = (updatedFields: Record<string, unknown>) => {
+    const s = room.settings as unknown as Record<string, unknown>;
     const updatedSettings = {
-      discussionTime: room.settings?.discussionTime || 120,
-      voteTime: room.settings?.voteTime || 60,
-      dayStartDuration: room.settings?.dayStartDuration || 8,
+      discussionTime: s?.discussionTime ?? 120,
+      voteTime: s?.voteTime ?? 60,
+      dayStartDuration: s?.dayStartDuration ?? 8,
       roles: room.settings?.roles || ['WEREWOLF', 'SEER', 'BODYGUARD', 'VILLAGER'],
-      ...updatedFields
+      ...updatedFields,
     };
     socket.emit('UPDATE_SETTINGS', { roomId: room.id, settings: updatedSettings });
   };
 
-  const getRoleCounts = () => {
+  const getRoleCounts = (): Record<string, number> => {
     const roles = room.settings?.roles || [];
-    const counts = {};
-    AVAILABLE_ROLES.forEach(r => {
-      counts[r.id] = roles.filter(roleId => roleId === r.id).length;
+    const counts: Record<string, number> = {};
+    AVAILABLE_ROLES.forEach((r) => {
+      counts[r.id] = roles.filter((roleId) => roleId === r.id).length;
     });
     return counts;
   };
 
-  const handleUpdateRoleCount = (roleId, delta) => {
+  const handleUpdateRoleCount = (roleId: Role, delta: number) => {
     const counts = getRoleCounts();
     const currentCount = counts[roleId] || 0;
     const newCount = Math.max(0, currentCount + delta);
 
-    const newRoles = [];
-    AVAILABLE_ROLES.forEach(r => {
-      const count = r.id === roleId ? newCount : (counts[r.id] || 0);
+    const newRoles: Role[] = [];
+    AVAILABLE_ROLES.forEach((r) => {
+      const count = r.id === roleId ? newCount : counts[r.id] || 0;
       for (let i = 0; i < count; i++) {
         newRoles.push(r.id);
       }
@@ -131,7 +141,7 @@ export const LobbyPage = () => {
     handleUpdateSettings({ roles: newRoles });
   };
 
-  const handleTimerChange = (key, value) => {
+  const handleTimerChange = (key: string, value: string) => {
     const intVal = parseInt(value, 10);
     if (!isNaN(intVal) && intVal > 0) {
       handleUpdateSettings({ [key]: intVal });
@@ -140,8 +150,11 @@ export const LobbyPage = () => {
 
   const roleCounts = getRoleCounts();
   const totalStrength = AVAILABLE_ROLES.reduce(
-    (sum, r) => sum + (roleCounts[r.id] || 0) * r.strength, 0
+    (sum, r) => sum + (roleCounts[r.id] || 0) * r.strength,
+    0,
   );
+
+  const roomSettings = room.settings as unknown as Record<string, unknown>;
 
   return (
     <div className="min-h-screen pt-20 px-4 container mx-auto max-w-6xl">
@@ -211,7 +224,7 @@ export const LobbyPage = () => {
                   <input
                     type="number"
                     disabled={!isHost}
-                    value={room.settings?.dayStartDuration || 8}
+                    value={(roomSettings?.dayStartDuration as number) || 8}
                     onChange={(e) => handleTimerChange('dayStartDuration', e.target.value)}
                     className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
                   />
@@ -221,7 +234,7 @@ export const LobbyPage = () => {
                   <input
                     type="number"
                     disabled={!isHost}
-                    value={room.settings?.discussionTime || 120}
+                    value={(roomSettings?.discussionTime as number) || 120}
                     onChange={(e) => handleTimerChange('discussionTime', e.target.value)}
                     className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
                   />
@@ -231,7 +244,7 @@ export const LobbyPage = () => {
                   <input
                     type="number"
                     disabled={!isHost}
-                    value={room.settings?.voteTime || 60}
+                    value={(roomSettings?.voteTime as number) || 60}
                     onChange={(e) => handleTimerChange('voteTime', e.target.value)}
                     className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
                   />
@@ -261,7 +274,7 @@ export const LobbyPage = () => {
               </div>
 
               <div className="space-y-2 bg-darker/60 p-3 rounded-lg border border-gray-800">
-                {AVAILABLE_ROLES.map(role => {
+                {AVAILABLE_ROLES.map((role) => {
                   const count = roleCounts[role.id] || 0;
                   return (
                     <div key={role.id} className="flex items-center justify-between py-1.5 border-b border-gray-800 last:border-0">

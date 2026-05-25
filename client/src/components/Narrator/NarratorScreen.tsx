@@ -4,7 +4,7 @@ import { Sun, Skull, Heart } from 'lucide-react';
 
 export const NarratorScreen = () => {
   const { phase, gameState } = useGame();
-  const [timeLeft, setTimeLeft] = useState(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const nightDeaths = gameState?.nightDeaths || [];
   const hasDeaths = nightDeaths.length > 0;

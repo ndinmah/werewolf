@@ -4,7 +4,7 @@ import { Clock } from 'lucide-react';
 
 export const PhaseTimer = () => {
   const { gameState } = useGame();
-  const [secondsLeft, setSecondsLeft] = useState(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   useEffect(() => {
     if (!gameState?.timerDuration || !gameState?.timerStartAt) return;
@@ -25,7 +25,7 @@ export const PhaseTimer = () => {
   if (!gameState?.timerDuration || !gameState?.timerStartAt || secondsLeft == null) return null;
 
   // Định dạng mm:ss
-  const formatTime = (secs) => {
+  const formatTime = (secs: number): string => {
     const m = Math.floor(secs / 60)
       .toString()
       .padStart(2, '0');

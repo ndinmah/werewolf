@@ -1,16 +1,18 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 
-const socket = io('http://localhost:3001');
+const socket: Socket = io('http://localhost:3001');
 
-const SocketContext = createContext();
+const SocketContext = createContext<Socket | null>(null);
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useSocket = () => {
-  return useContext(SocketContext);
+export const useSocket = (): Socket => {
+  const ctx = useContext(SocketContext);
+  if (!ctx) throw new Error('useSocket must be used within SocketProvider');
+  return ctx;
 };
 
-export const SocketProvider = ({ children }) => {
+export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(socket.connected);
 
   useEffect(() => {
@@ -22,18 +24,18 @@ export const SocketProvider = ({ children }) => {
       try {
         const sessionStr = sessionStorage.getItem('werewolf_session');
         if (!sessionStr) return;
-        const { roomId, playerName } = JSON.parse(sessionStr);
+        const { roomId, playerName } = JSON.parse(sessionStr) as { roomId: string; playerName: string };
         if (!roomId || !playerName) return;
 
         console.log('Attempting automatic room reconnect for:', { roomId, playerName });
         // Đầu tiên, thử RECONNECT_ROOM (nếu game đang chạy)
-        socket.emit('RECONNECT_ROOM', { roomId, playerName }, (response) => {
+        socket.emit('RECONNECT_ROOM', { roomId, playerName }, (response: { success: boolean }) => {
           if (response && response.success) {
             console.log('RECONNECT_ROOM successful');
           } else {
             console.log('RECONNECT_ROOM failed, attempting JOIN_ROOM (lobby)...');
             // Nếu không thành công, có thể game chưa chạy (đang ở lobby), thử JOIN_ROOM
-            socket.emit('JOIN_ROOM', { roomId, playerName }, (joinResponse) => {
+            socket.emit('JOIN_ROOM', { roomId, playerName }, (joinResponse: { success: boolean; error?: string }) => {
               if (joinResponse && joinResponse.success) {
                 console.log('JOIN_ROOM successful on reconnect');
               } else {

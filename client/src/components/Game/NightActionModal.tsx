@@ -16,9 +16,9 @@ export const NightActionModal = () => {
     nightStatus 
   } = useGame();
 
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasConfirmed, setHasConfirmed] = useState(false);
-  const [wolfPartnersTargets, setWolfPartnersTargets] = useState({}); // { [partnerName]: targetId }
+  const [wolfPartnersTargets, setWolfPartnersTargets] = useState<Record<string, string>>({}); // { [partnerName]: targetId }
 
   // Lắng nghe sự kiện Sói đồng bọn chọn mục tiêu
   useEffect(() => {
@@ -51,7 +51,7 @@ export const NightActionModal = () => {
 
   if (phase !== 'night' || !myPlayer?.isAlive) return null;
 
-  const handleSelect = (playerId) => {
+  const handleSelect = (playerId: string) => {
     if (hasConfirmed) return;
     setSelectedId(playerId);
 

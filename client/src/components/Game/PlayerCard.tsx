@@ -1,6 +1,7 @@
 import { useGame } from '../../context/GameContext';
+import type { Player } from '../../types/game';
 
-export const PlayerCard = ({ player }) => {
+export const PlayerCard = ({ player }: { player: Player }) => {
   const { seerVisions } = useGame();
   const isDisconnected = player.disconnected;
   const isDead = !player.isAlive;

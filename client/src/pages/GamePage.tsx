@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
+import type { Role } from '../types/game';
 import { ChatPanel } from '../components/Game/ChatPanel';
 import { VotePanel } from '../components/Game/VotePanel';
 import { NightActionModal } from '../components/Game/NightActionModal';
@@ -45,7 +46,7 @@ export const GamePage = () => {
     }
   };
 
-  const getRoleEmoji = (role) => {
+  const getRoleEmoji = (role?: Role): string => {
     switch (role) {
       case 'WEREWOLF': return '🐺';
       case 'SEER': return '🔮';
@@ -55,7 +56,7 @@ export const GamePage = () => {
     }
   };
 
-  const getRoleName = (role) => {
+  const getRoleName = (role?: Role): string => {
     switch (role) {
       case 'WEREWOLF': return 'Ma Sói';
       case 'SEER': return 'Tiên Tri';

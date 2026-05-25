@@ -9,14 +9,14 @@ export const VotePanel = () => {
   const { id: roomId } = useParams();
   const socket = useSocket();
   const { gameState, myPlayer, phase } = useGame();
-  const [selectedPlayerId, setSelectedPlayerId] = useState(null);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
-  const [voteData, setVoteData] = useState({ tally: {}, totalVoters: 0 });
+  const [voteData, setVoteData] = useState<{ tally: Record<string, number>; totalVoters: number }>({ tally: {}, totalVoters: 0 });
 
   useEffect(() => {
     if (!socket) return;
     
-    socket.on('VOTE_UPDATED', (data) => {
+    socket.on('VOTE_UPDATED', (data: { tally: Record<string, number>; totalVoters: number }) => {
       setVoteData(data);
     });
 

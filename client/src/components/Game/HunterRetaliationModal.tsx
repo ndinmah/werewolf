@@ -10,7 +10,7 @@ export const HunterRetaliationModal = () => {
   const socket = useSocket();
   const { myPlayer, phase, hunterPrompt, setHunterPrompt, hunterShotResult } = useGame();
 
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hasConfirmed, setHasConfirmed] = useState(false);
 
   const [prevPhase, setPrevPhase] = useState(phase);
@@ -31,7 +31,7 @@ export const HunterRetaliationModal = () => {
     setHunterPrompt(null); // Ẩn prompt sau khi bắn
   };
 
-  const getRoleName = (roleId) => {
+  const getRoleName = (roleId?: string): string => {
     switch (roleId) {
       case 'WEREWOLF':
         return 'Ma Sói';
@@ -42,7 +42,7 @@ export const HunterRetaliationModal = () => {
       case 'VILLAGER':
         return 'Dân Làng';
       default:
-        return roleId;
+        return roleId ?? '';
     }
   };
 
@@ -160,7 +160,7 @@ export const HunterRetaliationModal = () => {
 
   return null;
 
-  function handleSelect(playerId) {
+  function handleSelect(playerId: string) {
     if (hasConfirmed) return;
     setSelectedId(playerId);
   }
