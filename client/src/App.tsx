@@ -6,23 +6,26 @@ import { RolesPage } from './pages/RolesPage';
 import { GamePage } from './pages/GamePage';
 import { SocketProvider } from './context/SocketContext';
 import { GameProvider } from './context/GameContext';
+import { ToastProvider } from './context/ToastContext';
 
 function App() {
   return (
     <Router>
-      <SocketProvider>
-        <GameProvider>
-          <div className="min-h-screen text-gray-100 font-sans selection:bg-wolf/30">
-            <Navbar />
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/room/:id" element={<LobbyPage />} />
-              <Route path="/room/:id/game" element={<GamePage />} />
-              <Route path="/roles" element={<RolesPage />} />
-            </Routes>
-          </div>
-        </GameProvider>
-      </SocketProvider>
+      <ToastProvider>
+        <SocketProvider>
+          <GameProvider>
+            <div className="min-h-screen text-gray-100 font-sans selection:bg-wolf/30">
+              <Navbar />
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/room/:id" element={<LobbyPage />} />
+                <Route path="/room/:id/game" element={<GamePage />} />
+                <Route path="/roles" element={<RolesPage />} />
+              </Routes>
+            </div>
+          </GameProvider>
+        </SocketProvider>
+      </ToastProvider>
     </Router>
   );
 }

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import { useGame } from '../../context/GameContext';
 import { ChatMessage } from './ChatMessage';
+import type { ChatLogs } from '../../types/game';
 
 export const ChatPanel = () => {
   const { id: roomId } = useParams();
@@ -36,7 +37,7 @@ export const ChatPanel = () => {
   }, [myPlayer]);
 
   // Derive tab hiệu lực: nếu activeTab không còn hợp lệ thì fallback về 'general'
-  const currentTab = tabs.some((t) => t.id === activeTab) ? activeTab : 'general';
+  const currentTab = (tabs.some((t) => t.id === activeTab) ? activeTab : 'general') as keyof ChatLogs;
 
   const isInputDisabled = () => {
     if (!myPlayer) return true;

@@ -24,7 +24,7 @@ export const NightActionModal = () => {
   useEffect(() => {
     if (!socket || myPlayer?.role !== 'WEREWOLF') return;
 
-    const handleWolfTarget = ({ targetId, actorName }) => {
+    const handleWolfTarget = ({ targetId, actorName }: { targetId: string; actorName: string }) => {
       setWolfPartnersTargets(prev => ({
         ...prev,
         [actorName]: targetId

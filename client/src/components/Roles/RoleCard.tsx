@@ -1,4 +1,11 @@
-export const RoleCard = ({ role }) => {
+interface RoleCardProps {
+  role: {
+    name: string;
+    description: string;
+  };
+}
+
+export const RoleCard = ({ role }: RoleCardProps) => {
   return (
     <div className="bg-darker p-4 rounded-lg border border-gray-700">
       <h3 className="font-bold text-white">{role.name}</h3>

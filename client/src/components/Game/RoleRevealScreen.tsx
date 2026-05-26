@@ -3,7 +3,11 @@ import { useGame } from '../../context/GameContext';
 import { Eye, Shield, Search, Users, HelpCircle, Target } from 'lucide-react';
 import { Button } from '../UI/Button';
 
-export const RoleRevealScreen = ({ onConfirm }) => {
+interface RoleRevealScreenProps {
+  onConfirm: () => void;
+}
+
+export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
   const { myPlayer } = useGame();
   const [isFlipped, setIsFlipped] = useState(false);
 

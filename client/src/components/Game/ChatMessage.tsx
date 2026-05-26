@@ -1,4 +1,11 @@
-export const ChatMessage = ({ message, isMe }) => {
+import { ChatMessage as ChatMessageType } from '../../types/game';
+
+interface ChatMessageProps {
+  message: ChatMessageType;
+  isMe: boolean;
+}
+
+export const ChatMessage = ({ message, isMe }: ChatMessageProps) => {
   const { senderName, content, channel, timestamp } = message;
 
   const getChannelStyle = () => {

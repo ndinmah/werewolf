@@ -1,4 +1,11 @@
-export const PlayerCard = ({ player }) => {
+interface PlayerCardProps {
+  player: {
+    name: string;
+    isHost?: boolean;
+  };
+}
+
+export const PlayerCard = ({ player }: PlayerCardProps) => {
   return (
     <div className="bg-darker p-4 rounded-lg flex items-center gap-3 border border-gray-700">
       <div className="w-10 h-10 rounded-full bg-linear-to-tr from-gray-700 to-gray-600 flex items-center justify-center font-bold text-white">

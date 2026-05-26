@@ -10,28 +10,28 @@ export const GameOverScreen = () => {
   const navigate = useNavigate();
   const { gameState, myPlayer } = useGame();
   const socket = useSocket();
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!gameState || gameState.phase !== 'gameOver' || !gameState.timerDuration || !gameState.timerStartAt) {
-      setSecondsLeft(null);
       return;
     }
 
-    const timerDuration = gameState.timerDuration;
-    const timerStartAt = gameState.timerStartAt;
-
-    const updateTimer = () => {
-      const elapsed = Date.now() - timerStartAt;
-      const remaining = Math.max(0, timerDuration - elapsed);
-      setSecondsLeft(Math.ceil(remaining / 1000));
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 500);
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 500);
 
     return () => clearInterval(interval);
   }, [gameState]);
+
+  const secondsLeft = (() => {
+    if (!gameState || gameState.phase !== 'gameOver' || !gameState.timerDuration || !gameState.timerStartAt) {
+      return null;
+    }
+    const elapsed = now - gameState.timerStartAt;
+    const remaining = Math.max(0, gameState.timerDuration - elapsed);
+    return Math.ceil(remaining / 1000);
+  })();
 
   if (!gameState || gameState.phase !== 'gameOver') return null;
 
