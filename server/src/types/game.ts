@@ -78,3 +78,24 @@ export interface GameEvent {
   shotPlayerId?: string;
   [key: string]: unknown;
 }
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  channel: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface ChatLogs {
+  general: ChatMessage[];
+  wolves: ChatMessage[];
+  ghost: ChatMessage[];
+}
+
+export interface SeerVision {
+  targetId: string;
+  targetName: string;
+  isWerewolf: boolean;
+}

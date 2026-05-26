@@ -1,6 +1,7 @@
-﻿import { getGameData } from '../engine/gameStateManager.ts';
+import { getGameData } from '../engine/gameStateManager.ts';
+import type { ChatMessage, ChatLogs } from '../types/game.ts';
 
-export const addMessage = (roomId, channel, message) => {
+export const addMessage = (roomId: string, channel: keyof ChatLogs, message: ChatMessage) => {
   const gameData = getGameData(roomId);
   if (gameData && gameData.chatLogs[channel]) {
     gameData.chatLogs[channel].push(message);
@@ -9,7 +10,7 @@ export const addMessage = (roomId, channel, message) => {
   return false;
 };
 
-export const getMessages = (roomId, channel) => {
+export const getMessages = (roomId: string, channel: keyof ChatLogs) => {
   const gameData = getGameData(roomId);
   if (gameData && gameData.chatLogs[channel]) {
     return gameData.chatLogs[channel];

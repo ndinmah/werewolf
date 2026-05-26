@@ -1,13 +1,13 @@
 import { setup, assign } from 'xstate';
 import { checkWinCondition } from './winCondition.ts';
 import { ROLES } from '../roles/index.ts';
-import type { GameContext, GameEvent } from '../types/game.ts';
+import type { GameContext, GameEvent, Faction } from '../types/game.ts';
 
 // Định nghĩa state machine cho một phòng game Ma Sói Ma Sói
 export const gameMachine = setup({
   types: {
     context: {} as GameContext,
-    events: {} as GameEvent
+    events: {} as GameEvent,
   },
   actions: {
     notifyPlayers: () => {
@@ -57,13 +57,13 @@ export const gameMachine = setup({
       // Gán role cho từng người
       const assignedPlayers = playersList.map((p, idx) => {
         const roleId = rolesToAssign[idx];
-        const roleData = ROLES[roleId] || ROLES.VILLAGER;
+        const roleData = ROLES[roleId as keyof typeof ROLES] || ROLES.VILLAGER;
         return {
           ...p,
           role: roleId,
-          faction: roleData.faction,
+          faction: roleData.faction as Faction,
           isAlive: true,
-          disconnected: false
+          disconnected: false,
         };
       });
 
@@ -79,15 +79,15 @@ export const gameMachine = setup({
         winner: null,
         dayDeath: null,
         hunterNextPhase: null,
-        hunterShotPlayer: null
+        hunterShotPlayer: null,
       };
     }),
     applyNightResults: assign(({ context, event }) => {
       const nightDeaths = event.nightDeaths || [];
-      const deadIds = nightDeaths.map(d => d.id);
+      const deadIds = nightDeaths.map((d) => d.id);
 
       // Cập nhật người chơi chết
-      const updatedPlayers = context.players.map(p => {
+      const updatedPlayers = context.players.map((p) => {
         if (deadIds.includes(p.id)) {
           return { ...p, isAlive: false };
         }
@@ -99,13 +99,13 @@ export const gameMachine = setup({
         nightDeaths: nightDeaths,
         phase: 'dayStart',
         dayDeath: null,
-        hunterShotPlayer: null // Reset
+        hunterShotPlayer: null, // Reset
       };
     }),
     applyVotingResults: assign(({ context, event }) => {
       const eliminatedPlayer = event.eliminatedPlayer; // { id, name, role } hoặc null
-      
-      const updatedPlayers = context.players.map(p => {
+
+      const updatedPlayers = context.players.map((p) => {
         if (eliminatedPlayer && p.id === eliminatedPlayer.id) {
           return { ...p, isAlive: false };
         }
@@ -116,25 +116,25 @@ export const gameMachine = setup({
         players: updatedPlayers,
         dayDeath: eliminatedPlayer,
         phase: 'night', // Sẽ được cập nhật lại nếu qua Hunter
-        hunterShotPlayer: null
+        hunterShotPlayer: null,
       };
     }),
     applyHunterShot: assign(({ context, event }) => {
       const shotPlayerId = event.shotPlayerId;
-      const updatedPlayers = context.players.map(p => {
+      const updatedPlayers = context.players.map((p) => {
         if (p.id === shotPlayerId) {
           return { ...p, isAlive: false };
         }
         return p;
       });
-      
-      const shotPlayer = context.players.find(p => p.id === shotPlayerId);
-      
+
+      const shotPlayer = context.players.find((p) => p.id === shotPlayerId);
+
       return {
         players: updatedPlayers,
         hunterShotPlayer: shotPlayer ? { id: shotPlayer.id, name: shotPlayer.name, role: shotPlayer.role } : null,
         timerDuration: null,
-        timerStartAt: null
+        timerStartAt: null,
       };
     }),
     setWinner: assign(({ context }) => {
@@ -143,24 +143,24 @@ export const gameMachine = setup({
         phase: 'gameOver' as const,
         winner: winResult.winner as import('../types/game.ts').Faction | null,
         timerDuration: null,
-        timerStartAt: null
+        timerStartAt: null,
       };
-    })
+    }),
   },
   guards: {
     checkWinCondition: ({ context }) => {
       const winResult = checkWinCondition(context.players);
       return winResult.isGameOver;
     },
-    hasHunterDiedNight: ({ context, event }) => {
+    hasHunterDiedNight: ({ event }) => {
       const nightDeaths = event.nightDeaths || [];
-      return nightDeaths.some(d => d.role === 'HUNTER');
+      return nightDeaths.some((d) => d.role === 'HUNTER');
     },
-    hasHunterDiedVote: ({ context, event }) => {
+    hasHunterDiedVote: ({ event }) => {
       const eliminatedPlayer = event.eliminatedPlayer;
       return eliminatedPlayer?.role === 'HUNTER';
-    }
-  }
+    },
+  },
 }).createMachine({
   id: 'werewolf-game',
   initial: 'Lobby',
@@ -176,16 +176,16 @@ export const gameMachine = setup({
     winner: null,
     dayDeath: null,
     hunterNextPhase: null,
-    hunterShotPlayer: null
+    hunterShotPlayer: null,
   },
   states: {
     Lobby: {
       on: {
         START_GAME: {
           target: 'NightPhase',
-          actions: ['setupGame', 'notifyPlayers']
-        }
-      }
+          actions: ['setupGame', 'notifyPlayers'],
+        },
+      },
     },
     NightPhase: {
       entry: ['runNightStart', 'notifyPlayers'],
@@ -194,7 +194,7 @@ export const gameMachine = setup({
           {
             target: 'GameOver',
             guard: 'checkWinCondition',
-            actions: ['applyNightResults', 'setWinner', 'notifyPlayers']
+            actions: ['applyNightResults', 'setWinner', 'notifyPlayers'],
           },
           {
             target: 'HunterRetaliation',
@@ -202,15 +202,15 @@ export const gameMachine = setup({
             actions: [
               'applyNightResults',
               assign({ phase: 'hunterRetaliation', hunterNextPhase: 'dayStart' }),
-              'notifyPlayers'
-            ]
+              'notifyPlayers',
+            ],
           },
           {
             target: 'DayPhase',
-            actions: ['applyNightResults', 'notifyPlayers']
-          }
-        ]
-      }
+            actions: ['applyNightResults', 'notifyPlayers'],
+          },
+        ],
+      },
     },
     DayPhase: {
       initial: 'DayStart',
@@ -220,20 +220,20 @@ export const gameMachine = setup({
           on: {
             TIMER_EXPIRED: {
               target: 'DayDiscuss',
-              actions: assign({ phase: 'dayDiscuss' })
-            }
-          }
+              actions: assign({ phase: 'dayDiscuss' }),
+            },
+          },
         },
         DayDiscuss: {
           entry: ['startDayDiscussTimer', 'notifyPlayers'],
           on: {
             TIMER_EXPIRED: {
               target: '#werewolf-game.VotingPhase',
-              actions: assign({ phase: 'voting' })
-            }
-          }
-        }
-      }
+              actions: assign({ phase: 'voting' }),
+            },
+          },
+        },
+      },
     },
     VotingPhase: {
       entry: ['startVotingTimer', 'notifyPlayers'],
@@ -242,7 +242,7 @@ export const gameMachine = setup({
           {
             target: 'GameOver',
             guard: 'checkWinCondition',
-            actions: ['applyVotingResults', 'setWinner', 'notifyPlayers']
+            actions: ['applyVotingResults', 'setWinner', 'notifyPlayers'],
           },
           {
             target: 'HunterRetaliation',
@@ -250,8 +250,8 @@ export const gameMachine = setup({
             actions: [
               'applyVotingResults',
               assign({ phase: 'hunterRetaliation', hunterNextPhase: 'night' }),
-              'notifyPlayers'
-            ]
+              'notifyPlayers',
+            ],
           },
           {
             target: 'NightPhase',
@@ -260,16 +260,16 @@ export const gameMachine = setup({
               assign({
                 phase: 'night',
                 dayCount: ({ context }) => context.dayCount + 1,
-                voteTally: {}
+                voteTally: {},
               }),
-              'notifyPlayers'
-            ]
-          }
+              'notifyPlayers',
+            ],
+          },
         ],
         TIMER_EXPIRED: {
-          actions: ['autoResolveVotes']
-        }
-      }
+          actions: ['autoResolveVotes'],
+        },
+      },
     },
     HunterRetaliation: {
       entry: ['runHunterRetaliationStart', 'notifyPlayers'],
@@ -278,12 +278,12 @@ export const gameMachine = setup({
           {
             target: 'GameOver',
             guard: 'checkWinCondition',
-            actions: ['applyHunterShot', 'setWinner', 'notifyPlayers']
+            actions: ['applyHunterShot', 'setWinner', 'notifyPlayers'],
           },
           {
             target: 'DayPhase',
             guard: ({ context }) => context.hunterNextPhase === 'dayStart',
-            actions: ['applyHunterShot', 'notifyPlayers']
+            actions: ['applyHunterShot', 'notifyPlayers'],
           },
           {
             target: 'NightPhase',
@@ -293,17 +293,17 @@ export const gameMachine = setup({
               assign({
                 phase: 'night',
                 dayCount: ({ context }) => context.dayCount + 1,
-                voteTally: {}
+                voteTally: {},
               }),
-              'notifyPlayers'
-            ]
-          }
+              'notifyPlayers',
+            ],
+          },
         ],
         TIMER_EXPIRED: [
           {
             target: 'DayPhase',
             guard: ({ context }) => context.hunterNextPhase === 'dayStart',
-            actions: [assign({ phase: 'dayStart', timerDuration: null, timerStartAt: null }), 'notifyPlayers']
+            actions: [assign({ phase: 'dayStart', timerDuration: null, timerStartAt: null }), 'notifyPlayers'],
           },
           {
             target: 'NightPhase',
@@ -314,16 +314,16 @@ export const gameMachine = setup({
                 dayCount: ({ context }) => context.dayCount + 1,
                 voteTally: {},
                 timerDuration: null,
-                timerStartAt: null
+                timerStartAt: null,
               }),
-              'notifyPlayers'
-            ]
-          }
-        ]
-      }
+              'notifyPlayers',
+            ],
+          },
+        ],
+      },
     },
     GameOver: {
-      entry: ['startGameOverTimer', 'notifyPlayers']
-    }
-  }
+      entry: ['startGameOverTimer', 'notifyPlayers'],
+    },
+  },
 });

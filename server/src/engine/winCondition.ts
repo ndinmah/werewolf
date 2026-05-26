@@ -1,18 +1,19 @@
-﻿import { FACTIONS, ROLES } from '../roles/index.ts';
+import { FACTIONS, ROLES } from '../roles/index.ts';
+import type { Player, Faction } from '../types/game.ts';
 
 /**
- * Kiá»ƒm tra xem game Ä‘Ã£ káº¿t thÃºc chÆ°a vÃ  phe nÃ o tháº¯ng.
- * @param {Array} players Danh sÃ¡ch ngÆ°á»i chÆ¡i hiá»‡n táº¡i { id, role, isAlive }
+ * Kiểm tra xem game đã kết thúc chưa và phe nào thắng.
+ * @param {Array} players Danh sách người chơi hiện tại { id, role, isAlive }
  * @returns {Object} { isGameOver: boolean, winner: string|null }
  */
-export const checkWinCondition = (players) => {
+export const checkWinCondition = (players: Player[]): { isGameOver: boolean; winner: Faction | null } => {
   const alivePlayers = players.filter(p => p.isAlive);
   
   let aliveWolves = 0;
   let aliveVillagers = 0;
   
   for (const player of alivePlayers) {
-    const roleData = ROLES[player.role];
+    const roleData = player.role ? ROLES[player.role as keyof typeof ROLES] : null;
     if (!roleData) continue;
     
     if (roleData.faction === FACTIONS.WEREWOLF) {
@@ -22,23 +23,23 @@ export const checkWinCondition = (players) => {
     }
   }
   
-  // SÃ³i tháº¯ng náº¿u sá»‘ SÃ³i >= sá»‘ DÃ¢n
+  // Sói thắng nếu số Sói >= số Dân
   const wolvesWin = aliveWolves >= aliveVillagers;
-  // DÃ¢n tháº¯ng náº¿u khÃ´ng cÃ²n SÃ³i nÃ o
+  // Dân thắng nếu không còn Sói nào
   const villagersWin = aliveWolves === 0;
   
   if (wolvesWin || villagersWin) {
-    // Kiá»ƒm tra xem cÃ³ ngÆ°á»i chÆ¡i phe thá»© 3 nÃ o cÃ²n sá»‘ng khÃ´ng
+    // Kiểm tra xem có người chơi phe thứ 3 nào còn sống không
     const aliveThirdParty = alivePlayers.some(p => {
-      const roleData = ROLES[p.role];
+      const roleData = p.role ? ROLES[p.role as keyof typeof ROLES] : null;
       return roleData && roleData.faction === FACTIONS.THIRD_PARTY;
     });
     
     if (aliveThirdParty) {
-      return { isGameOver: true, winner: FACTIONS.THIRD_PARTY };
+      return { isGameOver: true, winner: FACTIONS.THIRD_PARTY as Faction };
     }
     
-    return { isGameOver: true, winner: wolvesWin ? FACTIONS.WEREWOLF : FACTIONS.VILLAGER };
+    return { isGameOver: true, winner: (wolvesWin ? FACTIONS.WEREWOLF : FACTIONS.VILLAGER) as Faction };
   }
   
   return { isGameOver: false, winner: null };

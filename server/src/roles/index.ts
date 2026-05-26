@@ -1,4 +1,4 @@
-﻿export const FACTIONS = {
+export const FACTIONS = {
   VILLAGER: 'VILLAGER',
   WEREWOLF: 'WEREWOLF',
   THIRD_PARTY: 'THIRD_PARTY'
@@ -7,49 +7,49 @@
 export const ROLES = {
   VILLAGER: {
     id: 'VILLAGER',
-    name: 'DÃ¢n lÃ ng',
+    name: 'Dân làng',
     faction: FACTIONS.VILLAGER,
     strength: 1,
     priority: 0,
-    description: 'Ngá»§ vÃ o ban Ä‘Ãªm. Thá»©c dáº­y vÃ o ban ngÃ y Ä‘á»ƒ tháº£o luáº­n vÃ  vote.',
+    description: 'Ngủ vào ban đêm. Thức dậy vào ban ngày để thảo luận và vote.',
     icon: 'Users'
   },
   WEREWOLF: {
     id: 'WEREWOLF',
-    name: 'Ma sÃ³i',
+    name: 'Ma sói',
     faction: FACTIONS.WEREWOLF,
     strength: -2,
     priority: 10,
-    description: 'Thá»©c dáº­y vÃ o ban Ä‘Ãªm Ä‘á»ƒ chá»n má»™t náº¡n nhÃ¢n. Cá»‘ gáº¯ng giáº£ lÃ m ngÆ°á»i vÃ o ban ngÃ y.',
+    description: 'Thức dậy vào ban đêm để chọn một nạn nhân. Cố gắng giả làm người vào ban ngày.',
     icon: 'Eye'
   },
   SEER: {
     id: 'SEER',
-    name: 'TiÃªn tri',
+    name: 'Tiên tri',
     faction: FACTIONS.VILLAGER,
     strength: 3,
     priority: 20,
-    description: 'Thá»©c dáº­y má»—i Ä‘Ãªm Ä‘á»ƒ soi xem má»™t ngÆ°á»i cÃ³ pháº£i lÃ  SÃ³i hay khÃ´ng.',
+    description: 'Thức dậy mỗi đêm để soi xem một người có phải là Sói hay không.',
     icon: 'Search'
   },
   BODYGUARD: {
     id: 'BODYGUARD',
-    name: 'Báº£o vá»‡',
+    name: 'Bảo vệ',
     faction: FACTIONS.VILLAGER,
     strength: 3,
     priority: 30,
-    description: 'Tháº­y dáº­y má»—i Ä‘Ãªm Ä‘á»ƒ báº£o vá»‡ má»™t ngÆ°á»i khá»i bá»‹ SÃ³i cáº¯n. KhÃ´ng thá»ƒ báº£o vá»‡ cÃ¹ng 1 ngÆ°á»i 2 Ä‘Ãªm liÃªn tiáº¿p.',
+    description: 'Thậy dậy mỗi đêm để bảo vệ một người khỏi bị Sói cắn. Không thể bảo vệ cùng 1 người 2 đêm liên tiếp.',
     icon: 'Shield'
   },
   HUNTER: {
     id: 'HUNTER',
-    name: 'Thá»£ sÄƒn',
+    name: 'Thợ săn',
     faction: FACTIONS.VILLAGER,
     strength: 2,
     priority: 0,
-    description: 'Khi cháº¿t, Ä‘Æ°á»£c báº¯n cháº¿t 1 ngÆ°á»i khÃ¡c.',
+    description: 'Khi chết, được bắn chết 1 người khác.',
     icon: 'Target'
   }
 };
 
-export const getRoleById = (id) => ROLES[id];
+export const getRoleById = (id: keyof typeof ROLES) => ROLES[id];

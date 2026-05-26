@@ -1,15 +1,31 @@
-import { createActor, assign } from 'xstate';
+import { createActor, assign, Actor } from 'xstate';
+import type { Server } from 'socket.io';
 import { gameMachine } from './gameMachine.ts';
+import type { ChatLogs, SeerVision, SlimPlayer } from '../types/game.ts';
 
-// Map lÆ°u trá»¯: roomId -> { machine, actor, chatLogs, votes, disconnectTimers, phaseTimer, lastProtectedId, seerVisions }
-const gameRooms = new Map();
+export interface GameData {
+  machine: typeof gameMachine;
+  actor: Actor<typeof gameMachine>;
+  chatLogs: ChatLogs;
+  votes: Record<string, string>;
+  disconnectTimers: Record<string, NodeJS.Timeout>;
+  phaseTimer: NodeJS.Timeout | null;
+  lastProtectedId: string | null;
+  seerVisions: Record<string, SeerVision[]>;
+  pendingNightRoles?: string[];
+  currentNightRoleIndex?: number;
+  nightActions?: Record<string, { actorId: string; targetId: string }>;
+}
 
-export const createGameActor = (roomId, io) => {
+// Map lưu trữ: roomId -> { machine, actor, chatLogs, votes, disconnectTimers, phaseTimer, lastProtectedId, seerVisions }
+const gameRooms = new Map<string, GameData>();
+
+export const createGameActor = (roomId: string, io: Server) => {
   if (gameRooms.has(roomId)) {
-    return gameRooms.get(roomId).actor;
+    return gameRooms.get(roomId)!.actor;
   }
 
-  // Cáº¥u hÃ¬nh cÃ¡c action cÃ³ tÆ°Æ¡ng tÃ¡c socket/timer thá»±c táº¿
+  // Cấu hình các action có tương tác socket/timer thực tế
   const machineWithActions = gameMachine.provide({
     actions: {
       notifyPlayers: ({ context }) => {
@@ -24,7 +40,7 @@ export const createGameActor = (roomId, io) => {
                 const isWolfTeam = myPlayer?.role === 'WEREWOLF' && p.role === 'WEREWOLF';
                 const isGameOver = context.phase === 'gameOver';
 
-                // Chá»‰ hiá»ƒn thá»‹ role cá»§a báº£n thÃ¢n, ngÆ°á»i Ä‘Ã£ cháº¿t, Ä‘á»“ng bá»n sÃ³i hoáº·c khi káº¿t thÃºc game
+                // Chỉ hiển thị role của bản thân, người đã chết, đồng bọn sói hoặc khi kết thúc game
                 if (isSelf || isDead || isWolfTeam || isGameOver) {
                   return p;
                 }
@@ -116,7 +132,7 @@ export const createGameActor = (roomId, io) => {
           timerStartAt: Date.now()
         };
       }),
-      startGameOverTimer: assign(({ context }) => {
+      startGameOverTimer: assign(() => {
         const duration = 10 * 1000;
         setGameTimer(roomId, duration, () => {
           import('../socket/roomManager.ts').then(({ getRoom, updateRoomStatus, getRooms }) => {
@@ -144,7 +160,7 @@ export const createGameActor = (roomId, io) => {
           const eliminatedId = resolveVote(roomId);
           const context = gameData.actor.getSnapshot().context;
 
-          let eliminatedPlayer: { id: string; name: string; role?: string } | null = null;
+          let eliminatedPlayer: SlimPlayer | null = null;
           if (eliminatedId) {
             const p = context.players.find(x => x.id === eliminatedId);
             if (p) {
@@ -152,13 +168,13 @@ export const createGameActor = (roomId, io) => {
             }
           }
 
-          // Emit káº¿t quáº£ vote vá» client
+          // Emit kết quả vote về client
           io.to(roomId).emit('VOTING_RESULT', {
             eliminatedPlayer,
             isTie: !eliminatedId && Object.keys(gameData.votes).length > 0
           });
 
-          // Chá» 4s hiá»ƒn thá»‹ káº¿t quáº£ rá»“i sang phase tiáº¿p theo
+          // Chờ 4s hiển thị kết quả rồi sang phase tiếp theo
           setTimeout(() => {
             gameData.actor.send({
               type: 'VOTING_DONE',
@@ -191,16 +207,16 @@ export const createGameActor = (roomId, io) => {
   return actor;
 };
 
-export const getGameActor = (roomId) => {
+export const getGameActor = (roomId: string) => {
   const room = gameRooms.get(roomId);
   return room ? room.actor : null;
 };
 
-export const getGameData = (roomId) => {
+export const getGameData = (roomId: string): GameData | undefined => {
   return gameRooms.get(roomId);
 };
 
-export const setGameTimer = (roomId, duration, callback) => {
+export const setGameTimer = (roomId: string, duration: number, callback: () => void): void => {
   const room = gameRooms.get(roomId);
   if (room) {
     if (room.phaseTimer) {
@@ -210,7 +226,7 @@ export const setGameTimer = (roomId, duration, callback) => {
   }
 };
 
-export const clearGameTimer = (roomId) => {
+export const clearGameTimer = (roomId: string): void => {
   const room = gameRooms.get(roomId);
   if (room && room.phaseTimer) {
     clearTimeout(room.phaseTimer);
@@ -218,7 +234,7 @@ export const clearGameTimer = (roomId) => {
   }
 };
 
-export const destroyGameActor = (roomId) => {
+export const destroyGameActor = (roomId: string): void => {
   const room = gameRooms.get(roomId);
   if (room) {
     room.actor.stop();
@@ -226,7 +242,7 @@ export const destroyGameActor = (roomId) => {
       clearTimeout(room.phaseTimer);
     }
     for (const timer of Object.values(room.disconnectTimers)) {
-      clearTimeout(timer as NodeJS.Timeout);
+      clearTimeout(timer);
     }
     gameRooms.delete(roomId);
   }

@@ -1,32 +1,34 @@
-﻿// In-memory store cho cÃ¡c phÃ²ng
-const rooms = new Map();
+import type { Player, Room, RoomSettings } from '../types/game';
+
+// In-memory store cho các phòng
+const rooms = new Map<string, Room>();
 
 /**
- * Láº¥y danh sÃ¡ch táº¥t cáº£ cÃ¡c phÃ²ng
+ * Lấy danh sách tất cả các phòng
  */
-export const getRooms = () => {
+export const getRooms = (): Room[] => {
   return Array.from(rooms.values());
 };
 
 /**
- * TÃ¬m phÃ²ng theo ID
+ * Tìm phòng theo ID
  */
-export const getRoom = (roomId) => {
+export const getRoom = (roomId: string): Room | undefined => {
   return rooms.get(roomId);
 };
 
 /**
- * Táº¡o phÃ²ng má»›i
+ * Tạo phòng mới
  */
-export const createRoom = (roomId, hostId) => {
-  const newRoom = {
+export const createRoom = (roomId: string, hostId: string): Room => {
+  const newRoom: Room = {
     id: roomId,
     hostId: hostId,
-    players: [], // Danh sÃ¡ch ngÆ°á»i chÆ¡i
+    players: [], // Danh sách người chơi
     status: 'Lobby',
     settings: {
+      roles: [], // Các role được chọn trong phòng
       turnDuration: 60,
-      roles: [], // CÃ¡c role Ä‘Æ°á»£c chá»n trong phÃ²ng
     },
   };
   rooms.set(roomId, newRoom);
@@ -34,19 +36,19 @@ export const createRoom = (roomId, hostId) => {
 };
 
 /**
- * XÃ³a phÃ²ng
+ * Xóa phòng
  */
-export const deleteRoom = (roomId) => {
+export const deleteRoom = (roomId: string): void => {
   rooms.delete(roomId);
 };
 
 /**
- * ThÃªm ngÆ°á»i chÆ¡i vÃ o phÃ²ng
+ * Thêm người chơi vào phòng
  */
-export const joinRoom = (roomId, player) => {
+export const joinRoom = (roomId: string, player: Player): Room | null => {
   const room = rooms.get(roomId);
   if (room) {
-    // TrÃ¡nh trÃ¹ng láº·p
+    // Tránh trùng lặp
     if (!room.players.find((p) => p.id === player.id)) {
       room.players.push(player);
     }
@@ -56,18 +58,18 @@ export const joinRoom = (roomId, player) => {
 };
 
 /**
- * XÃ³a ngÆ°á»i chÆ¡i khá»i phÃ²ng
+ * Xóa người chơi khỏi phòng
  */
-export const leaveRoom = (roomId, playerId) => {
+export const leaveRoom = (roomId: string, playerId: string): Room | null => {
   const room = rooms.get(roomId);
   if (room) {
     room.players = room.players.filter((p) => p.id !== playerId);
     if (room.players.length === 0) {
-      // Náº¿u phÃ²ng trá»‘ng, xÃ³a phÃ²ng luÃ´n
+      // Nếu phòng trống, xóa phòng luôn
       deleteRoom(roomId);
       return null;
     }
-    // Náº¿u host thoÃ¡t, chuyá»ƒn host cho ngÆ°á»i Ä‘áº§u tiÃªn
+    // Nếu host thoát, chuyển host cho người đầu tiên
     if (room.hostId === playerId && room.players.length > 0) {
       room.hostId = room.players[0].id;
     }
@@ -76,16 +78,16 @@ export const leaveRoom = (roomId, playerId) => {
   return null;
 };
 
-export const updateRoomSettings = (roomId, settings) => {
+export const updateRoomSettings = (roomId: string, settings: Partial<RoomSettings>): Room | null => {
   const room = rooms.get(roomId);
   if (room) {
-    room.settings = { ...room.settings, ...settings };
+    room.settings = { ...room.settings, ...settings } as RoomSettings;
     return room;
   }
   return null;
 };
 
-export const updateRoomStatus = (roomId, status) => {
+export const updateRoomStatus = (roomId: string, status: Room['status']): Room | null => {
   const room = rooms.get(roomId);
   if (room) {
     room.status = status;
