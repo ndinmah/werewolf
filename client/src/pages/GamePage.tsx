@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../context/GameContext';
-import type { Role } from '../types/game';
 import { ChatPanel } from '../components/Game/ChatPanel';
 import { VotePanel } from '../components/Game/VotePanel';
 import { NightActionModal } from '../components/Game/NightActionModal';
@@ -11,15 +10,20 @@ import { VotingResultBanner } from '../components/Game/VotingResultBanner';
 import { RoleRevealScreen } from '../components/Game/RoleRevealScreen';
 import { GameOverScreen } from '../components/GameOver/GameOverScreen';
 import { HunterRetaliationModal } from '../components/Game/HunterRetaliationModal';
+import { FirstNightModal } from '../components/Game/FirstNightModal';
+
+import { getRoleEmoji, getRoleName } from '../constants/roles';
+
+import { getPhaseName } from '../constants/phases';
 
 export const GamePage = () => {
   const { id: roomId } = useParams();
   const navigate = useNavigate();
   const { gameState, myPlayer, phase, dayCount } = useGame();
 
-  // Chỉ hiện màn lật bài ở ngày đầu tiên, phase đêm và chưa bấm tắt
+  // Chỉ hiện màn lật bài ở ngày đầu tiên, phase lật bài hoặc đêm đầu và chưa bấm tắt
   const [showRoleReveal, setShowRoleReveal] = useState(() => {
-    return phase === 'night' && dayCount === 1;
+    return phase === 'roleReveal' || ((phase === 'night' || phase === 'firstNight') && dayCount === 1);
   });
 
   useEffect(() => {
@@ -34,37 +38,6 @@ export const GamePage = () => {
 
   if (!gameState) return <div className="pt-20 text-center text-gray-400">Đang tải...</div>;
 
-  const getPhaseName = () => {
-    switch (phase) {
-      case 'night': return 'Ban Đêm';
-      case 'dayStart': return 'Bình Minh';
-      case 'dayDiscuss': return 'Thảo Luận';
-      case 'voting': return 'Bỏ Phiếu';
-      case 'hunterRetaliation': return 'Thợ Săn Trả Thù';
-      case 'gameOver': return 'Kết Thúc';
-      default: return 'Đang xử lý...';
-    }
-  };
-
-  const getRoleEmoji = (role?: Role): string => {
-    switch (role) {
-      case 'WEREWOLF': return '🐺';
-      case 'SEER': return '🔮';
-      case 'BODYGUARD': return '🛡️';
-      case 'HUNTER': return '🏹';
-      default: return '🧑';
-    }
-  };
-
-  const getRoleName = (role?: Role): string => {
-    switch (role) {
-      case 'WEREWOLF': return 'Ma Sói';
-      case 'SEER': return 'Tiên Tri';
-      case 'BODYGUARD': return 'Bảo Vệ';
-      case 'HUNTER': return 'Thợ Săn';
-      default: return 'Dân Làng';
-    }
-  };
 
   return (
     <div className="min-h-screen pt-20 px-4 container mx-auto max-w-7xl pb-10">
@@ -74,6 +47,7 @@ export const GamePage = () => {
       )}
       
       {!showRoleReveal && <NightActionModal />}
+      {phase === 'firstNight' && <FirstNightModal />}
       <NarratorScreen />
       <VotingResultBanner />
       <HunterRetaliationModal />
@@ -86,7 +60,7 @@ export const GamePage = () => {
           <h1 className="text-3xl font-bold text-white mb-2">Mã phòng: <span className="text-wolf-light font-mono">{roomId}</span></h1>
           <div className="flex items-center gap-3 text-gray-400 text-lg">
             <p>
-              Ngày thứ {dayCount} — <span className="text-yellow-500 font-bold">{getPhaseName()}</span>
+              Ngày thứ {dayCount} — <span className="text-yellow-500 font-bold">{getPhaseName(phase)}</span>
             </p>
             <PhaseTimer />
           </div>

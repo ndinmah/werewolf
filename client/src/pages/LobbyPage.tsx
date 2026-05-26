@@ -6,22 +6,7 @@ import { useGame } from '../context/GameContext';
 import { useToast } from '../context/ToastContext';
 import { Plus, Minus, Clock, ShieldAlert, Copy } from 'lucide-react';
 import type { Room, Role } from '../types/game';
-
-interface RoleConfig {
-  id: Role;
-  name: string;
-  strength: number;
-  icon: string;
-  color: string;
-}
-
-const AVAILABLE_ROLES: RoleConfig[] = [
-  { id: 'WEREWOLF', name: 'Ma Sói', strength: -2, icon: '🐺', color: 'text-red-400' },
-  { id: 'SEER', name: 'Tiên Tri', strength: 3, icon: '🔮', color: 'text-purple-400' },
-  { id: 'BODYGUARD', name: 'Bảo Vệ', strength: 3, icon: '🛡️', color: 'text-green-400' },
-  { id: 'HUNTER', name: 'Thợ Săn', strength: 2, icon: '🏹', color: 'text-amber-400' },
-  { id: 'VILLAGER', name: 'Dân Làng', strength: 1, icon: '🧑', color: 'text-blue-400' }
-];
+import { AVAILABLE_ROLES } from '../constants/roles';
 
 export const LobbyPage = () => {
   const { id: roomId } = useParams<{ id: string }>();
@@ -316,7 +301,7 @@ export const LobbyPage = () => {
                   return (
                     <div key={role.id} className="flex items-center justify-between py-1.5 border-b border-gray-800 last:border-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{role.icon}</span>
+                        <span className="text-lg">{role.emoji}</span>
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-gray-200">{role.name}</span>
                           <span className="text-[9px] text-gray-500 font-mono">Điểm: {role.strength > 0 ? `+${role.strength}` : role.strength}</span>

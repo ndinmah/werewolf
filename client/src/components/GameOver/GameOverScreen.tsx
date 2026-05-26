@@ -4,6 +4,7 @@ import { useGame } from '../../context/GameContext';
 import { useSocket } from '../../context/SocketContext';
 import { Button } from '../UI/Button';
 import { Trophy, Frown, Users, RefreshCw } from 'lucide-react';
+import { getRoleName, getFactionDisplay } from '../../constants/roles';
 
 export const GameOverScreen = () => {
   const { id: roomId } = useParams();
@@ -41,50 +42,7 @@ export const GameOverScreen = () => {
   // Xác định xem phe của bản thân có thắng không
   const isMyFactionWinner = myPlayer?.faction === winnerFaction;
 
-  const getFactionDisplay = (faction: string | null | undefined) => {
-    switch (faction) {
-      case 'WEREWOLF':
-        return {
-          name: 'Phe Ma Sói',
-          color: 'text-red-500 bg-red-950/60 border-red-800',
-          bannerBg: 'bg-red-950/80 border-red-500/30 text-red-100',
-          shadow: 'shadow-[0_0_50px_rgba(220,38,38,0.15)]'
-        };
-      case 'VILLAGER':
-        return {
-          name: 'Phe Dân Làng',
-          color: 'text-green-400 bg-green-950/60 border-green-800',
-          bannerBg: 'bg-green-950/80 border-green-500/30 text-green-100',
-          shadow: 'shadow-[0_0_50px_rgba(34,197,94,0.15)]'
-        };
-      case 'THIRD_PARTY':
-        return {
-          name: 'Phe Thứ Ba',
-          color: 'text-purple-400 bg-purple-950/60 border-purple-800',
-          bannerBg: 'bg-purple-950/80 border-purple-500/30 text-purple-100',
-          shadow: 'shadow-[0_0_50px_rgba(168,85,247,0.15)]'
-        };
-      default:
-        return {
-          name: 'Không rõ',
-          color: 'text-gray-400 bg-gray-900 border-gray-800',
-          bannerBg: 'bg-gray-900 border-gray-800 text-gray-400',
-          shadow: ''
-        };
-    }
-  };
-
   const factionInfo = getFactionDisplay(winnerFaction);
-
-  const getRoleName = (roleId?: string): string => {
-    switch (roleId) {
-      case 'WEREWOLF': return 'Ma Sói';
-      case 'SEER': return 'Tiên Tri';
-      case 'BODYGUARD': return 'Bảo Vệ';
-      case 'VILLAGER': return 'Dân Làng';
-      default: return roleId ?? '';
-    }
-  };
 
   const handleBackToLobby = () => {
     if (socket) {
