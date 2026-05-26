@@ -65,9 +65,10 @@ export interface GameState {
 export interface ChatMessage {
   id: string;
   channel: 'general' | 'wolves' | 'ghost';
-  playerName: string;
-  text: string;
-  timestamp: number;
+  senderId: string;
+  senderName: string;
+  content: string;
+  timestamp: number | string;
 }
 
 export interface ChatLogs {
