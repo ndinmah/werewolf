@@ -35,7 +35,7 @@ export const getVoteTally = (roomId: string) => {
   return { tally, totalVoters: alivePlayers };
 };
 
-export const resolveVote = (roomId: string) => {
+export const resolveVote = (roomId: string): { eliminatedId: string | null; isTie: boolean } => {
   const { tally } = getVoteTally(roomId);
   const gameData = getGameData(roomId);
   
@@ -59,9 +59,13 @@ export const resolveVote = (roomId: string) => {
     gameData.votes = {};
   }
 
-  if (isTie || maxVotes === 0) {
-    return null; // Hòa phiếu hoặc không ai bầu
+  if (isTie) {
+    return { eliminatedId: null, isTie: true };
+  }
+
+  if (maxVotes === 0) {
+    return { eliminatedId: null, isTie: false };
   }
   
-  return targetToEliminate;
+  return { eliminatedId: targetToEliminate, isTie: false };
 };

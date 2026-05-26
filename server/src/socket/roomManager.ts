@@ -7,7 +7,7 @@ const rooms = new Map<string, Room>();
  * Lấy danh sách tất cả các phòng
  */
 export const getRooms = (): Room[] => {
-  return Array.from(rooms.values());
+  return Array.from(rooms.values()).filter((r) => r.players.length > 0);
 };
 
 /**

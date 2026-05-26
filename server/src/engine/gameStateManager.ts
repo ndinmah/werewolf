@@ -15,6 +15,18 @@ export interface GameData {
   pendingNightRoles?: string[];
   currentNightRoleIndex?: number;
   nightActions?: Record<string, { actorId: string; targetId: string }>;
+  /** Phù thủy đã dùng quyền hồi sinh trong game này chưa */
+  witchHealUsed: boolean;
+  /** Phù thủy đã dùng quyền đầu độc trong game này chưa */
+  witchPoisonUsed: boolean;
+  /** Rate limiting: lưu player nào đã submit night action trong đêm này */
+  nightActionSubmitted: Set<string>;
+  /** Rate limiting: lưu player nào đã vote trong pha vote này */
+  voteSubmitted: Set<string>;
+  /** Ma Sói vote */
+  wolfVotes?: Record<string, string>;
+  /** Ma Sói vote timestamps */
+  wolfVoteTimes?: Record<string, number>;
 }
 
 // Map lưu trữ: roomId -> { machine, actor, chatLogs, votes, disconnectTimers, phaseTimer, lastProtectedId, seerVisions }
@@ -65,6 +77,22 @@ export const createGameActor = (roomId: string, io: Server) => {
           });
         }
       },
+      runFirstNightStart: () => {
+        import('../socket/nightManager.ts').then(({ startFirstNight }) => {
+          startFirstNight(roomId, io);
+        });
+      },
+      startRoleRevealTimer: assign(() => {
+        const duration = 10 * 1000;
+        setGameTimer(roomId, duration, () => {
+          const actor = getGameActor(roomId);
+          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
+        });
+        return {
+          timerDuration: duration,
+          timerStartAt: Date.now()
+        };
+      }),
       runNightStart: () => {
         import('../socket/nightManager.ts').then(({ startNight }) => {
           startNight(roomId, io);
@@ -98,6 +126,9 @@ export const createGameActor = (roomId: string, io: Server) => {
           const actor = getGameActor(roomId);
           if (actor) actor.send({ type: 'TIMER_EXPIRED' });
         });
+        // Reset vote rate limiting khi bắt đầu phase vote mới
+        const gameData = gameRooms.get(roomId);
+        if (gameData) gameData.voteSubmitted = new Set();
         return {
           timerDuration: duration,
           timerStartAt: Date.now()
@@ -157,7 +188,7 @@ export const createGameActor = (roomId: string, io: Server) => {
           const gameData = gameRooms.get(roomId);
           if (!gameData) return;
 
-          const eliminatedId = resolveVote(roomId);
+          const { eliminatedId, isTie } = resolveVote(roomId);
           const context = gameData.actor.getSnapshot().context;
 
           let eliminatedPlayer: SlimPlayer | null = null;
@@ -170,8 +201,8 @@ export const createGameActor = (roomId: string, io: Server) => {
 
           // Emit kết quả vote về client
           io.to(roomId).emit('VOTING_RESULT', {
-            eliminatedPlayer,
-            isTie: !eliminatedId && Object.keys(gameData.votes).length > 0
+            eliminated: eliminatedPlayer,
+            isTie
           });
 
           // Chờ 4s hiển thị kết quả rồi sang phase tiếp theo
@@ -201,7 +232,13 @@ export const createGameActor = (roomId: string, io: Server) => {
     disconnectTimers: {},
     phaseTimer: null,
     lastProtectedId: null,
-    seerVisions: {}
+    seerVisions: {},
+    witchHealUsed: false,
+    witchPoisonUsed: false,
+    nightActionSubmitted: new Set(),
+    voteSubmitted: new Set(),
+    wolfVotes: {},
+    wolfVoteTimes: {},
   });
 
   return actor;

@@ -13,6 +13,12 @@ export const gameMachine = setup({
     notifyPlayers: () => {
       // Sẽ được inject từ bên ngoài ở gameStateManager.js
     },
+    runFirstNightStart: () => {
+      // Sẽ được inject từ bên ngoài
+    },
+    startRoleRevealTimer: () => {
+      // Sẽ được inject từ bên ngoài
+    },
     runNightStart: () => {
       // Sẽ được inject từ bên ngoài
     },
@@ -34,6 +40,16 @@ export const gameMachine = setup({
     autoResolveVotes: () => {
       // Sẽ được inject từ bên ngoài
     },
+    applyPlayerReconnect: assign(({ context, event }) => {
+      // Cập nhật socket id mới cho player đã reconnect qua assign (không mutation trực tiếp)
+      const { oldId, newId } = event;
+      if (!oldId || !newId) return {};
+      return {
+        players: context.players.map(p =>
+          p.id === oldId ? { ...p, id: newId, disconnected: false } : p
+        )
+      };
+    }),
     setupGame: assign(({ context, event }) => {
       const playersList = event.players || context.players;
       const settings = event.settings || { roles: [] };
@@ -69,7 +85,7 @@ export const gameMachine = setup({
 
       return {
         players: assignedPlayers,
-        phase: 'night',
+        phase: 'roleReveal',
         dayCount: 1,
         nightDeaths: [],
         voteTally: {},
@@ -80,6 +96,9 @@ export const gameMachine = setup({
         dayDeath: null,
         hunterNextPhase: null,
         hunterShotPlayer: null,
+        witchHeals: false,
+        witchPoisons: false,
+        lovers: [],
       };
     }),
     applyNightResults: assign(({ context, event }) => {
@@ -152,12 +171,12 @@ export const gameMachine = setup({
       const winResult = checkWinCondition(context.players);
       return winResult.isGameOver;
     },
-    hasHunterDiedNight: ({ event }) => {
-      const nightDeaths = event.nightDeaths || [];
+    hasHunterDiedNight: ({ context }) => {
+      const nightDeaths = context.nightDeaths || [];
       return nightDeaths.some((d) => d.role === 'HUNTER');
     },
-    hasHunterDiedVote: ({ event }) => {
-      const eliminatedPlayer = event.eliminatedPlayer;
+    hasHunterDiedVote: ({ context }) => {
+      const eliminatedPlayer = context.dayDeath;
       return eliminatedPlayer?.role === 'HUNTER';
     },
   },
@@ -177,40 +196,83 @@ export const gameMachine = setup({
     dayDeath: null,
     hunterNextPhase: null,
     hunterShotPlayer: null,
+    witchHeals: false,
+    witchPoisons: false,
+    lovers: [],
   },
   states: {
     Lobby: {
       on: {
         START_GAME: {
-          target: 'NightPhase',
+          target: 'RoleRevealPhase',
           actions: ['setupGame', 'notifyPlayers'],
+        },
+      },
+    },
+    RoleRevealPhase: {
+      entry: ['startRoleRevealTimer', 'notifyPlayers'],
+      on: {
+        TIMER_EXPIRED: {
+          target: 'FirstNightPhase',
+          actions: [
+            assign({ phase: 'firstNight' }),
+            'notifyPlayers',
+          ],
+        },
+        PLAYER_RECONNECTED: {
+          actions: ['applyPlayerReconnect'],
+        },
+      },
+    },
+    FirstNightPhase: {
+      entry: ['runFirstNightStart', 'notifyPlayers'],
+      on: {
+        PLAYER_RECONNECTED: {
+          actions: ['applyPlayerReconnect'],
+        },
+        FIRST_NIGHT_DONE: {
+          target: 'NightPhase',
+          actions: [
+            assign({ phase: 'night' }),
+            'notifyPlayers'
+          ],
         },
       },
     },
     NightPhase: {
       entry: ['runNightStart', 'notifyPlayers'],
       on: {
-        ALL_NIGHT_ACTIONS_DONE: [
-          {
-            target: 'GameOver',
-            guard: 'checkWinCondition',
-            actions: ['applyNightResults', 'setWinner', 'notifyPlayers'],
-          },
-          {
-            target: 'HunterRetaliation',
-            guard: 'hasHunterDiedNight',
-            actions: [
-              'applyNightResults',
-              assign({ phase: 'hunterRetaliation', hunterNextPhase: 'dayStart' }),
-              'notifyPlayers',
-            ],
-          },
-          {
-            target: 'DayPhase',
-            actions: ['applyNightResults', 'notifyPlayers'],
-          },
-        ],
+        PLAYER_RECONNECTED: {
+          actions: ['applyPlayerReconnect'],
+        },
+        ALL_NIGHT_ACTIONS_DONE: {
+          target: 'NightResolve',
+          actions: ['applyNightResults'],
+        },
       },
+    },
+    NightResolve: {
+      always: [
+        {
+          // Ưu tiên kiểm tra Thợ Săn TRƯỚC điều kiện thắng:
+          // Nếu Thợ Săn chết đêm nay, họ vẫn có quyền bắn trả trước khi kết thúc game
+          target: 'HunterRetaliation',
+          guard: 'hasHunterDiedNight',
+          actions: [
+            assign({ phase: 'hunterRetaliation', hunterNextPhase: 'dayStart' }),
+            'notifyPlayers',
+          ],
+        },
+        {
+          target: 'GameOver',
+          guard: 'checkWinCondition',
+          actions: ['setWinner', 'notifyPlayers'],
+        },
+        {
+          target: 'DayPhase',
+          actions: ['notifyPlayers'],
+        },
+      ],
     },
     DayPhase: {
       initial: 'DayStart',
@@ -238,67 +300,52 @@ export const gameMachine = setup({
     VotingPhase: {
       entry: ['startVotingTimer', 'notifyPlayers'],
       on: {
-        VOTING_DONE: [
-          {
-            target: 'GameOver',
-            guard: 'checkWinCondition',
-            actions: ['applyVotingResults', 'setWinner', 'notifyPlayers'],
-          },
-          {
-            target: 'HunterRetaliation',
-            guard: 'hasHunterDiedVote',
-            actions: [
-              'applyVotingResults',
-              assign({ phase: 'hunterRetaliation', hunterNextPhase: 'night' }),
-              'notifyPlayers',
-            ],
-          },
-          {
-            target: 'NightPhase',
-            actions: [
-              'applyVotingResults',
-              assign({
-                phase: 'night',
-                dayCount: ({ context }) => context.dayCount + 1,
-                voteTally: {},
-              }),
-              'notifyPlayers',
-            ],
-          },
-        ],
+        VOTING_DONE: {
+          target: 'VoteResolve',
+          actions: ['applyVotingResults'],
+        },
         TIMER_EXPIRED: {
           actions: ['autoResolveVotes'],
         },
       },
     },
+    VoteResolve: {
+      always: [
+        {
+          // Ưu tiên kiểm tra Thợ Săn TRƯỚC điều kiện thắng:
+          // Nếu Thợ Săn bị vote chết, họ vẫn có quyền bắn trả trước khi kết thúc game
+          target: 'HunterRetaliation',
+          guard: 'hasHunterDiedVote',
+          actions: [
+            assign({ phase: 'hunterRetaliation', hunterNextPhase: 'night' }),
+            'notifyPlayers',
+          ],
+        },
+        {
+          target: 'GameOver',
+          guard: 'checkWinCondition',
+          actions: ['setWinner', 'notifyPlayers'],
+        },
+        {
+          target: 'NightPhase',
+          actions: [
+            assign({
+              phase: 'night',
+              dayCount: ({ context }) => context.dayCount + 1,
+              voteTally: {},
+            }),
+            'notifyPlayers',
+          ],
+        },
+      ],
+    },
     HunterRetaliation: {
       entry: ['runHunterRetaliationStart', 'notifyPlayers'],
       on: {
-        HUNTER_SHOT_DONE: [
-          {
-            target: 'GameOver',
-            guard: 'checkWinCondition',
-            actions: ['applyHunterShot', 'setWinner', 'notifyPlayers'],
-          },
-          {
-            target: 'DayPhase',
-            guard: ({ context }) => context.hunterNextPhase === 'dayStart',
-            actions: ['applyHunterShot', 'notifyPlayers'],
-          },
-          {
-            target: 'NightPhase',
-            guard: ({ context }) => context.hunterNextPhase === 'night',
-            actions: [
-              'applyHunterShot',
-              assign({
-                phase: 'night',
-                dayCount: ({ context }) => context.dayCount + 1,
-                voteTally: {},
-              }),
-              'notifyPlayers',
-            ],
-          },
-        ],
+        HUNTER_SHOT_DONE: {
+          target: 'HunterResolve',
+          actions: ['applyHunterShot'],
+        },
         TIMER_EXPIRED: [
           {
             target: 'DayPhase',
@@ -321,6 +368,32 @@ export const gameMachine = setup({
           },
         ],
       },
+    },
+    HunterResolve: {
+      always: [
+        {
+          target: 'GameOver',
+          guard: 'checkWinCondition',
+          actions: ['setWinner', 'notifyPlayers'],
+        },
+        {
+          target: 'DayPhase',
+          guard: ({ context }) => context.hunterNextPhase === 'dayStart',
+          actions: ['notifyPlayers'],
+        },
+        {
+          target: 'NightPhase',
+          guard: ({ context }) => context.hunterNextPhase === 'night',
+          actions: [
+            assign({
+              phase: 'night',
+              dayCount: ({ context }) => context.dayCount + 1,
+              voteTally: {},
+            }),
+            'notifyPlayers',
+          ],
+        },
+      ],
     },
     GameOver: {
       entry: ['startGameOverTimer', 'notifyPlayers'],
