@@ -31,24 +31,18 @@ export const HunterRetaliationModal = () => {
     setHunterPrompt(null); // Ẩn prompt sau khi bắn
   };
 
-  const getRoleName = (roleId?: string): string => {
-    switch (roleId) {
-      case 'WEREWOLF':
-        return 'Ma Sói';
-      case 'SEER':
-        return 'Tiên Tri';
-      case 'BODYGUARD':
-        return 'Bảo Vệ';
-      case 'VILLAGER':
-        return 'Dân Làng';
-      default:
-        return roleId ?? '';
-    }
+  const handleSkip = () => {
+    if (hasConfirmed) return;
+    socket.emit('HUNTER_SKIP', { roomId });
+    setHasConfirmed(true);
+    setHunterPrompt(null);
   };
 
+
   // Render 1: Banner kết quả phát súng (Cho tất cả người chơi nhìn thấy)
+  // Auto-clear được xử lý trong GameContext (5 giây)
   if (hunterShotResult) {
-    const { hunterName, targetName, targetRole } = hunterShotResult;
+    const { hunterName, targetName } = hunterShotResult;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 animate-fade-in px-4">
         <div className="bg-dark/95 border border-red-500 max-w-xl p-8 rounded-2xl text-center shadow-2xl animate-scale-up">
@@ -58,15 +52,11 @@ export const HunterRetaliationModal = () => {
             </div>
           </div>
           <h2 className="text-3xl font-black text-white uppercase tracking-wider mb-2">🔫 Phát Súng Cuối Cùng!</h2>
-          <p className="text-gray-300 text-lg leading-relaxed mb-6">
+          <p className="text-gray-300 text-lg leading-relaxed">
             Thợ săn <span className="text-red-400 font-extrabold">{hunterName}</span> trước khi trút hơi thở cuối cùng
             đã rút súng nhắm thẳng vào thái dương của <span className="text-red-400 font-extrabold">{targetName}</span>{' '}
             và bóp cò!
           </p>
-          <div className="bg-darker border border-gray-800 p-4 rounded-xl">
-            <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Vai trò của nạn nhân:</p>
-            <p className="text-2xl font-black text-red-500 uppercase tracking-widest mt-1">{getRoleName(targetRole)}</p>
-          </div>
         </div>
       </div>
     );
@@ -127,16 +117,28 @@ export const HunterRetaliationModal = () => {
               <AlertCircle className="w-4 h-4 text-red-500 animate-pulse" />
               <span>Nếu hết thời gian đếm ngược, súng của bạn sẽ bị kẹt!</span>
             </span>
-            <Button
-              size="lg"
-              disabled={!selectedId || hasConfirmed}
-              onClick={handleConfirm}
-              className={`px-8 font-bold tracking-wider ${
-                hasConfirmed ? 'bg-gray-600' : 'bg-red-600 hover:bg-red-700 shadow-md shadow-red-600/20'
-              }`}
-            >
-              {hasConfirmed ? 'ĐÃ NỔ SÚNG' : 'BẮN TIÊU DIỆT'}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                size="lg"
+                disabled={hasConfirmed}
+                onClick={handleSkip}
+                className={`px-5 font-bold tracking-wider border ${
+                  hasConfirmed ? 'bg-gray-700 border-gray-600' : 'bg-gray-700 hover:bg-gray-600 border-gray-600'
+                }`}
+              >
+                Bỏ qua
+              </Button>
+              <Button
+                size="lg"
+                disabled={!selectedId || hasConfirmed}
+                onClick={handleConfirm}
+                className={`px-8 font-bold tracking-wider ${
+                  hasConfirmed ? 'bg-gray-600' : 'bg-red-600 hover:bg-red-700 shadow-md shadow-red-600/20'
+                }`}
+              >
+                {hasConfirmed ? 'ĐÃ NỔ SÚNG' : 'BẮN TIÊU DIỆT'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

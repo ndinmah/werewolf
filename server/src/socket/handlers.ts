@@ -15,6 +15,19 @@ import type { SlimPlayer, ChatLogs } from '../types/game.ts';
 
 export type SocketCallback = (res: { success: boolean; error?: string; [key: string]: unknown }) => void;
 
+/** Validate tên người chơi: 2-20 ký tự, chỉ chứa chữ cái/số/khoảng trắng/gạch dưới */
+const validatePlayerName = (name: string): string | null => {
+  if (!name || typeof name !== 'string') return 'Tên không được để trống';
+  const trimmed = name.trim();
+  if (trimmed.length < 2) return 'Tên phải có ít nhất 2 ký tự';
+  if (trimmed.length > 20) return 'Tên không được vượt quá 20 ký tự';
+  if (!/^[\w\s\u00C0-\u024F\u1E00-\u1EFF]+$/u.test(trimmed)) return 'Tên chỉ được chứa chữ cái, số và khoảng trắng';
+  return null;
+};
+
+/** Giới hạn số người chơi tối đa */
+const MAX_PLAYERS_PER_ROOM = 15;
+
 /**
  * Helper function xử lý reconnect của người chơi
  */
@@ -45,7 +58,10 @@ const handlePlayerReconnect = (
       }
 
       const mPlayer = gameData.actor.getSnapshot().context.players.find((p) => p.name === playerName);
-      if (mPlayer) mPlayer.id = playerId;
+      if (mPlayer) {
+        // Dispatch event để XState machine tự cập nhật context (không mutation trực tiếp)
+        gameData.actor.send({ type: 'PLAYER_RECONNECTED', oldId: mPlayer.id, newId: playerId });
+      }
 
       socket.join(roomId);
 
@@ -126,8 +142,15 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
   });
 
   socket.on('CREATE_ROOM', ({ playerName }: { playerName: string }, callback?: SocketCallback) => {
+    // Validation
+    const nameError = validatePlayerName(playerName);
+    if (nameError) {
+      if (callback) callback({ success: false, error: nameError });
+      return;
+    }
+    const trimmedName = playerName.trim();
     const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const player = { id: playerId, name: playerName, isHost: true, isAlive: true };
+    const player = { id: playerId, name: trimmedName, isHost: true, isAlive: true };
     const room = createRoom(roomId, playerId);
 
     joinRoom(roomId, player);
@@ -140,6 +163,19 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
   socket.on(
     'JOIN_ROOM',
     ({ roomId, playerName }: { roomId: string; playerName: string }, callback?: SocketCallback) => {
+      // Validate roomId
+      if (!roomId || typeof roomId !== 'string' || roomId.trim().length === 0) {
+        if (callback) callback({ success: false, error: 'Mã phòng không hợp lệ' });
+        return;
+      }
+      // Validate playerName
+      const nameError = validatePlayerName(playerName);
+      if (nameError) {
+        if (callback) callback({ success: false, error: nameError });
+        return;
+      }
+      const trimmedName = playerName.trim();
+
       const room = getRoom(roomId);
       if (!room) {
         if (callback) callback({ success: false, error: 'Phòng không tồn tại' });
@@ -147,14 +183,26 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       }
 
       if (room.status === 'InGame') {
-        const reconnected = handlePlayerReconnect(io, socket, roomId, playerName, callback);
+        const reconnected = handlePlayerReconnect(io, socket, roomId, trimmedName, callback);
         if (!reconnected) {
           if (callback) callback({ success: false, error: 'Phòng đã bắt đầu chơi và không khớp người chơi cũ' });
         }
         return;
       }
 
-      const player = { id: playerId, name: playerName, isHost: false, isAlive: true };
+      // Kiểm tra tên trùng
+      if (room.players.some(p => p.name.toLowerCase() === trimmedName.toLowerCase())) {
+        if (callback) callback({ success: false, error: 'Tên này đã có người dùng trong phòng' });
+        return;
+      }
+
+      // Kiểm tra số lượng người chơi tối đa
+      if (room.players.length >= MAX_PLAYERS_PER_ROOM) {
+        if (callback) callback({ success: false, error: `Phòng đã đầy (tối đa ${MAX_PLAYERS_PER_ROOM} người)` });
+        return;
+      }
+
+      const player = { id: playerId, name: trimmedName, isHost: false, isAlive: true };
       const updatedRoom = joinRoom(roomId, player);
       if (updatedRoom) {
         socket.join(roomId);
@@ -274,7 +322,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
 
     // Phân quyền chat theo Phase
     if (channel === 'general' && context.phase !== 'dayDiscuss' && context.phase !== 'voting') return;
-    if (channel === 'wolves' && (context.phase !== 'night' || player.role !== 'WEREWOLF')) return;
+    if (channel === 'wolves' && (player.role !== 'WEREWOLF' || !player.isAlive || context.phase === 'roleReveal' || context.phase === 'gameOver')) return;
     if (channel === 'ghost' && player.isAlive) return;
 
     const message = {
@@ -308,52 +356,100 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
   });
 
   socket.on('CAST_VOTE', ({ roomId, targetId }: { roomId: string; targetId: string }) => {
+    if (!roomId || !targetId) return;
+
+    const gameData = getGameData(roomId);
+    if (!gameData) return;
+
+    // Rate limiting: mỗi player chỉ vote 1 lần mỗi phase
+    if (gameData.voteSubmitted.has(playerId)) return;
+
     if (castVote(roomId, playerId, targetId)) {
+      gameData.voteSubmitted.add(playerId);
       const { tally, totalVoters } = getVoteTally(roomId);
       io.to(roomId).emit('VOTE_UPDATED', { tally, totalVoters });
 
-      const gameData = getGameData(roomId);
-      if (gameData) {
-        const votedCount = Object.keys(gameData.votes).length;
-        if (votedCount >= totalVoters) {
-          import('../engine/gameStateManager.ts').then(({ clearGameTimer }) => {
-            clearGameTimer(roomId);
-          });
+      const votedCount = Object.keys(gameData.votes).length;
+      if (votedCount >= totalVoters) {
+        import('../engine/gameStateManager.ts').then(({ clearGameTimer }) => {
+          clearGameTimer(roomId);
+        });
 
-          import('./voteManager.ts').then(({ resolveVote }) => {
-            const eliminatedId = resolveVote(roomId);
-            const context = gameData.actor.getSnapshot().context;
+        import('./voteManager.ts').then(({ resolveVote }) => {
+          const { eliminatedId, isTie } = resolveVote(roomId);
+          const context = gameData.actor.getSnapshot().context;
 
-            let eliminatedPlayer: SlimPlayer | null = null;
-            if (eliminatedId) {
-              const p = context.players.find((x) => x.id === eliminatedId);
-              if (p) {
-                eliminatedPlayer = { id: p.id, name: p.name, role: p.role };
-              }
+          let eliminatedPlayer: SlimPlayer | null = null;
+          if (eliminatedId) {
+            const p = context.players.find((x) => x.id === eliminatedId);
+            if (p) {
+              eliminatedPlayer = { id: p.id, name: p.name, role: p.role };
             }
+          }
 
-            io.to(roomId).emit('VOTING_RESULT', {
-              eliminatedPlayer,
-              isTie: !eliminatedId,
-            });
-
-            setTimeout(() => {
-              gameData.actor.send({
-                type: 'VOTING_DONE',
-                eliminatedPlayer,
-              });
-            }, 4000);
+          io.to(roomId).emit('VOTING_RESULT', {
+            eliminated: eliminatedPlayer,
+            isTie,
           });
-        }
+
+          setTimeout(() => {
+            gameData.actor.send({
+              type: 'VOTING_DONE',
+              eliminatedPlayer,
+            });
+          }, 4000);
+        });
       }
     }
   });
 
   socket.on('NIGHT_ACTION', ({ roomId, targetId }: { roomId: string; targetId: string }) => {
+    if (!roomId || typeof targetId !== 'string') return;
     import('./nightManager.ts').then(({ submitNightAction }) => {
       submitNightAction(roomId, playerId, targetId, io);
     });
   });
+
+  socket.on('WOLF_DRAFT_TARGET', ({ roomId, targetId }: { roomId: string; targetId: string }) => {
+    if (!roomId || typeof targetId !== 'string') return;
+    const gameData = getGameData(roomId);
+    if (!gameData) return;
+    
+    const snapshot = gameData.actor.getSnapshot();
+    const context = snapshot.context;
+    const player = context.players.find(p => p.id === playerId);
+    if (!player || !player.isAlive || player.role !== 'WEREWOLF') return;
+
+    const wolves = context.players.filter(p => p.role === 'WEREWOLF' && p.isAlive);
+    wolves.forEach(w => {
+      if (w.id !== playerId) {
+        const wolfSocket = io.sockets.sockets.get(w.id);
+        if (wolfSocket) {
+          wolfSocket.emit('WOLF_TARGET_SELECTED', { targetId, actorName: player.name });
+        }
+      }
+    });
+  });
+
+  socket.on(
+    'WITCH_ACTION',
+    ({ roomId, healTargetId, poisonTargetId }: { roomId: string; healTargetId: string | null; poisonTargetId: string | null }) => {
+      if (!roomId) return;
+      import('./nightManager.ts').then(({ submitWitchAction }) => {
+        submitWitchAction(roomId, playerId, healTargetId ?? null, poisonTargetId ?? null, io);
+      });
+    },
+  );
+
+  socket.on(
+    'CUPID_ACTION',
+    ({ roomId, lover1Id, lover2Id }: { roomId: string; lover1Id: string; lover2Id: string }) => {
+      if (!roomId || !lover1Id || !lover2Id) return;
+      import('./nightManager.ts').then(({ submitCupidAction }) => {
+        submitCupidAction(roomId, playerId, lover1Id, lover2Id, io);
+      });
+    }
+  );
 
   socket.on('HUNTER_SHOOT', ({ roomId, targetId }: { roomId: string; targetId: string }) => {
     const gameData = getGameData(roomId);
@@ -391,7 +487,37 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
         type: 'HUNTER_SHOT_DONE',
         shotPlayerId: targetId,
       });
-    }, 4000);
+    }, 5000);
+  });
+
+  // Thợ Săn bỏ qua, không bắn ai
+  socket.on('HUNTER_SKIP', ({ roomId }: { roomId: string }) => {
+    const gameData = getGameData(roomId);
+    if (!gameData) return;
+
+    const snapshot = gameData.actor.getSnapshot();
+    const context = snapshot.context;
+
+    if (snapshot.value !== 'HunterRetaliation') return;
+
+    const isNightDeath = context.hunterNextPhase === 'dayStart';
+    const hunter = isNightDeath
+      ? context.nightDeaths.find((d) => d.role === 'HUNTER')
+      : context.dayDeath?.role === 'HUNTER'
+        ? context.dayDeath
+        : null;
+
+    if (!hunter || hunter.id !== playerId) return;
+
+    import('../engine/gameStateManager.ts').then(({ clearGameTimer }) => {
+      clearGameTimer(roomId);
+    });
+
+    // Bỏ qua: không bắn ai, chuyển phase ngay
+    gameData.actor.send({
+      type: 'HUNTER_SHOT_DONE',
+      shotPlayerId: undefined,
+    });
   });
 
   socket.on(

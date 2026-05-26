@@ -75,15 +75,6 @@ export const NarratorScreen = () => {
                     💀
                   </div>
                   <span className="font-extrabold text-white text-lg">{victim.name}</span>
-                  <span className="text-xs font-bold text-red-400 bg-red-950/50 px-2.5 py-0.5 rounded-full border border-red-950 mt-1.5 uppercase">
-                    {victim.role === 'WEREWOLF'
-                      ? 'Ma Sói'
-                      : victim.role === 'SEER'
-                        ? 'Tiên tri'
-                        : victim.role === 'BODYGUARD'
-                          ? 'Bảo vệ'
-                          : 'Dân làng'}
-                  </span>
                 </div>
               ))}
             </div>

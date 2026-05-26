@@ -13,6 +13,12 @@ export const ChatPanel = () => {
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const [lastReadMessageCount, setLastReadMessageCount] = useState<Record<string, number>>(() => ({
+    general: chatLogs.general?.length || 0,
+    wolves: chatLogs.wolves?.length || 0,
+    ghost: chatLogs.ghost?.length || 0,
+  }));
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -39,13 +45,28 @@ export const ChatPanel = () => {
   // Derive tab hiệu lực: nếu activeTab không còn hợp lệ thì fallback về 'general'
   const currentTab = (tabs.some((t) => t.id === activeTab) ? activeTab : 'general') as keyof ChatLogs;
 
+  // Cập nhật số tin nhắn đã đọc cho tab hiện tại khi render hoặc chatLogs thay đổi
+  const currentTabLength = chatLogs[currentTab]?.length || 0;
+  if (lastReadMessageCount[currentTab] !== currentTabLength) {
+    setLastReadMessageCount((prev) => ({
+      ...prev,
+      [currentTab]: currentTabLength,
+    }));
+  }
+
+  const getUnreadCount = (tabId: string) => {
+    const total = chatLogs[tabId as keyof ChatLogs]?.length || 0;
+    const read = lastReadMessageCount[tabId] || 0;
+    return Math.max(0, total - read);
+  };
+
   const isInputDisabled = () => {
     if (!myPlayer) return true;
     if (currentTab === 'general') {
       return !myPlayer.isAlive || ((phase as string) !== 'dayDiscuss' && phase !== 'voting');
     }
     if (currentTab === 'wolves') {
-      return myPlayer.role !== 'WEREWOLF' || !myPlayer.isAlive || phase !== 'night';
+      return myPlayer.role !== 'WEREWOLF' || !myPlayer.isAlive || phase === 'gameOver' || phase === 'roleReveal';
     }
     return myPlayer.isAlive; // Chỉ người chết mới chat được cõi chết
   };
@@ -53,21 +74,31 @@ export const ChatPanel = () => {
   return (
     <div className="flex flex-col h-full bg-dark/80 rounded-xl border border-gray-800 overflow-hidden">
       <div className="flex bg-darker border-b border-gray-800">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-3 text-sm font-medium transition-colors ${
-              currentTab === tab.id
-                ? tab.id === 'wolves'
-                  ? 'text-red-500 border-b-2 border-red-500'
-                  : 'text-wolf-light border-b-2 border-wolf-light'
-                : 'text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const unread = getUnreadCount(tab.id);
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                currentTab === tab.id
+                  ? tab.id === 'wolves'
+                    ? 'text-red-500 border-b-2 border-red-500'
+                    : 'text-wolf-light border-b-2 border-wolf-light'
+                  : 'text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              <span>{tab.label}</span>
+              {unread > 0 && (
+                <span className={`text-[10px] text-white font-bold px-1.5 py-0.5 rounded-full shrink-0 min-w-[18px] text-center ${
+                  tab.id === 'wolves' ? 'bg-red-600 animate-pulse' : 'bg-wolf'
+                }`}>
+                  {unread}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">

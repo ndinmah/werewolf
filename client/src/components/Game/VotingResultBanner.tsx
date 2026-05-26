@@ -41,17 +41,7 @@ export const VotingResultBanner = () => {
             {eliminatedPlayer ? (
               <>
                 Dân làng đồng lòng treo cổ <span className="font-extrabold text-red-300">{eliminatedPlayer.name}</span>.
-                Họ thuộc vai trò:{' '}
-                <span className="font-extrabold text-red-400 underline uppercase">
-                  {eliminatedPlayer.role === 'WEREWOLF'
-                    ? 'Ma Sói'
-                    : eliminatedPlayer.role === 'SEER'
-                      ? 'Tiên tri'
-                      : eliminatedPlayer.role === 'BODYGUARD'
-                        ? 'Bảo vệ'
-                        : 'Dân làng'}
-                </span>
-                .
+                Họ đã ra đi mãi mãi...
               </>
             ) : isTie ? (
               'Kết quả bỏ phiếu bị hòa! Thần linh quyết định tha mạng cho tất cả mọi người hôm nay.'
