@@ -75,6 +75,8 @@ export interface GameContext {
   witchPoisons: boolean;
   /** Danh sách 2 người được chọn làm người tình (Cupid) */
   lovers: string[];
+  /** Cờ báo hiệu có người chơi cần trả đũa (ví dụ: Thợ săn) */
+  pendingRetaliation?: boolean;
 }
 
 export interface GameEvent {

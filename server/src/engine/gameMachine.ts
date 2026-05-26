@@ -1,7 +1,9 @@
 import { setup, assign } from 'xstate';
 import { checkWinCondition } from './winCondition.ts';
 import { ROLES } from '../roles/index.ts';
+import { RoleRegistry } from '../roles/RoleHandler.ts';
 import type { GameContext, GameEvent, Faction } from '../types/game.ts';
+import type { GameData } from './gameStateManager.ts';
 
 // Định nghĩa state machine cho một phòng game Ma Sói Ma Sói
 export const gameMachine = setup({
@@ -102,15 +104,48 @@ export const gameMachine = setup({
       };
     }),
     applyNightResults: assign(({ context, event }) => {
-      const nightDeaths = event.nightDeaths || [];
-      const deadIds = nightDeaths.map((d) => d.id);
+      const initialNightDeaths = event.nightDeaths || [];
+      const deadIds = new Set(initialNightDeaths.map((d) => d.id));
+      const nightDeaths = [...initialNightDeaths];
+
+      // Xử lý chết chùm người tình ban đêm
+      if (context.lovers && context.lovers.length === 2) {
+        const [l1, l2] = context.lovers;
+        const lover1Died = deadIds.has(l1);
+        const lover2Died = deadIds.has(l2);
+
+        if (lover1Died && !lover2Died) {
+          const partner = context.players.find(p => p.id === l2);
+          if (partner && partner.isAlive) {
+            nightDeaths.push({ ...partner, isAlive: false });
+            deadIds.add(l2);
+          }
+        } else if (lover2Died && !lover1Died) {
+          const partner = context.players.find(p => p.id === l1);
+          if (partner && partner.isAlive) {
+            nightDeaths.push({ ...partner, isAlive: false });
+            deadIds.add(l1);
+          }
+        }
+      }
 
       // Cập nhật người chơi chết
       const updatedPlayers = context.players.map((p) => {
-        if (deadIds.includes(p.id)) {
+        if (deadIds.has(p.id)) {
           return { ...p, isAlive: false };
         }
         return p;
+      });
+
+      // Kích hoạt onDeath hooks
+      updatedPlayers.forEach(p => {
+        if (!p.isAlive && !context.players.find(oldP => oldP.id === p.id && !oldP.isAlive)) {
+          // Player vừa mới chết
+          const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
+          if (handler && handler.onDeath) {
+            handler.onDeath('', p, context, {} as unknown as GameData, 'night');
+          }
+        }
       });
 
       return {
@@ -123,12 +158,34 @@ export const gameMachine = setup({
     }),
     applyVotingResults: assign(({ context, event }) => {
       const eliminatedPlayer = event.eliminatedPlayer; // { id, name, role } hoặc null
+      const deadIds = new Set<string>();
+      if (eliminatedPlayer) {
+        deadIds.add(eliminatedPlayer.id);
+      }
+
+      // Xử lý chết chùm người tình khi bị vote
+      if (context.lovers && context.lovers.length === 2) {
+        const [l1, l2] = context.lovers;
+        if (deadIds.has(l1)) deadIds.add(l2);
+        if (deadIds.has(l2)) deadIds.add(l1);
+      }
 
       const updatedPlayers = context.players.map((p) => {
-        if (eliminatedPlayer && p.id === eliminatedPlayer.id) {
+        if (deadIds.has(p.id)) {
           return { ...p, isAlive: false };
         }
         return p;
+      });
+
+      // Kích hoạt onDeath hooks
+      updatedPlayers.forEach(p => {
+        if (!p.isAlive && !context.players.find(oldP => oldP.id === p.id && !oldP.isAlive)) {
+          // Player vừa mới chết
+          const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
+          if (handler && handler.onDeath) {
+            handler.onDeath('', p, context, {} as unknown as GameData, 'vote');
+          }
+        }
       });
 
       return {
@@ -140,8 +197,20 @@ export const gameMachine = setup({
     }),
     applyHunterShot: assign(({ context, event }) => {
       const shotPlayerId = event.shotPlayerId;
+      const deadIds = new Set<string>();
+      if (shotPlayerId) {
+        deadIds.add(shotPlayerId);
+      }
+
+      // Xử lý chết chùm người tình khi bị Thợ Săn bắn
+      if (context.lovers && context.lovers.length === 2) {
+        const [l1, l2] = context.lovers;
+        if (deadIds.has(l1)) deadIds.add(l2);
+        if (deadIds.has(l2)) deadIds.add(l1);
+      }
+
       const updatedPlayers = context.players.map((p) => {
-        if (p.id === shotPlayerId) {
+        if (deadIds.has(p.id)) {
           return { ...p, isAlive: false };
         }
         return p;
@@ -149,15 +218,27 @@ export const gameMachine = setup({
 
       const shotPlayer = context.players.find((p) => p.id === shotPlayerId);
 
+      // Kích hoạt onDeath hooks
+      updatedPlayers.forEach(p => {
+        if (!p.isAlive && !context.players.find(oldP => oldP.id === p.id && !oldP.isAlive)) {
+          // Player vừa mới chết
+          const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
+          if (handler && handler.onDeath) {
+            handler.onDeath('', p, context, {} as unknown as GameData, 'hunter');
+          }
+        }
+      });
+
       return {
         players: updatedPlayers,
         hunterShotPlayer: shotPlayer ? { id: shotPlayer.id, name: shotPlayer.name, role: shotPlayer.role } : null,
         timerDuration: null,
         timerStartAt: null,
+        pendingRetaliation: false, // Clear flag sau khi Hunter đã bắn
       };
     }),
     setWinner: assign(({ context }) => {
-      const winResult = checkWinCondition(context.players);
+      const winResult = checkWinCondition(context.players, context.lovers);
       return {
         phase: 'gameOver' as const,
         winner: winResult.winner as import('../types/game.ts').Faction | null,
@@ -168,16 +249,14 @@ export const gameMachine = setup({
   },
   guards: {
     checkWinCondition: ({ context }) => {
-      const winResult = checkWinCondition(context.players);
+      const winResult = checkWinCondition(context.players, context.lovers);
       return winResult.isGameOver;
     },
     hasHunterDiedNight: ({ context }) => {
-      const nightDeaths = context.nightDeaths || [];
-      return nightDeaths.some((d) => d.role === 'HUNTER');
+      return !!context.pendingRetaliation;
     },
     hasHunterDiedVote: ({ context }) => {
-      const eliminatedPlayer = context.dayDeath;
-      return eliminatedPlayer?.role === 'HUNTER';
+      return !!context.pendingRetaliation;
     },
   },
 }).createMachine({
@@ -379,7 +458,10 @@ export const gameMachine = setup({
         {
           target: 'DayPhase',
           guard: ({ context }) => context.hunterNextPhase === 'dayStart',
-          actions: ['notifyPlayers'],
+          actions: [
+            assign({ phase: 'dayStart', timerDuration: null, timerStartAt: null }),
+            'notifyPlayers',
+          ],
         },
         {
           target: 'NightPhase',
@@ -389,6 +471,8 @@ export const gameMachine = setup({
               phase: 'night',
               dayCount: ({ context }) => context.dayCount + 1,
               voteTally: {},
+              timerDuration: null,
+              timerStartAt: null,
             }),
             'notifyPlayers',
           ],
@@ -400,3 +484,4 @@ export const gameMachine = setup({
     },
   },
 });
+

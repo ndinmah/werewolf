@@ -52,14 +52,23 @@ export const createGameActor = (roomId: string, io: Server) => {
                 const isWolfTeam = myPlayer?.role === 'WEREWOLF' && p.role === 'WEREWOLF';
                 const isGameOver = context.phase === 'gameOver';
 
+                const isLoverOfCurrentUser = context.lovers &&
+                  context.lovers.length === 2 &&
+                  context.lovers.includes(s.id) &&
+                  context.lovers.includes(p.id);
+
                 // Chỉ hiển thị role của bản thân, người đã chết, đồng bọn sói hoặc khi kết thúc game
                 if (isSelf || isDead || isWolfTeam || isGameOver) {
-                  return p;
+                  return {
+                    ...p,
+                    isLover: isLoverOfCurrentUser ? true : undefined
+                  };
                 }
                 return {
                   ...p,
                   role: undefined,
-                  faction: undefined
+                  faction: undefined,
+                  isLover: isLoverOfCurrentUser ? true : undefined
                 };
               });
 

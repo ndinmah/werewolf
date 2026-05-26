@@ -1,4 +1,4 @@
-import { FACTIONS, ROLES } from '../roles/index.ts';
+import { FACTIONS } from '../roles/index.ts';
 import type { Player, Faction } from '../types/game.ts';
 
 /**
@@ -6,40 +6,42 @@ import type { Player, Faction } from '../types/game.ts';
  * @param {Array} players Danh sách người chơi hiện tại { id, role, isAlive }
  * @returns {Object} { isGameOver: boolean, winner: string|null }
  */
-export const checkWinCondition = (players: Player[]): { isGameOver: boolean; winner: Faction | null } => {
+export const checkWinCondition = (
+  players: Player[],
+  _lovers?: string[]
+): { isGameOver: boolean; winner: Faction | null } => {
   const alivePlayers = players.filter(p => p.isAlive);
   
   let aliveWolves = 0;
-  let aliveVillagers = 0;
+  let aliveThirdParty = 0;
   
   for (const player of alivePlayers) {
-    const roleData = player.role ? ROLES[player.role as keyof typeof ROLES] : null;
-    if (!roleData) continue;
-    
-    if (roleData.faction === FACTIONS.WEREWOLF) {
+    if (player.faction === FACTIONS.WEREWOLF) {
       aliveWolves++;
-    } else if (roleData.faction === FACTIONS.VILLAGER) {
-      aliveVillagers++;
+    } else if (player.faction === FACTIONS.THIRD_PARTY) {
+      aliveThirdParty++;
     }
   }
   
-  // Sói thắng nếu số Sói >= số Dân
-  const wolvesWin = aliveWolves >= aliveVillagers;
-  // Dân thắng nếu không còn Sói nào
-  const villagersWin = aliveWolves === 0;
+  // 1. Phe thứ 3 (Người tình khác phe) thắng nếu họ là 2 người duy nhất còn sống sót
+  const thirdPartyWin = aliveThirdParty === 2 && alivePlayers.length === 2;
+
+  // 2. Sói thắng khi số lượng Sói >= số lượng các người chơi còn lại
+  const wolvesWin = aliveWolves >= (alivePlayers.length - aliveWolves);
+
+  // 3. Dân thắng khi toàn bộ Sói và Phe Thứ 3 đều đã chết
+  const villagersWin = aliveWolves === 0 && aliveThirdParty === 0;
+
+  if (thirdPartyWin) {
+    return { isGameOver: true, winner: FACTIONS.THIRD_PARTY as Faction };
+  }
   
-  if (wolvesWin || villagersWin) {
-    // Kiểm tra xem có người chơi phe thứ 3 nào còn sống không
-    const aliveThirdParty = alivePlayers.some(p => {
-      const roleData = p.role ? ROLES[p.role as keyof typeof ROLES] : null;
-      return roleData && roleData.faction === FACTIONS.THIRD_PARTY;
-    });
-    
-    if (aliveThirdParty) {
-      return { isGameOver: true, winner: FACTIONS.THIRD_PARTY as Faction };
-    }
-    
-    return { isGameOver: true, winner: (wolvesWin ? FACTIONS.WEREWOLF : FACTIONS.VILLAGER) as Faction };
+  if (wolvesWin) {
+    return { isGameOver: true, winner: FACTIONS.WEREWOLF as Faction };
+  }
+  
+  if (villagersWin) {
+    return { isGameOver: true, winner: FACTIONS.VILLAGER as Faction };
   }
   
   return { isGameOver: false, winner: null };
