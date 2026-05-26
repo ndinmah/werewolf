@@ -2,17 +2,34 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { Button } from '../components/UI/Button';
+import { useToast } from '../context/ToastContext';
+import type { Room } from '../types/game';
 
 export const HomePage = () => {
   const [playerName, setPlayerName] = useState('');
   const [roomId, setRoomId] = useState('');
+  const [rooms, setRooms] = useState<Room[]>([]);
   const socket = useSocket();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Dọn dẹp session khi quay về trang chủ
   useEffect(() => {
     sessionStorage.removeItem('werewolf_session');
   }, []);
+
+  // Lắng nghe danh sách phòng từ server
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('ROOM_LIST', (list: Room[]) => {
+      setRooms(list);
+    });
+
+    return () => {
+      socket.off('ROOM_LIST');
+    };
+  }, [socket]);
 
   const handleCreateRoom = (e: React.FormEvent | React.MouseEvent) => {
     e.preventDefault();
@@ -40,10 +57,12 @@ export const HomePage = () => {
         }));
         navigate(`/room/${response.room.id}`);
       } else {
-        alert(response.error);
+        showToast(response.error || 'Không thể vào phòng', 'error');
       }
     });
   };
+
+  const lobbyRooms = rooms.filter(r => r.status === 'Lobby');
 
   return (
     <div className="min-h-screen pt-20 flex flex-col items-center justify-center px-4">
@@ -91,6 +110,32 @@ export const HomePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Hiển thị danh sách phòng đang chờ */}
+      {lobbyRooms.length > 0 && (
+        <div className="w-full max-w-md mt-6 p-6 rounded-2xl bg-dark/65 backdrop-blur-sm border border-gray-800/80 shadow-2xl">
+          <h2 className="text-lg font-bold text-gray-200 mb-4">Phòng đang chờ ({lobbyRooms.length})</h2>
+          <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+            {lobbyRooms.map((room) => (
+              <div key={room.id} className="flex justify-between items-center p-3 rounded-xl bg-darker/50 border border-gray-800 hover:border-gray-700 transition-all duration-300">
+                <div>
+                  <span className="font-mono font-bold text-wolf-light text-base">{room.id}</span>
+                  <p className="text-xs text-gray-400 mt-0.5">{room.players.length} người chơi trong sảnh</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setRoomId(room.id);
+                    showToast(`Đã chọn mã phòng: ${room.id}`, 'info');
+                  }}
+                  className="px-4 py-1.5 rounded-lg bg-indigo-650 hover:bg-indigo-650 hover:opacity-90 text-xs font-bold text-white transition-all cursor-pointer"
+                >
+                  Chọn
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

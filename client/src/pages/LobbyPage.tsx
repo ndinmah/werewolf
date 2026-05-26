@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { Button } from '../components/UI/Button';
 import { useGame } from '../context/GameContext';
-import { Plus, Minus, Clock, ShieldAlert } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
+import { Plus, Minus, Clock, ShieldAlert, Copy } from 'lucide-react';
 import type { Room, Role } from '../types/game';
 
 interface RoleConfig {
@@ -26,6 +27,7 @@ export const LobbyPage = () => {
   const { id: roomId } = useParams<{ id: string }>();
   const socket = useSocket();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [room, setRoom] = useState<Room | null>(null);
   const { gameState } = useGame();
 
@@ -44,7 +46,7 @@ export const LobbyPage = () => {
     const timer = setTimeout(() => {
       if (!settled) {
         settled = true;
-        alert('Không thể kết nối đến phòng. Vui lòng thử lại.');
+        showToast('Không thể kết nối đến phòng. Vui lòng thử lại.', 'error');
         navigate('/');
       }
     }, 5000);
@@ -56,7 +58,7 @@ export const LobbyPage = () => {
       if (response.success) {
         setRoom(response.room);
       } else {
-        alert(response.error || 'Phòng không tồn tại');
+        showToast(response.error || 'Phòng không tồn tại', 'error');
         navigate('/');
       }
     });
@@ -65,7 +67,7 @@ export const LobbyPage = () => {
       settled = true;
       clearTimeout(timer);
     };
-  }, [socket, roomId, navigate]);
+  }, [socket, roomId, navigate, showToast]);
 
   useEffect(() => {
     if (!socket) return;
@@ -74,10 +76,16 @@ export const LobbyPage = () => {
       setRoom(updatedRoom);
     });
 
+    socket.on('KICKED', () => {
+      showToast('Bạn đã bị kick khỏi phòng bởi chủ phòng.', 'warning');
+      navigate('/');
+    });
+
     return () => {
       socket.off('ROOM_UPDATED');
+      socket.off('KICKED');
     };
-  }, [socket]);
+  }, [socket, navigate, showToast]);
 
   if (!room) return <div className="pt-20 text-center text-gray-400">Đang tải phòng...</div>;
 
@@ -89,17 +97,17 @@ export const LobbyPage = () => {
     const wolfCount = roles.filter((r) => r === 'WEREWOLF').length;
 
     if (wolfCount < 1) {
-      alert('⚠️ Trận đấu phải có ít nhất 1 Ma Sói!');
+      showToast('⚠️ Trận đấu phải có ít nhất 1 Ma Sói!', 'warning');
       return;
     }
     if (room.players.length < 2) {
-      alert('⚠️ Trận đấu phải có ít nhất 2 người chơi!');
+      showToast('⚠️ Trận đấu phải có ít nhất 2 người chơi!', 'warning');
       return;
     }
 
     socket.emit('START_GAME', { roomId: room.id }, (response: { success: boolean; error?: string }) => {
       if (response && !response.success) {
-        alert(response.error);
+        showToast(response.error || 'Lỗi không xác định khi bắt đầu game', 'error');
       }
     });
   };
@@ -163,8 +171,18 @@ export const LobbyPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Phòng chờ game</h1>
-          <p className="text-gray-400">
-            Mã phòng: <span className="text-wolf-light font-mono font-bold text-xl ml-2">{room.id}</span>
+          <p className="text-gray-400 flex items-center gap-2">
+            Mã phòng: <span className="text-wolf-light font-mono font-bold text-xl">{room.id}</span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(room.id);
+                showToast('Đã copy mã phòng!', 'success');
+              }}
+              className="p-1 rounded bg-dark border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white transition-colors cursor-pointer"
+              title="Copy mã phòng"
+            >
+              <Copy className="w-3.5 h-3.5" />
+            </button>
           </p>
         </div>
         {isHost && (
@@ -186,15 +204,34 @@ export const LobbyPage = () => {
               {room.players.map((player) => (
                 <div
                   key={player.id}
-                  className="bg-darker/60 p-4 rounded-lg flex items-center gap-3 border border-gray-800 hover:border-gray-700 transition-colors"
+                  className="bg-darker/60 p-4 rounded-lg flex items-center justify-between border border-gray-800 hover:border-gray-700 transition-colors"
                 >
-                  <div className="w-10 h-10 rounded-full bg-linear-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center font-bold text-white">
-                    {player.name.charAt(0).toUpperCase()}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-linear-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center font-bold text-white">
+                      {player.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-200">{player.name}</p>
+                      {player.id === room.hostId && <span className="text-xs text-yellow-500 font-bold">Chủ phòng</span>}
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-gray-200">{player.name}</p>
-                    {player.id === room.hostId && <span className="text-xs text-yellow-500 font-bold">Chủ phòng</span>}
-                  </div>
+                  {isHost && player.id !== socket?.id && (
+                    <button
+                      onClick={() => {
+                        socket?.emit('KICK_PLAYER', { roomId: room.id, targetPlayerId: player.id }, (res: { success: boolean; error?: string }) => {
+                          if (res && !res.success) {
+                            showToast(res.error || 'Lỗi không xác định', 'error');
+                          } else {
+                            showToast(`Đã kick người chơi ${player.name}`, 'success');
+                          }
+                        });
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-900/65 text-red-400 hover:text-white hover:bg-red-650 hover:border-red-600 transition-all cursor-pointer text-xs font-bold"
+                      title="Kick người chơi"
+                    >
+                      Kick
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
