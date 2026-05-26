@@ -11,6 +11,7 @@ import type {
   NightStatus,
   HunterPrompt,
   HunterShotResult,
+  WolfRevealInfo,
 } from '../types/game';
 
 interface GameContextValue {
@@ -29,6 +30,7 @@ interface GameContextValue {
   hunterPrompt: HunterPrompt | null;
   setHunterPrompt: React.Dispatch<React.SetStateAction<HunterPrompt | null>>;
   hunterShotResult: HunterShotResult | null;
+  wolfReveal: WolfRevealInfo | null;
 }
 
 const defaultChatLogs: ChatLogs = { general: [], wolves: [], ghost: [] };
@@ -51,6 +53,7 @@ interface GameReducerState {
   nightStatus: NightStatus | null;
   hunterPrompt: HunterPrompt | null;
   hunterShotResult: HunterShotResult | null;
+  wolfReveal: WolfRevealInfo | null;
 }
 
 const initialState: GameReducerState = {
@@ -62,6 +65,7 @@ const initialState: GameReducerState = {
   nightStatus: null,
   hunterPrompt: null,
   hunterShotResult: null,
+  wolfReveal: null,
 };
 
 type GameAction =
@@ -78,6 +82,7 @@ type GameAction =
   | { type: 'SET_NIGHT_ACTION_PROMPT'; payload: NightActionPrompt | null | ((prev: NightActionPrompt | null) => NightActionPrompt | null) }
   | { type: 'SET_VOTING_RESULT'; payload: VotingResult | null | ((prev: VotingResult | null) => VotingResult | null) }
   | { type: 'SET_HUNTER_PROMPT'; payload: HunterPrompt | null | ((prev: HunterPrompt | null) => HunterPrompt | null) }
+  | { type: 'FIRST_NIGHT_WOLF_REVEAL'; payload: WolfRevealInfo | null }
   | { type: 'GAME_RESET' };
 
 function gameReducer(state: GameReducerState, action: GameAction): GameReducerState {
@@ -93,6 +98,7 @@ function gameReducer(state: GameReducerState, action: GameAction): GameReducerSt
         hunterPrompt: update.phase !== 'hunterRetaliation' ? null : state.hunterPrompt,
         // Reset shot result khi bắt đầu phase retaliation mới
         hunterShotResult: update.phase === 'hunterRetaliation' ? null : state.hunterShotResult,
+        wolfReveal: update.phase !== 'firstNight' ? null : state.wolfReveal,
       };
     }
     case 'CHAT_MESSAGE':
@@ -167,6 +173,11 @@ function gameReducer(state: GameReducerState, action: GameAction): GameReducerSt
         ...state,
         hunterPrompt: typeof action.payload === 'function' ? action.payload(state.hunterPrompt) : action.payload,
       };
+    case 'FIRST_NIGHT_WOLF_REVEAL':
+      return {
+        ...state,
+        wolfReveal: action.payload,
+      };
     case 'GAME_RESET':
       return initialState;
     default:
@@ -230,6 +241,18 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
 
     socket.on('HUNTER_SHOT_RESULT', (result: HunterShotResult) => {
       dispatch({ type: 'HUNTER_SHOT_RESULT', payload: result });
+      // Tự động ẩn banner sau 5 giây
+      setTimeout(() => {
+        dispatch({ type: 'HUNTER_SHOT_RESULT', payload: null });
+      }, 5000);
+    });
+
+    socket.on('FIRST_NIGHT_WOLF_REVEAL', (info: WolfRevealInfo) => {
+      dispatch({ type: 'FIRST_NIGHT_WOLF_REVEAL', payload: info });
+      // Tự động ẩn danh sách sau 5 giây
+      setTimeout(() => {
+        dispatch({ type: 'FIRST_NIGHT_WOLF_REVEAL', payload: null });
+      }, 5000);
     });
 
     socket.on('GAME_RESET', () => {
@@ -294,6 +317,7 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
         hunterPrompt: state.hunterPrompt,
         setHunterPrompt,
         hunterShotResult: state.hunterShotResult,
+        wolfReveal: state.wolfReveal,
       }}
     >
       {children}

@@ -16,6 +16,8 @@ export type Faction = 'VILLAGER' | 'WEREWOLF' | 'THIRD_PARTY';
 
 export type GamePhase =
   | 'lobby'
+  | 'roleReveal'
+  | 'firstNight'
   | 'night'
   | 'dayStart'
   | 'dayDiscuss'
@@ -67,6 +69,12 @@ export interface GameContext {
   dayDeath: SlimPlayer | null;
   hunterNextPhase: string | null;
   hunterShotPlayer: SlimPlayer | null;
+  /** Phù thủy đã dùng quyền hồi sinh chưa */
+  witchHeals: boolean;
+  /** Phù thủy đã dùng quyền đầu độc chưa */
+  witchPoisons: boolean;
+  /** Danh sách 2 người được chọn làm người tình (Cupid) */
+  lovers: string[];
 }
 
 export interface GameEvent {
@@ -76,6 +84,9 @@ export interface GameEvent {
   nightDeaths?: Player[];
   eliminatedPlayer?: SlimPlayer | null;
   shotPlayerId?: string;
+  /** Event PLAYER_RECONNECTED: cập nhật socket id mới cho player */
+  oldId?: string;
+  newId?: string;
   [key: string]: unknown;
 }
 

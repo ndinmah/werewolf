@@ -13,6 +13,8 @@ export type Role =
   | 'CUPID';
 
 export type GamePhase =
+  | 'roleReveal'
+  | 'firstNight'
   | 'dayStart'
   | 'discussion'
   | 'dayDiscuss'
@@ -83,11 +85,20 @@ export interface SeerVision {
   isWerewolf: boolean;
 }
 
+export interface WitchInfo {
+  werewolfVictimId: string | null;
+  canHeal: boolean;
+  canPoison: boolean;
+}
+
 export interface NightActionPrompt {
   role: Role;
   targetablePlayers: Pick<Player, 'id' | 'name' | 'isAlive'>[];
   excludeTargetId?: string | null;
+  /** Thông tin đặc biệt dành cho WITCH */
+  witchInfo?: WitchInfo;
 }
+
 
 export interface HunterPrompt {
   targetablePlayers: Pick<Player, 'id' | 'name'>[];
@@ -111,3 +122,12 @@ export interface HunterShotResult {
   targetName: string;
   targetRole?: string;
 }
+
+export interface WolfRevealInfo {
+  teammates: Pick<Player, 'id' | 'name'>[];
+}
+
+export interface CupidPrompt {
+  targetablePlayers: Pick<Player, 'id' | 'name'>[];
+}
+

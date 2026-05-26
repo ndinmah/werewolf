@@ -49,6 +49,24 @@ export const ROLES = {
     priority: 0,
     description: 'Khi chết, được bắn chết 1 người khác.',
     icon: 'Target'
+  },
+  WITCH: {
+    id: 'WITCH',
+    name: 'Phù Thủy',
+    faction: FACTIONS.VILLAGER,
+    strength: 3,
+    priority: 5,
+    description: 'Có 1 lần hồi sinh và 1 lần đầu độc mỗi game. Thức dậy sau Sói để quyết định số phận nạn nhân.',
+    icon: 'FlaskConical'
+  },
+  CUPID: {
+    id: 'CUPID',
+    name: 'Thần Tình Yêu',
+    faction: FACTIONS.VILLAGER,
+    strength: 2,
+    priority: 0,
+    description: 'Thức dậy vào đêm đầu tiên để ghép đôi 2 người chơi thành một cặp tình nhân.',
+    icon: 'Heart'
   }
 };
 
