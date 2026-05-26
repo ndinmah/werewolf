@@ -6,6 +6,7 @@ export interface PhaseMeta {
 }
 
 export const PHASE_METADATA: Record<GamePhase, PhaseMeta> = {
+  lobby: { id: 'lobby', name: 'Phòng Chờ' },
   roleReveal: { id: 'roleReveal', name: 'Nhận Vai Trò' },
   firstNight: { id: 'firstNight', name: 'Đêm Đầu Tiên' },
   dayStart: { id: 'dayStart', name: 'Bình Minh' },

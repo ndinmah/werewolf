@@ -18,7 +18,7 @@ export const LobbyPage = () => {
 
   // Chuyển hướng sang trang game nếu game đã bắt đầu
   useEffect(() => {
-    if (gameState && gameState.phase && gameState.phase !== 'lobby' as string) {
+    if (gameState && gameState.phase && gameState.phase !== 'lobby') {
       navigate(`/room/${roomId}/game`);
     }
   }, [gameState, navigate, roomId]);

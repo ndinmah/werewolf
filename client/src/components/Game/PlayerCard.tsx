@@ -19,6 +19,14 @@ export const PlayerCard = ({ player }: { player: Player }) => {
     }`}>
       {/* Icon trạng thái */}
       <div className="absolute top-2 right-2 text-base z-10 flex gap-1 items-center">
+        {player.isLover && (
+          <span 
+            className="px-1.5 py-0.5 rounded bg-pink-950/80 border border-pink-500/30 text-pink-400 text-xs font-bold animate-pulse"
+            title="Người tình liên kết"
+          >
+            ❤️
+          </span>
+        )}
         {isWolfAlly && (
           <span 
             className="px-1.5 py-0.5 rounded bg-red-950/80 border border-red-500/30 text-red-400 text-xs font-bold"

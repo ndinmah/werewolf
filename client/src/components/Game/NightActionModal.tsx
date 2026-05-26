@@ -320,6 +320,7 @@ export const NightActionModal = () => {
                   .filter((p) => p.id !== witchInfo.werewolfVictimId)
                   .map((player) => {
                     const isSelected = witchPoisonTargetId === player.id;
+                    const fullPlayer = players.find((p) => p.id === player.id);
                     return (
                       <div
                         key={player.id}
@@ -337,7 +338,10 @@ export const NightActionModal = () => {
                         >
                           {player.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-bold text-gray-200 text-xs truncate max-w-full">{player.name}</span>
+                        <span className="font-bold text-gray-200 text-xs truncate max-w-full flex items-center justify-center gap-1">
+                          {fullPlayer?.isLover && <span className="animate-pulse">❤️</span>}
+                          <span>{player.name}</span>
+                        </span>
                       </div>
                     );
                   })}
@@ -453,6 +457,11 @@ export const NightActionModal = () => {
                 <span className="font-bold text-gray-200 text-sm truncate max-w-full flex flex-col items-center gap-1">
                   <span>{player.name}</span>
                   <span className="flex gap-1 flex-wrap justify-center">
+                    {fullPlayer?.isLover && (
+                      <span className="text-[10px] bg-pink-950/80 border border-pink-500/20 text-pink-400 px-1 py-0.5 rounded font-bold animate-pulse">
+                        ❤️ Người tình
+                      </span>
+                    )}
                     {isSelf && (
                       <span className="text-[10px] bg-indigo-950/80 border border-indigo-500/20 text-indigo-400 px-1 py-0.5 rounded font-semibold">
                         (Bạn)

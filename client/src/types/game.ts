@@ -13,6 +13,7 @@ export type Role =
   | 'CUPID';
 
 export type GamePhase =
+  | 'lobby'
   | 'roleReveal'
   | 'firstNight'
   | 'dayStart'
@@ -56,7 +57,7 @@ export interface GameState {
   phase: GamePhase;
   dayCount: number;
   players: Player[];
-  winner?: 'villagers' | 'werewolves' | null;
+  winner?: 'WEREWOLF' | 'VILLAGER' | 'THIRD_PARTY' | null;
   nightDeaths?: Player[];
   dayDeath?: Player | null;
   timerDuration?: number;
@@ -125,6 +126,10 @@ export interface HunterShotResult {
 
 export interface WolfRevealInfo {
   teammates: Pick<Player, 'id' | 'name'>[];
+}
+
+export interface LoverRevealInfo {
+  partner: Pick<Player, 'id' | 'name'> | null;
 }
 
 export interface CupidPrompt {
