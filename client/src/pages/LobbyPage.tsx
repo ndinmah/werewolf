@@ -4,9 +4,13 @@ import { useSocket } from '../context/SocketContext';
 import { Button } from '../components/UI/Button';
 import { useGame } from '../context/GameContext';
 import { useToast } from '../context/ToastContext';
-import { Plus, Minus, Clock, ShieldAlert, Copy } from 'lucide-react';
-import type { Room, Role } from '../types/game';
+import { Copy } from 'lucide-react';
+import type { Room, Role, RoomSettings } from '../types/game';
 import { AVAILABLE_ROLES } from '../constants/roles';
+import { LobbyPlayerList } from '../components/Lobby/LobbyPlayerList';
+import { LobbyTimerSettings } from '../components/Lobby/LobbyTimerSettings';
+import { LobbyRoleDeck } from '../components/Lobby/LobbyRoleDeck';
+import { LoadingSpinner } from '../components/UI/LoadingSpinner';
 
 export const LobbyPage = () => {
   const { id: roomId } = useParams<{ id: string }>();
@@ -72,7 +76,7 @@ export const LobbyPage = () => {
     };
   }, [socket, navigate, showToast]);
 
-  if (!room) return <div className="pt-20 text-center text-gray-400">Đang tải phòng...</div>;
+  if (!room) return <LoadingSpinner text="Đang tải phòng..." />;
 
   const isHost = room.hostId === socket?.id;
 
@@ -97,16 +101,15 @@ export const LobbyPage = () => {
     });
   };
 
-  const handleUpdateSettings = (updatedFields: Record<string, unknown>) => {
-    const s = room.settings as unknown as Record<string, unknown>;
+  const handleUpdateSettings = (updatedFields: Partial<RoomSettings>) => {
     const updatedSettings = {
-      discussionTime: s?.discussionTime ?? 120,
-      voteTime: s?.voteTime ?? 60,
-      dayStartDuration: s?.dayStartDuration ?? 8,
-      roles: room.settings?.roles || ['WEREWOLF', 'SEER', 'BODYGUARD', 'VILLAGER'],
+      discussionTime: room?.settings?.discussionTime ?? 120,
+      voteTime: room?.settings?.voteTime ?? 60,
+      dayStartDuration: room?.settings?.dayStartDuration ?? 8,
+      roles: room?.settings?.roles || ['WEREWOLF', 'SEER', 'BODYGUARD', 'VILLAGER'],
       ...updatedFields,
     };
-    socket.emit('UPDATE_SETTINGS', { roomId: room.id, settings: updatedSettings });
+    socket.emit('UPDATE_SETTINGS', { roomId: room?.id, settings: updatedSettings });
   };
 
   const getRoleCounts = (): Record<string, number> => {
@@ -134,7 +137,7 @@ export const LobbyPage = () => {
     handleUpdateSettings({ roles: newRoles });
   };
 
-  const handleTimerChange = (key: string, value: string) => {
+  const handleTimerChange = (key: keyof RoomSettings, value: string) => {
     const intVal = parseInt(value, 10);
     if (!isNaN(intVal) && intVal > 0) {
       handleUpdateSettings({ [key]: intVal });
@@ -147,7 +150,7 @@ export const LobbyPage = () => {
     0,
   );
 
-  const roomSettings = room.settings as unknown as Record<string, unknown>;
+  const roomSettings = room?.settings;
 
   return (
     <div className="min-h-screen pt-20 px-4 container mx-auto max-w-6xl">
@@ -177,50 +180,25 @@ export const LobbyPage = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Cột danh sách Người chơi */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-dark/50 p-6 rounded-xl border border-gray-800 backdrop-blur-xs">
-            <h2 className="text-xl font-bold mb-4 flex items-center justify-between">
-              <span>Người chơi tham gia ({room.players.length})</span>
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {room.players.map((player) => (
-                <div
-                  key={player.id}
-                  className="bg-darker/60 p-4 rounded-lg flex items-center justify-between border border-gray-800 hover:border-gray-700 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-linear-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center font-bold text-white">
-                      {player.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-200">{player.name}</p>
-                      {player.id === room.hostId && <span className="text-xs text-yellow-500 font-bold">Chủ phòng</span>}
-                    </div>
-                  </div>
-                  {isHost && player.id !== socket?.id && (
-                    <button
-                      onClick={() => {
-                        socket?.emit('KICK_PLAYER', { roomId: room.id, targetPlayerId: player.id }, (res: { success: boolean; error?: string }) => {
-                          if (res && !res.success) {
-                            showToast(res.error || 'Lỗi không xác định', 'error');
-                          } else {
-                            showToast(`Đã kick người chơi ${player.name}`, 'success');
-                          }
-                        });
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-900/65 text-red-400 hover:text-white hover:bg-red-650 hover:border-red-600 transition-all cursor-pointer text-xs font-bold"
-                      title="Kick người chơi"
-                    >
-                      Kick
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <LobbyPlayerList
+            players={room.players}
+            hostId={room.hostId}
+            myPlayerId={socket?.id}
+            isHost={isHost}
+            onKick={(player) => {
+              socket?.emit('KICK_PLAYER', { roomId: room.id, targetPlayerId: player.id }, (res: { success: boolean; error?: string }) => {
+                if (res && !res.success) {
+                  showToast(res.error || 'Lỗi không xác định', 'error');
+                } else {
+                  showToast(`Đã trục xuất người chơi ${player.name}`, 'success');
+                }
+              });
+            }}
+          />
         </div>
 
         {/* Cột Cài đặt */}
@@ -233,110 +211,18 @@ export const LobbyPage = () => {
               </p>
             </div>
 
-            {/* Timers settings */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
-                <span>Thời gian các Phase (giây)</span>
-              </h3>
-              
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-[10px] text-gray-400 font-bold block mb-1">Bình minh</label>
-                  <input
-                    type="number"
-                    disabled={!isHost}
-                    value={(roomSettings?.dayStartDuration as number) || 8}
-                    onChange={(e) => handleTimerChange('dayStartDuration', e.target.value)}
-                    className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-gray-400 block mb-1 font-bold">Thảo luận</label>
-                  <input
-                    type="number"
-                    disabled={!isHost}
-                    value={(roomSettings?.discussionTime as number) || 120}
-                    onChange={(e) => handleTimerChange('discussionTime', e.target.value)}
-                    className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-gray-400 block mb-1 font-bold">Biểu quyết</label>
-                  <input
-                    type="number"
-                    disabled={!isHost}
-                    value={(roomSettings?.voteTime as number) || 60}
-                    onChange={(e) => handleTimerChange('voteTime', e.target.value)}
-                    className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
-                  />
-                </div>
-              </div>
-            </div>
+            <LobbyTimerSettings
+              roomSettings={roomSettings}
+              isHost={isHost}
+              onTimerChange={handleTimerChange}
+            />
 
-            {/* Roles selector & Strength Meter */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xs font-extrabold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4" />
-                  <span>Bộ bài (Role Deck)</span>
-                </h3>
-                
-                {/* Strength Meter */}
-                <div className={`px-2 py-0.5 rounded text-xs font-bold font-mono border
-                  ${totalStrength === 0 
-                    ? 'bg-green-950/40 border-green-500 text-green-400' 
-                    : totalStrength > 0 
-                      ? 'bg-blue-950/40 border-blue-500 text-blue-400' 
-                      : 'bg-red-950/40 border-red-500 text-red-400'
-                  }
-                `} title="Tổng điểm sức mạnh. Cân bằng nhất là 0.">
-                  Cân bằng: {totalStrength > 0 ? `+${totalStrength}` : totalStrength}
-                </div>
-              </div>
-
-              <div className="space-y-2 bg-darker/60 p-3 rounded-lg border border-gray-800">
-                {AVAILABLE_ROLES.map((role) => {
-                  const count = roleCounts[role.id] || 0;
-                  return (
-                    <div key={role.id} className="flex items-center justify-between py-1.5 border-b border-gray-800 last:border-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{role.emoji}</span>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-gray-200">{role.name}</span>
-                          <span className="text-[9px] text-gray-500 font-mono">Điểm: {role.strength > 0 ? `+${role.strength}` : role.strength}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {isHost ? (
-                          <>
-                            <button
-                              onClick={() => handleUpdateRoleCount(role.id, -1)}
-                              className="p-1 rounded bg-dark border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white"
-                            >
-                              <Minus className="w-3.5 h-3.5" />
-                            </button>
-                            <span className="w-6 text-center text-sm font-extrabold text-white">{count}</span>
-                            <button
-                              onClick={() => handleUpdateRoleCount(role.id, 1)}
-                              className="p-1 rounded bg-dark border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        ) : (
-                          <span className="font-extrabold text-white px-2 py-0.5 rounded bg-dark text-xs border border-gray-800">
-                            x{count}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
+            <LobbyRoleDeck
+              isHost={isHost}
+              roleCounts={roleCounts}
+              totalStrength={totalStrength}
+              onUpdateRoleCount={handleUpdateRoleCount}
+            />
           </div>
         </div>
 
