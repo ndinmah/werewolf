@@ -3,6 +3,7 @@ import { useGame } from '../../context/GameContext';
 import { HelpCircle } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { PhaseTimer } from '../UI/PhaseTimer';
+import { ModalOverlay } from '../UI/ModalOverlay';
 import { getRoleMeta } from '../../constants/roles';
 
 interface RoleRevealScreenProps {
@@ -29,11 +30,10 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
   if (!myPlayer) return null;
 
   const meta = getRoleMeta(myPlayer.role);
+  const IconComponent = meta.iconComponent;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/98 px-4 overflow-y-auto">
-      <div className="absolute inset-0 stars-bg opacity-35 pointer-events-none"></div>
-
+    <ModalOverlay opacity="dark" className="flex-col">
       <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-wider mb-2 text-center uppercase animate-fade-in">
         Vai Trò Của Bạn Đã Sẵn Sàng
       </h2>
@@ -70,10 +70,7 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
             {/* Icon & Name */}
             <div className="flex flex-col items-center">
               <div className="p-4 bg-darker/60 rounded-2xl border border-gray-800/50 mb-4">
-                {(() => {
-                  const Icon = meta.iconComponent;
-                  return <Icon className={`w-16 h-16 ${meta.color} ${meta.animateIcon ? 'animate-pulse' : ''}`} />;
-                })()}
+                <IconComponent className={`w-16 h-16 ${meta.color} ${meta.animateIcon ? 'animate-pulse' : ''}`} />
               </div>
               <h3 className="text-3xl font-black text-white uppercase tracking-wider">
                 {meta.name}
@@ -98,11 +95,11 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
         <Button 
           size="lg" 
           onClick={onConfirm}
-          className="bg-indigo-600 hover:bg-indigo-700 px-10 shadow-lg shadow-indigo-600/20 font-bold tracking-wider"
+          className="bg-indigo-600 hover:bg-indigo-700 px-10 shadow-lg shadow-indigo-600/20 font-bold tracking-wider cursor-pointer"
         >
           {phase !== 'roleReveal' ? 'ĐANG VÀO ĐÊM...' : 'TÔI ĐÃ HIỂU'}
         </Button>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

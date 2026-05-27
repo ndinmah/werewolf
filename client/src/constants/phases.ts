@@ -10,7 +10,6 @@ export const PHASE_METADATA: Record<GamePhase, PhaseMeta> = {
   roleReveal: { id: 'roleReveal', name: 'Nhận Vai Trò' },
   firstNight: { id: 'firstNight', name: 'Đêm Đầu Tiên' },
   dayStart: { id: 'dayStart', name: 'Bình Minh' },
-  discussion: { id: 'discussion', name: 'Thảo Luận' },
   dayDiscuss: { id: 'dayDiscuss', name: 'Thảo Luận' },
   voting: { id: 'voting', name: 'Bỏ Phiếu' },
   dayEnd: { id: 'dayEnd', name: 'Hoàng Hôn' },

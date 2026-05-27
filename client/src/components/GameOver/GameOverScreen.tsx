@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGame } from '../../context/GameContext';
 import { useSocket } from '../../context/SocketContext';
+import { useCountdownTimer } from '../../hooks/useCountdownTimer';
 import { Button } from '../UI/Button';
+import { Avatar } from '../UI/Avatar';
+import { ModalOverlay } from '../UI/ModalOverlay';
 import { Trophy, Frown, Users, RefreshCw } from 'lucide-react';
 import { getRoleName, getFactionDisplay } from '../../constants/roles';
 
@@ -11,28 +13,12 @@ export const GameOverScreen = () => {
   const navigate = useNavigate();
   const { gameState, myPlayer } = useGame();
   const socket = useSocket();
-  const [now, setNow] = useState(() => Date.now());
 
-  useEffect(() => {
-    if (!gameState || gameState.phase !== 'gameOver' || !gameState.timerDuration || !gameState.timerStartAt) {
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [gameState]);
-
-  const secondsLeft = (() => {
-    if (!gameState || gameState.phase !== 'gameOver' || !gameState.timerDuration || !gameState.timerStartAt) {
-      return null;
-    }
-    const elapsed = now - gameState.timerStartAt;
-    const remaining = Math.max(0, gameState.timerDuration - elapsed);
-    return Math.ceil(remaining / 1000);
-  })();
+  const isGameOver = gameState?.phase === 'gameOver';
+  const secondsLeft = useCountdownTimer(
+    isGameOver ? gameState?.timerDuration : undefined,
+    isGameOver ? gameState?.timerStartAt : undefined
+  );
 
   if (!gameState || gameState.phase !== 'gameOver') return null;
 
@@ -53,9 +39,7 @@ export const GameOverScreen = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/98 px-4 py-8 overflow-y-auto">
-      <div className="absolute inset-0 stars-bg opacity-35 pointer-events-none"></div>
-
+    <ModalOverlay opacity="dark" starsOpacity="heavy">
       <div className={`w-full max-w-4xl bg-dark/95 border backdrop-blur-md rounded-2xl p-6 md:p-8 flex flex-col gap-6 relative z-10 ${factionInfo.shadow} border-gray-800`}>
         
         {/* Banner Victory/Defeat */}
@@ -108,9 +92,7 @@ export const GameOverScreen = () => {
                   return (
                     <tr key={player.id} className={`hover:bg-darker/30 transition-colors ${isSelf ? 'bg-indigo-950/10' : ''}`}>
                       <td className="py-3.5 pl-2 font-bold text-gray-200 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs">
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
+                        <Avatar name={player.name} size="xs" className="bg-slate-800 border-slate-750 text-gray-300" />
                         <span className="truncate max-w-[150px]">
                           {player.name}
                           {isSelf && <span className="text-xs text-indigo-400 ml-1.5">(Bạn)</span>}
@@ -164,6 +146,6 @@ export const GameOverScreen = () => {
         </div>
 
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

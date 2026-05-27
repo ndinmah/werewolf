@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useSocket } from '../../context/SocketContext';
 import { useGame } from '../../context/GameContext';
+import { useSocketEvent } from '../../hooks/useSocketEvent';
 import { PlayerCard } from './PlayerCard';
 import { Button } from '../UI/Button';
 
@@ -11,30 +12,27 @@ export const VotePanel = () => {
   const { gameState, myPlayer, phase } = useGame();
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
-  const [voteData, setVoteData] = useState<{ tally: Record<string, number>; totalVoters: number }>({ tally: {}, totalVoters: 0 });
+  const [voteData, setVoteData] = useState<{
+    tally: Record<string, number>;
+    totalVoters: number;
+    votersMap: Record<string, { id: string; name: string }[]>;
+  }>({ tally: {}, totalVoters: 0, votersMap: {} });
 
-  useEffect(() => {
-    if (!socket) return;
-    
-    socket.on('VOTE_UPDATED', (data: { tally: Record<string, number>; totalVoters: number }) => {
-      setVoteData(data);
-    });
-
-    return () => {
-      socket.off('VOTE_UPDATED');
-    };
-  }, [socket]);
-
-  const [currentPhase, setCurrentPhase] = useState(phase);
-
-  if (phase !== currentPhase) {
-    setCurrentPhase(phase);
-    if (phase !== 'voting') {
-      setSelectedPlayerId(null);
-      setHasVoted(false);
-      setVoteData({ tally: {}, totalVoters: 0 });
+  useSocketEvent(
+    socket,
+    'VOTE_UPDATED',
+    (data: {
+      tally: Record<string, number>;
+      totalVoters: number;
+      votersMap?: Record<string, { id: string; name: string }[]>;
+    }) => {
+      setVoteData({
+        tally: data.tally || {},
+        totalVoters: data.totalVoters || 0,
+        votersMap: data.votersMap || {}
+      });
     }
-  }
+  );
 
   const handleVote = () => {
     if (!selectedPlayerId || hasVoted || phase !== 'voting' || !myPlayer?.isAlive) return;
@@ -59,7 +57,7 @@ export const VotePanel = () => {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {gameState?.players.map(player => {
           const isSelected = selectedPlayerId === player.id;
-          const votesReceived = voteData.tally[player.id] || 0;
+          const voters = voteData.votersMap?.[player.id] || [];
 
           return (
             <div 
@@ -74,10 +72,18 @@ export const VotePanel = () => {
                 <div className="absolute inset-0 rounded-xl border-2 border-wolf-light z-10 pointer-events-none shadow-[0_0_15px_rgba(100,200,255,0.3)]"></div>
               )}
 
-              {/* Vote count badge */}
-              {votesReceived > 0 && (
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center font-bold text-white border-2 border-darker z-20">
-                  {votesReceived}
+              {/* Voters avatar list */}
+              {voters.length > 0 && (
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex -space-x-1.5 z-20 overflow-visible">
+                  {voters.map((voter) => (
+                    <div
+                      key={voter.id}
+                      className="w-7 h-7 rounded-full bg-red-500 border-2 border-darker flex items-center justify-center text-xs font-extrabold text-white shadow-md cursor-help hover:scale-110 hover:-translate-y-0.5 transition-all duration-200"
+                      title={`${voter.name} đã vote`}
+                    >
+                      {voter.name.charAt(0).toUpperCase()}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

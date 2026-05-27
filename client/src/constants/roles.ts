@@ -136,24 +136,6 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
     iconComponent: Users,
     cardBg: 'from-slate-900 via-zinc-950 to-blue-950/50 border-blue-900/50 shadow-[0_0_40px_rgba(59,130,246,0.2)]',
   },
-  DOCTOR: {
-    id: 'DOCTOR',
-    name: 'Bác Sĩ',
-    emoji: '🩺',
-    color: 'text-teal-400',
-    bgColor: 'bg-teal-600',
-    strength: 2,
-    factionName: 'Phe Dân Làng',
-    factionColor: 'text-teal-400 bg-teal-950/60 border-teal-800',
-    desc: 'Thức dậy mỗi đêm để chọn một người để cứu chữa.',
-    iconComponent: Shield,
-    cardBg: 'from-slate-900 via-zinc-950 to-teal-950/50 border-teal-900/50 shadow-[0_0_40px_rgba(20,184,166,0.2)]',
-    nightAction: {
-      title: 'Bác Sĩ',
-      desc: 'Chọn 1 người chơi để cứu chữa đêm nay.',
-      headerColor: 'border-teal-600 shadow-[0_0_20px_rgba(20,184,166,0.2)]',
-    },
-  },
 };
 
 export const AVAILABLE_ROLES: RoleMeta[] = [
@@ -211,8 +193,8 @@ export const FACTION_METADATA: Record<'WEREWOLF' | 'VILLAGER' | 'THIRD_PARTY', F
   },
 };
 
-export const getFactionDisplay = (faction?: string | null): FactionMeta => {
-  if (!faction || !FACTION_METADATA[faction as keyof typeof FACTION_METADATA]) {
+export const getFactionDisplay = (faction?: 'WEREWOLF' | 'VILLAGER' | 'THIRD_PARTY' | null): FactionMeta => {
+  if (!faction || !FACTION_METADATA[faction]) {
     return {
       name: 'Không rõ',
       color: 'text-gray-400 bg-gray-900 border-gray-800',
@@ -220,5 +202,5 @@ export const getFactionDisplay = (faction?: string | null): FactionMeta => {
       shadow: '',
     };
   }
-  return FACTION_METADATA[faction as keyof typeof FACTION_METADATA];
+  return FACTION_METADATA[faction];
 };

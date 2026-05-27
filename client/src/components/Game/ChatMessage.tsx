@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ChatMessage as ChatMessageType } from '../../types/game';
 
 interface ChatMessageProps {
@@ -5,7 +6,7 @@ interface ChatMessageProps {
   isMe: boolean;
 }
 
-export const ChatMessage = ({ message, isMe }: ChatMessageProps) => {
+export const ChatMessage = memo(({ message, isMe }: ChatMessageProps) => {
   const { senderName, content, channel, timestamp } = message;
 
   const getChannelStyle = () => {
@@ -34,4 +35,4 @@ export const ChatMessage = ({ message, isMe }: ChatMessageProps) => {
       </div>
     </div>
   );
-};
+});

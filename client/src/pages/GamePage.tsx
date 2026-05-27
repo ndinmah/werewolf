@@ -11,6 +11,7 @@ import { RoleRevealScreen } from '../components/Game/RoleRevealScreen';
 import { GameOverScreen } from '../components/GameOver/GameOverScreen';
 import { HunterRetaliationModal } from '../components/Game/HunterRetaliationModal';
 import { FirstNightModal } from '../components/Game/FirstNightModal';
+import { LoadingSpinner } from '../components/UI/LoadingSpinner';
 
 import { getRoleEmoji, getRoleName } from '../constants/roles';
 
@@ -19,7 +20,7 @@ import { getPhaseName } from '../constants/phases';
 export const GamePage = () => {
   const { id: roomId } = useParams();
   const navigate = useNavigate();
-  const { gameState, myPlayer, phase, dayCount } = useGame();
+  const { gameState, myPlayer, phase, dayCount, nightActionPrompt, hunterPrompt } = useGame();
 
   // Chỉ hiện màn lật bài ở ngày đầu tiên, phase lật bài hoặc đêm đầu và chưa bấm tắt
   const [showRoleReveal, setShowRoleReveal] = useState(() => {
@@ -36,7 +37,7 @@ export const GamePage = () => {
     }
   }, [gameState, navigate, roomId]);
 
-  if (!gameState) return <div className="pt-20 text-center text-gray-400">Đang tải...</div>;
+  if (!gameState) return <LoadingSpinner text="Đang tải..." />;
 
 
   return (
@@ -46,11 +47,17 @@ export const GamePage = () => {
         <RoleRevealScreen onConfirm={() => setShowRoleReveal(false)} />
       )}
       
-      {!showRoleReveal && <NightActionModal />}
+      {!showRoleReveal && (
+        <NightActionModal
+          key={`${phase}-${nightActionPrompt ? nightActionPrompt.role : 'none'}`}
+        />
+      )}
       {phase === 'firstNight' && <FirstNightModal />}
       <NarratorScreen />
       <VotingResultBanner />
-      <HunterRetaliationModal />
+      <HunterRetaliationModal
+        key={`${phase}-${hunterPrompt ? 'prompt' : 'no-prompt'}`}
+      />
       <GameOverScreen />
 
       <div className="stars-bg absolute inset-0 -z-10 opacity-30"></div>
@@ -90,7 +97,7 @@ export const GamePage = () => {
         </div>
         
         <div className="lg:col-span-3 overflow-y-auto">
-          <VotePanel />
+          <VotePanel key={phase} />
         </div>
       </div>
     </div>

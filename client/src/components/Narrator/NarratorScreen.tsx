@@ -1,28 +1,17 @@
-import { useEffect, useState } from 'react';
 import { useGame } from '../../context/GameContext';
+import { useCountdownTimer } from '../../hooks/useCountdownTimer';
 import { Sun, Skull, Heart } from 'lucide-react';
 
 export const NarratorScreen = () => {
   const { phase, gameState } = useGame();
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const nightDeaths = gameState?.nightDeaths || [];
   const hasDeaths = nightDeaths.length > 0;
 
-  useEffect(() => {
-    if (phase !== 'dayStart' || !gameState?.timerDuration || !gameState?.timerStartAt) return;
-
-    const timerDuration = gameState.timerDuration;
-    const timerStartAt = gameState.timerStartAt;
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - timerStartAt;
-      const remaining = Math.max(0, timerDuration - elapsed);
-      setTimeLeft(Math.ceil(remaining / 1000));
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [phase, gameState?.timerDuration, gameState?.timerStartAt]);
+  const timeLeft = useCountdownTimer(
+    phase === 'dayStart' ? gameState?.timerDuration : undefined,
+    phase === 'dayStart' ? gameState?.timerStartAt : undefined
+  );
 
   if (phase !== 'dayStart') return null;
 

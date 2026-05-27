@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useReducer, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSocket } from './SocketContext';
 import type {
   GameState,
@@ -200,6 +200,10 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
   const socket = useSocket();
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
+  const hunterShotTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wolfRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loversRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (!socket) return;
 
@@ -252,25 +256,34 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
 
     socket.on('HUNTER_SHOT_RESULT', (result: HunterShotResult) => {
       dispatch({ type: 'HUNTER_SHOT_RESULT', payload: result });
-      // Tự động ẩn banner sau 5 giây
-      setTimeout(() => {
+      if (hunterShotTimeoutRef.current) {
+        clearTimeout(hunterShotTimeoutRef.current);
+      }
+      hunterShotTimeoutRef.current = setTimeout(() => {
         dispatch({ type: 'HUNTER_SHOT_RESULT', payload: null });
+        hunterShotTimeoutRef.current = null;
       }, 5000);
     });
 
     socket.on('FIRST_NIGHT_WOLF_REVEAL', (info: WolfRevealInfo) => {
       dispatch({ type: 'FIRST_NIGHT_WOLF_REVEAL', payload: info });
-      // Tự động ẩn danh sách sau 5 giây
-      setTimeout(() => {
+      if (wolfRevealTimeoutRef.current) {
+        clearTimeout(wolfRevealTimeoutRef.current);
+      }
+      wolfRevealTimeoutRef.current = setTimeout(() => {
         dispatch({ type: 'FIRST_NIGHT_WOLF_REVEAL', payload: null });
+        wolfRevealTimeoutRef.current = null;
       }, 5000);
     });
 
     socket.on('FIRST_NIGHT_LOVERS_REVEAL', (info: LoverRevealInfo) => {
       dispatch({ type: 'FIRST_NIGHT_LOVERS_REVEAL', payload: info });
-      // Tự động ẩn sau 5 giây
-      setTimeout(() => {
+      if (loversRevealTimeoutRef.current) {
+        clearTimeout(loversRevealTimeoutRef.current);
+      }
+      loversRevealTimeoutRef.current = setTimeout(() => {
         dispatch({ type: 'FIRST_NIGHT_LOVERS_REVEAL', payload: null });
+        loversRevealTimeoutRef.current = null;
       }, 5000);
     });
 
@@ -285,6 +298,10 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on('connect', handleConnect);
 
     return () => {
+      if (hunterShotTimeoutRef.current) clearTimeout(hunterShotTimeoutRef.current);
+      if (wolfRevealTimeoutRef.current) clearTimeout(wolfRevealTimeoutRef.current);
+      if (loversRevealTimeoutRef.current) clearTimeout(loversRevealTimeoutRef.current);
+
       socket.off('GAME_STATE_UPDATE');
       socket.off('CHAT_MESSAGE');
       socket.off('RECONNECT_SUCCESS');
@@ -303,45 +320,69 @@ export const GameProvider = ({ children }: { children: React.ReactNode }) => {
   }, [socket]);
 
   // Derived state
-  const myPlayer = state.gameState?.players?.find((p) => p.id === socket?.id);
+  const myPlayer = useMemo(() => {
+    return state.gameState?.players?.find((p) => p.id === socket?.id);
+  }, [state.gameState?.players, socket?.id]);
+
   const phase = state.gameState?.phase;
   const dayCount = state.gameState?.dayCount;
-  const players = state.gameState?.players || [];
 
-  const setNightActionPrompt = (payload: NightActionPrompt | null | ((prev: NightActionPrompt | null) => NightActionPrompt | null)) => {
+  const players = useMemo(() => {
+    return state.gameState?.players || [];
+  }, [state.gameState?.players]);
+
+  const setNightActionPrompt = useCallback((payload: NightActionPrompt | null | ((prev: NightActionPrompt | null) => NightActionPrompt | null)) => {
     dispatch({ type: 'SET_NIGHT_ACTION_PROMPT', payload });
-  };
+  }, []);
 
-  const setVotingResult = (payload: VotingResult | null | ((prev: VotingResult | null) => VotingResult | null)) => {
+  const setVotingResult = useCallback((payload: VotingResult | null | ((prev: VotingResult | null) => VotingResult | null)) => {
     dispatch({ type: 'SET_VOTING_RESULT', payload });
-  };
+  }, []);
 
-  const setHunterPrompt = (payload: HunterPrompt | null | ((prev: HunterPrompt | null) => HunterPrompt | null)) => {
+  const setHunterPrompt = useCallback((payload: HunterPrompt | null | ((prev: HunterPrompt | null) => HunterPrompt | null)) => {
     dispatch({ type: 'SET_HUNTER_PROMPT', payload });
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    gameState: state.gameState,
+    chatLogs: state.chatLogs,
+    myPlayer,
+    phase,
+    dayCount,
+    players,
+    seerVisions: state.seerVisions,
+    nightActionPrompt: state.nightActionPrompt,
+    setNightActionPrompt,
+    votingResult: state.votingResult,
+    setVotingResult,
+    nightStatus: state.nightStatus,
+    hunterPrompt: state.hunterPrompt,
+    setHunterPrompt,
+    hunterShotResult: state.hunterShotResult,
+    wolfReveal: state.wolfReveal,
+    loverReveal: state.loverReveal,
+  }), [
+    state.gameState,
+    state.chatLogs,
+    myPlayer,
+    phase,
+    dayCount,
+    players,
+    state.seerVisions,
+    state.nightActionPrompt,
+    setNightActionPrompt,
+    state.votingResult,
+    setVotingResult,
+    state.nightStatus,
+    state.hunterPrompt,
+    setHunterPrompt,
+    state.hunterShotResult,
+    state.wolfReveal,
+    state.loverReveal,
+  ]);
 
   return (
-    <GameContext.Provider
-      value={{
-        gameState: state.gameState,
-        chatLogs: state.chatLogs,
-        myPlayer,
-        phase,
-        dayCount,
-        players,
-        seerVisions: state.seerVisions,
-        nightActionPrompt: state.nightActionPrompt,
-        setNightActionPrompt,
-        votingResult: state.votingResult,
-        setVotingResult,
-        nightStatus: state.nightStatus,
-        hunterPrompt: state.hunterPrompt,
-        setHunterPrompt,
-        hunterShotResult: state.hunterShotResult,
-        wolfReveal: state.wolfReveal,
-        loverReveal: state.loverReveal,
-      }}
-    >
+    <GameContext.Provider value={contextValue}>
       {children}
     </GameContext.Provider>
   );

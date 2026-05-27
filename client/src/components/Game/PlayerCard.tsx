@@ -1,7 +1,9 @@
+import { memo } from 'react';
 import { useGame } from '../../context/GameContext';
+import { Avatar } from '../UI/Avatar';
 import type { Player } from '../../types/game';
 
-export const PlayerCard = ({ player }: { player: Player }) => {
+export const PlayerCard = memo(({ player }: { player: Player }) => {
   const { seerVisions, myPlayer } = useGame();
   const isDisconnected = player.disconnected;
   const isDead = !player.isAlive;
@@ -52,13 +54,13 @@ export const PlayerCard = ({ player }: { player: Player }) => {
       </div>
 
       <div className="flex flex-col items-center">
-        <div className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-2xl mb-2
-          ${isDead ? 'bg-red-900 text-red-200' : 'bg-linear-to-tr from-gray-700 to-gray-600 text-white'}
-        `}>
-          {player.name.charAt(0).toUpperCase()}
-        </div>
+        <Avatar
+          name={player.name}
+          size="lg"
+          className={`mb-2 border-2 ${isDead ? 'bg-red-900 text-red-200 border-red-800' : 'bg-linear-to-tr from-gray-700 to-gray-600 border-gray-500 text-white'}`}
+        />
         <p className="font-medium text-gray-200 text-center truncate w-full">{player.name}</p>
       </div>
     </div>
   );
-};
+});

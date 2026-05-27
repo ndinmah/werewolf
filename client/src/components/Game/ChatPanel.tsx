@@ -45,14 +45,14 @@ export const ChatPanel = () => {
   // Derive tab hiệu lực: nếu activeTab không còn hợp lệ thì fallback về 'general'
   const currentTab = (tabs.some((t) => t.id === activeTab) ? activeTab : 'general') as keyof ChatLogs;
 
-  // Cập nhật số tin nhắn đã đọc cho tab hiện tại khi render hoặc chatLogs thay đổi
-  const currentTabLength = chatLogs[currentTab]?.length || 0;
-  if (lastReadMessageCount[currentTab] !== currentTabLength) {
+  const handleTabChange = (tabId: string) => {
     setLastReadMessageCount((prev) => ({
       ...prev,
-      [currentTab]: currentTabLength,
+      [currentTab]: chatLogs[currentTab]?.length || 0,
+      [tabId]: chatLogs[tabId as keyof ChatLogs]?.length || 0,
     }));
-  }
+    setActiveTab(tabId);
+  };
 
   const getUnreadCount = (tabId: string) => {
     const total = chatLogs[tabId as keyof ChatLogs]?.length || 0;
@@ -63,7 +63,7 @@ export const ChatPanel = () => {
   const isInputDisabled = () => {
     if (!myPlayer) return true;
     if (currentTab === 'general') {
-      return !myPlayer.isAlive || ((phase as string) !== 'dayDiscuss' && phase !== 'voting');
+      return !myPlayer.isAlive || (phase !== 'dayDiscuss' && phase !== 'voting');
     }
     if (currentTab === 'wolves') {
       return myPlayer.role !== 'WEREWOLF' || !myPlayer.isAlive || phase === 'gameOver' || phase === 'roleReveal';
@@ -79,7 +79,7 @@ export const ChatPanel = () => {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
                 currentTab === tab.id
                   ? tab.id === 'wolves'
