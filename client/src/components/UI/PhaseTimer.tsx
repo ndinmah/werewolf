@@ -1,25 +1,10 @@
-import { useEffect, useState } from 'react';
 import { useGame } from '../../context/GameContext';
+import { useCountdownTimer } from '../../hooks/useCountdownTimer';
 import { Clock } from 'lucide-react';
 
 export const PhaseTimer = () => {
   const { gameState } = useGame();
-  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!gameState?.timerDuration || !gameState?.timerStartAt) return;
-
-    const timerDuration = gameState.timerDuration;
-    const timerStartAt = gameState.timerStartAt;
-
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - timerStartAt;
-      const remaining = Math.max(0, timerDuration - elapsed);
-      setSecondsLeft(Math.ceil(remaining / 1000));
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [gameState?.timerDuration, gameState?.timerStartAt]);
+  const secondsLeft = useCountdownTimer(gameState?.timerDuration, gameState?.timerStartAt);
 
   // Ẩn khi không có timer hoặc chưa có giá trị từ interval lần đầu
   if (!gameState?.timerDuration || !gameState?.timerStartAt || secondsLeft == null) return null;

@@ -6,7 +6,6 @@ export type Role =
   | 'VILLAGER'
   | 'WEREWOLF'
   | 'SEER'
-  | 'DOCTOR'
   | 'BODYGUARD'
   | 'HUNTER'
   | 'WITCH'
@@ -17,7 +16,6 @@ export type GamePhase =
   | 'roleReveal'
   | 'firstNight'
   | 'dayStart'
-  | 'discussion'
   | 'dayDiscuss'
   | 'voting'
   | 'dayEnd'
@@ -42,7 +40,9 @@ export interface RoomSettings {
   roles: Role[];
   discussionTime?: number;
   votingTime?: number;
+  voteTime?: number;
   nightTime?: number;
+  dayStartDuration?: number;
 }
 
 export interface Room {

@@ -7,25 +7,28 @@ import { GamePage } from './pages/GamePage';
 import { SocketProvider } from './context/SocketContext';
 import { GameProvider } from './context/GameContext';
 import { ToastProvider } from './context/ToastContext';
+import { ErrorBoundary } from './components/UI/ErrorBoundary';
 
 function App() {
   return (
     <Router>
-      <ToastProvider>
-        <SocketProvider>
-          <GameProvider>
-            <div className="min-h-screen text-gray-100 font-sans selection:bg-wolf/30">
-              <Navbar />
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/room/:id" element={<LobbyPage />} />
-                <Route path="/room/:id/game" element={<GamePage />} />
-                <Route path="/roles" element={<RolesPage />} />
-              </Routes>
-            </div>
-          </GameProvider>
-        </SocketProvider>
-      </ToastProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <SocketProvider>
+            <GameProvider>
+              <div className="min-h-screen text-gray-100 font-sans selection:bg-wolf/30">
+                <Navbar />
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/room/:id" element={<LobbyPage />} />
+                  <Route path="/room/:id/game" element={<GamePage />} />
+                  <Route path="/roles" element={<RolesPage />} />
+                </Routes>
+              </div>
+            </GameProvider>
+          </SocketProvider>
+        </ToastProvider>
+      </ErrorBoundary>
     </Router>
   );
 }
