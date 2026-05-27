@@ -1,7 +1,12 @@
 import { createActor, assign, Actor } from 'xstate';
 import type { Server } from 'socket.io';
 import { gameMachine } from './gameMachine.ts';
-import type { ChatLogs, SeerVision, SlimPlayer } from '../types/game.ts';
+import type { ChatLogs, SeerVision } from '../types/game.ts';
+import { startFirstNight, startNight } from '../socket/nightManager.ts';
+import { getRoom, updateRoomStatus, getRooms } from '../socket/roomManager.ts';
+import { finalizeVoting } from '../socket/voteManager.ts';
+import { findPendingHunter } from './gameHelpers.ts';
+import { notifyPlayers } from '../socket/notificationService.ts';
 
 export interface GameData {
   machine: typeof gameMachine;
@@ -41,119 +46,36 @@ export const createGameActor = (roomId: string, io: Server) => {
   const machineWithActions = gameMachine.provide({
     actions: {
       notifyPlayers: ({ context }) => {
-        if (io) {
-          io.to(roomId).fetchSockets().then(sockets => {
-            sockets.forEach(s => {
-              const myPlayer = context.players.find(p => p.id === s.id);
-
-              const personalizedPlayers = context.players.map(p => {
-                const isSelf = p.id === s.id;
-                const isDead = !p.isAlive;
-                const isWolfTeam = myPlayer?.role === 'WEREWOLF' && p.role === 'WEREWOLF';
-                const isGameOver = context.phase === 'gameOver';
-
-                const isLoverOfCurrentUser = context.lovers &&
-                  context.lovers.length === 2 &&
-                  context.lovers.includes(s.id) &&
-                  context.lovers.includes(p.id);
-
-                // Chỉ hiển thị role của bản thân, người đã chết, đồng bọn sói hoặc khi kết thúc game
-                if (isSelf || isDead || isWolfTeam || isGameOver) {
-                  return {
-                    ...p,
-                    isLover: isLoverOfCurrentUser ? true : undefined
-                  };
-                }
-                return {
-                  ...p,
-                  role: undefined,
-                  faction: undefined,
-                  isLover: isLoverOfCurrentUser ? true : undefined
-                };
-              });
-
-              s.emit('GAME_STATE_UPDATE', {
-                phase: context.phase,
-                dayCount: context.dayCount,
-                players: personalizedPlayers,
-                nightDeaths: context.nightDeaths,
-                dayDeath: context.dayDeath,
-                winner: context.winner,
-                timerDuration: context.timerDuration,
-                timerStartAt: context.timerStartAt
-              });
-            });
-          });
-        }
+        notifyPlayers(roomId, context, io);
       },
       runFirstNightStart: () => {
-        import('../socket/nightManager.ts').then(({ startFirstNight }) => {
-          startFirstNight(roomId, io);
-        });
+        startFirstNight(roomId, io);
       },
       startRoleRevealTimer: assign(() => {
-        const duration = 10 * 1000;
-        setGameTimer(roomId, duration, () => {
-          const actor = getGameActor(roomId);
-          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
-        });
-        return {
-          timerDuration: duration,
-          timerStartAt: Date.now()
-        };
+        return startTimerAction(roomId, 10 * 1000);
       }),
       runNightStart: () => {
-        import('../socket/nightManager.ts').then(({ startNight }) => {
-          startNight(roomId, io);
-        });
+        startNight(roomId, io);
       },
       startDayStartTimer: assign(({ context }) => {
         const duration = (context.settings?.dayStartDuration || 8) * 1000;
-        setGameTimer(roomId, duration, () => {
-          const actor = getGameActor(roomId);
-          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
-        });
-        return {
-          timerDuration: duration,
-          timerStartAt: Date.now()
-        };
+        return startTimerAction(roomId, duration);
       }),
       startDayDiscussTimer: assign(({ context }) => {
         const duration = (context.settings?.discussionTime || 120) * 1000;
-        setGameTimer(roomId, duration, () => {
-          const actor = getGameActor(roomId);
-          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
-        });
-        return {
-          timerDuration: duration,
-          timerStartAt: Date.now()
-        };
+        return startTimerAction(roomId, duration);
       }),
       startVotingTimer: assign(({ context }) => {
         const duration = (context.settings?.voteTime || 60) * 1000;
-        setGameTimer(roomId, duration, () => {
-          const actor = getGameActor(roomId);
-          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
-        });
         // Reset vote rate limiting khi bắt đầu phase vote mới
         const gameData = gameRooms.get(roomId);
         if (gameData) gameData.voteSubmitted = new Set();
-        return {
-          timerDuration: duration,
-          timerStartAt: Date.now()
-        };
+        return startTimerAction(roomId, duration);
       }),
       runHunterRetaliationStart: assign(({ context }) => {
-        const isNightDeath = context.hunterNextPhase === 'dayStart';
-        const hunter = isNightDeath 
-          ? context.nightDeaths.find(d => d.role === 'HUNTER')
-          : (context.dayDeath?.role === 'HUNTER' ? context.dayDeath : null);
-
+        const hunter = findPendingHunter(context);
         const duration = 30 * 1000;
-        setGameTimer(roomId, duration, () => {
-          const actor = getGameActor(roomId);
-          if (actor) actor.send({ type: 'TIMER_EXPIRED' });
-        });
+        const timerInfo = startTimerAction(roomId, duration);
 
         if (hunter && io) {
           const socket = io.sockets.sockets.get(hunter.id);
@@ -167,61 +89,24 @@ export const createGameActor = (roomId: string, io: Server) => {
           }
         }
 
-        return {
-          timerDuration: duration,
-          timerStartAt: Date.now()
-        };
+        return timerInfo;
       }),
       startGameOverTimer: assign(() => {
         const duration = 10 * 1000;
-        setGameTimer(roomId, duration, () => {
-          import('../socket/roomManager.ts').then(({ getRoom, updateRoomStatus, getRooms }) => {
-            const room = getRoom(roomId);
-            if (room) {
-              updateRoomStatus(roomId, 'Lobby');
-              destroyGameActor(roomId);
+        return startTimerAction(roomId, duration, () => {
+          const room = getRoom(roomId);
+          if (room) {
+            updateRoomStatus(roomId, 'Lobby');
+            destroyGameActor(roomId);
 
-              io.to(roomId).emit('ROOM_UPDATED', room);
-              io.to(roomId).emit('GAME_RESET');
-              io.emit('ROOM_LIST', getRooms());
-            }
-          });
+            io.to(roomId).emit('ROOM_UPDATED', room);
+            io.to(roomId).emit('GAME_RESET');
+            io.emit('ROOM_LIST', getRooms());
+          }
         });
-        return {
-          timerDuration: duration,
-          timerStartAt: Date.now()
-        };
       }),
       autoResolveVotes: () => {
-        import('../socket/voteManager.ts').then(({ resolveVote }) => {
-          const gameData = gameRooms.get(roomId);
-          if (!gameData) return;
-
-          const { eliminatedId, isTie } = resolveVote(roomId);
-          const context = gameData.actor.getSnapshot().context;
-
-          let eliminatedPlayer: SlimPlayer | null = null;
-          if (eliminatedId) {
-            const p = context.players.find(x => x.id === eliminatedId);
-            if (p) {
-              eliminatedPlayer = { id: p.id, name: p.name, role: p.role };
-            }
-          }
-
-          // Emit kết quả vote về client
-          io.to(roomId).emit('VOTING_RESULT', {
-            eliminated: eliminatedPlayer,
-            isTie
-          });
-
-          // Chờ 4s hiển thị kết quả rồi sang phase tiếp theo
-          setTimeout(() => {
-            gameData.actor.send({
-              type: 'VOTING_DONE',
-              eliminatedPlayer
-            });
-          }, 4000);
-        });
+        finalizeVoting(roomId, io);
       }
     }
   });
@@ -292,4 +177,26 @@ export const destroyGameActor = (roomId: string): void => {
     }
     gameRooms.delete(roomId);
   }
+};
+
+/**
+ * Tạo timer của game và trả về thông tin thời gian lưu vào context
+ * (Giải quyết trùng lặp D5)
+ */
+export const startTimerAction = (
+  roomId: string,
+  durationMs: number,
+  onExpired?: () => void
+): { timerDuration: number; timerStartAt: number } => {
+  const expiredCallback = onExpired || (() => {
+    const actor = getGameActor(roomId);
+    if (actor) actor.send({ type: 'TIMER_EXPIRED' });
+  });
+
+  setGameTimer(roomId, durationMs, expiredCallback);
+
+  return {
+    timerDuration: durationMs,
+    timerStartAt: Date.now()
+  };
 };

@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import type { GameContext, Player } from '../../types/game.ts';
+import type { GameContext, Player, NightActionPayload } from '../../types/game.ts';
 import type { GameData } from '../../engine/gameStateManager.ts';
 import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
 
@@ -29,18 +29,18 @@ class WitchHandler implements RoleHandler {
   submitNightAction(
     _roomId: string,
     player: Player,
-    targetId: string | null,
+    payload: NightActionPayload,
     context: GameContext,
     gameData: GameData,
     _io: Server,
-    extraData?: unknown,
   ): boolean {
-    const healTargetId = targetId; // by convention from previous code, or we can use extraData
-    const poisonTargetId = (extraData as Record<string, string> | undefined)?.poisonTargetId || null;
+    if (payload.role !== 'WITCH') return false;
+    const healTargetId = payload.healTargetId || null;
+    const poisonTargetId = payload.poisonTargetId || null;
 
     if (gameData.nightActionSubmitted.has(player.id)) return false;
 
-    // Validate
+    // Kiểm tra tính hợp lệ
     if (healTargetId && gameData.witchHealUsed) return false;
     if (poisonTargetId && gameData.witchPoisonUsed) return false;
 

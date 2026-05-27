@@ -1,12 +1,14 @@
 import type { GameContext, Player } from '../../types/game.ts';
-import type { GameData } from '../../engine/gameStateManager.ts';
 import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
 
 class HunterHandler implements RoleHandler {
-  onDeath(_roomId: string, deadPlayer: Player, context: GameContext, _gameData: GameData, _cause: string): void {
+  onDeath(_roomId: string, deadPlayer: Player, _context: GameContext, _cause: string): Partial<GameContext> | void {
     if (deadPlayer.role === 'HUNTER') {
-      // Mark that hunter needs retaliation
-      context.pendingRetaliation = true;
+      // Đánh dấu Thợ Săn cần trả đũa (không mutate context trực tiếp)
+      return {
+        pendingRetaliation: true,
+        pendingRetaliationHunterId: deadPlayer.id,
+      };
     }
   }
 }

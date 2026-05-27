@@ -20,6 +20,7 @@ export const ROLES = {
     faction: FACTIONS.WEREWOLF,
     strength: -2,
     priority: 10,
+    firstNightPriority: 10,
     description: 'Thức dậy vào ban đêm để chọn một nạn nhân. Cố gắng giả làm người vào ban ngày.',
     icon: 'Eye'
   },
@@ -65,9 +66,8 @@ export const ROLES = {
     faction: FACTIONS.VILLAGER,
     strength: 2,
     priority: 0,
+    firstNightPriority: 50,
     description: 'Thức dậy vào đêm đầu tiên để ghép đôi 2 người chơi thành một cặp tình nhân.',
     icon: 'Heart'
   }
 };
-
-export const getRoleById = (id: keyof typeof ROLES) => ROLES[id];

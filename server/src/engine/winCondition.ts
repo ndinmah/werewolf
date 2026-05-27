@@ -7,8 +7,7 @@ import type { Player, Faction } from '../types/game.ts';
  * @returns {Object} { isGameOver: boolean, winner: string|null }
  */
 export const checkWinCondition = (
-  players: Player[],
-  _lovers?: string[]
+  players: Player[]
 ): { isGameOver: boolean; winner: Faction | null } => {
   const alivePlayers = players.filter(p => p.isAlive);
   

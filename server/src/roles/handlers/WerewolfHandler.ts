@@ -1,7 +1,8 @@
 import type { Server, Socket } from 'socket.io';
-import type { GameContext, Player } from '../../types/game.ts';
+import type { GameContext, Player, NightActionPayload } from '../../types/game.ts';
 import type { GameData } from '../../engine/gameStateManager.ts';
 import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
+import { advanceFirstNightRole } from '../../socket/nightManager.ts';
 
 class WerewolfHandler implements RoleHandler {
   onFirstNightStart(roomId: string, context: GameContext, gameData: GameData, io: Server): void {
@@ -23,7 +24,7 @@ class WerewolfHandler implements RoleHandler {
 
     setTimeout(() => {
       if (gameData.actor.getSnapshot().value === 'FirstNightPhase') {
-        gameData.actor.send({ type: 'FIRST_NIGHT_DONE' });
+        advanceFirstNightRole(roomId, io);
       }
     }, 10000);
   }
@@ -44,11 +45,13 @@ class WerewolfHandler implements RoleHandler {
   submitNightAction(
     roomId: string,
     player: Player,
-    targetId: string | null,
+    payload: NightActionPayload,
     context: GameContext,
     gameData: GameData,
     io: Server
   ): boolean {
+    if (payload.role !== 'WEREWOLF') return false;
+    const targetId = payload.targetId;
     if (!targetId) return false;
 
     if (gameData.nightActionSubmitted.has(player.id)) return false;

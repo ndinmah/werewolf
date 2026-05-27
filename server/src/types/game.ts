@@ -6,7 +6,6 @@ export type Role =
   | 'VILLAGER'
   | 'WEREWOLF'
   | 'SEER'
-  | 'DOCTOR'
   | 'BODYGUARD'
   | 'HUNTER'
   | 'WITCH'
@@ -77,6 +76,9 @@ export interface GameContext {
   lovers: string[];
   /** Cờ báo hiệu có người chơi cần trả đũa (ví dụ: Thợ săn) */
   pendingRetaliation?: boolean;
+  pendingRetaliationHunterId?: string | null;
+  /** Danh sách ID người chơi vừa mới chết trong transition hiện tại */
+  newlyDeadPlayerIds?: string[];
 }
 
 export interface GameEvent {
@@ -112,3 +114,20 @@ export interface SeerVision {
   targetName: string;
   isWerewolf: boolean;
 }
+
+export type NightActionPayload =
+  | { role: 'WEREWOLF'; targetId: string }
+  | { role: 'SEER'; targetId: string }
+  | { role: 'BODYGUARD'; targetId: string }
+  | { role: 'WITCH'; healTargetId: string | null; poisonTargetId: string | null }
+  | { role: 'CUPID'; lover1Id: string; lover2Id: string };
+
+export type NightActionInput = Partial<{
+  targetId: string;
+  healTargetId: string | null;
+  poisonTargetId: string | null;
+  lover1Id: string;
+  lover2Id: string;
+}>;
+
+

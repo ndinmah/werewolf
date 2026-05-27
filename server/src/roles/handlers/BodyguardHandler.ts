@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import type { GameContext, Player } from '../../types/game.ts';
+import type { GameContext, Player, NightActionPayload } from '../../types/game.ts';
 import type { GameData } from '../../engine/gameStateManager.ts';
 import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
 
@@ -20,15 +20,17 @@ class BodyguardHandler implements RoleHandler {
   submitNightAction(
     roomId: string,
     player: Player,
-    targetId: string | null,
+    payload: NightActionPayload,
     context: GameContext,
     gameData: GameData,
     _io: Server,
   ): boolean {
+    if (payload.role !== 'BODYGUARD') return false;
+    const targetId = payload.targetId;
     if (!targetId) return false;
     if (gameData.nightActionSubmitted.has(player.id)) return false;
 
-    // Validate double protect
+    // Kiểm tra bảo vệ liên tiếp (không được bảo vệ cùng một người 2 đêm liên tiếp)
     if (targetId === gameData.lastProtectedId) return false;
 
     const targetPlayer = context.players.find((p) => p.id === targetId);

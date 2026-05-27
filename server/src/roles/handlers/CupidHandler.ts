@@ -1,8 +1,9 @@
 import type { Server } from 'socket.io';
-import type { GameContext, Player } from '../../types/game.ts';
+import type { GameContext, Player, NightActionPayload } from '../../types/game.ts';
 import type { GameData } from '../../engine/gameStateManager.ts';
 import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
-import { ROLES } from '../index.ts';
+import { advanceFirstNightRole } from '../../socket/nightManager.ts';
+import { getGameData } from '../../engine/gameStateManager.ts';
 
 class CupidHandler implements RoleHandler {
   onFirstNightStart(roomId: string, context: GameContext, gameData: GameData, io: Server): void {
@@ -23,17 +24,16 @@ class CupidHandler implements RoleHandler {
       }
       io.to(roomId).emit('NIGHT_STATUS_UPDATE', { currentRoleName: 'Cupid' });
       
-      // Fallback timeout
+      // Hạn giờ tự động chuyển tiếp (fallback timeout)
+      const currentRoleIndex = gameData.currentNightRoleIndex;
       setTimeout(() => {
-        // Will need to extract fallback logic, for now emit a internal event or call next step
-        const globalWithGameData = global as typeof globalThis & { getGameData?: (roomId: string) => GameData | null };
-        const currentGameData = globalWithGameData.getGameData ? globalWithGameData.getGameData(roomId) : null;
-        if (currentGameData && currentGameData.actor.getSnapshot().value === 'FirstNightPhase') {
-          // If cupid doesn't act, we move to wolves.
-          const werewolfHandler = RoleRegistry.getHandler('WEREWOLF');
-          if (werewolfHandler && werewolfHandler.onFirstNightStart) {
-            werewolfHandler.onFirstNightStart(roomId, context, currentGameData, io);
-          }
+        const currentGameData = getGameData(roomId);
+        if (
+          currentGameData &&
+          currentGameData.actor.getSnapshot().value === 'FirstNightPhase' &&
+          currentGameData.currentNightRoleIndex === currentRoleIndex
+        ) {
+          advanceFirstNightRole(roomId, io);
         }
       }, 30000);
     }
@@ -42,17 +42,17 @@ class CupidHandler implements RoleHandler {
   submitNightAction(
     roomId: string,
     player: Player,
-    targetId: string | null,
+    payload: NightActionPayload,
     context: GameContext,
     gameData: GameData,
     io: Server,
-    extraData?: unknown
   ): boolean {
-    // Only happens in First Night for Cupid
+    // Chỉ xảy ra vào Đêm đầu tiên đối với Cupid
     if (gameData.actor.getSnapshot().value !== 'FirstNightPhase') return false;
+    if (payload.role !== 'CUPID') return false;
     
-    const lover1Id = targetId;
-    const lover2Id = (extraData as Record<string, string> | undefined)?.lover2Id; // We need to pass lover2Id from nightManager
+    const lover1Id = payload.lover1Id;
+    const lover2Id = payload.lover2Id;
     
     if (!lover1Id || !lover2Id) return false;
 
@@ -65,14 +65,12 @@ class CupidHandler implements RoleHandler {
     if (gameData.nightActionSubmitted.has(player.id)) return false;
     gameData.nightActionSubmitted.add(player.id);
 
-    context.lovers = [lover1Id, lover2Id];
-
-    const role1 = lover1.role ? ROLES[lover1.role as keyof typeof ROLES] : null;
-    const role2 = lover2.role ? ROLES[lover2.role as keyof typeof ROLES] : null;
-    if (role1 && role2 && role1.faction !== role2.faction) {
-      lover1.faction = 'THIRD_PARTY';
-      lover2.faction = 'THIRD_PARTY';
-    }
+    // Gửi sự kiện SET_LOVERS để cập nhật context thông qua máy trạng thái (không mutate trực tiếp)
+    gameData.actor.send({
+      type: 'SET_LOVERS',
+      lover1Id,
+      lover2Id
+    });
 
     io.to(roomId).emit('NIGHT_STATUS_UPDATE', { currentRoleName: 'Người tình nhận diện' });
 
@@ -88,15 +86,12 @@ class CupidHandler implements RoleHandler {
       }
     });
 
-    // Sau 5s chuyển cho Sói
+    // Sau 5s chuyển sang role tiếp theo trong First Night
     setTimeout(() => {
-      const werewolfHandler = RoleRegistry.getHandler('WEREWOLF');
-      if (werewolfHandler && werewolfHandler.onFirstNightStart) {
-        werewolfHandler.onFirstNightStart(roomId, context, gameData, io);
-      }
+      advanceFirstNightRole(roomId, io);
     }, 5000);
 
-    return true; // action handled, do not auto-advance in nightManager (we handle async advance here)
+    return true; // Hành động đã được xử lý, không tự động chuyển tiếp trong nightManager (chúng ta xử lý chuyển tiếp không đồng bộ ở đây)
   }
 }
 

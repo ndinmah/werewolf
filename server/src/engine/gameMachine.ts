@@ -3,7 +3,7 @@ import { checkWinCondition } from './winCondition.ts';
 import { ROLES } from '../roles/index.ts';
 import { RoleRegistry } from '../roles/RoleHandler.ts';
 import type { GameContext, GameEvent, Faction } from '../types/game.ts';
-import type { GameData } from './gameStateManager.ts';
+import { addLoverDeaths, getNewlyDeadPlayerIds } from './gameHelpers.ts';
 
 // Định nghĩa state machine cho một phòng game Ma Sói Ma Sói
 export const gameMachine = setup({
@@ -51,6 +51,32 @@ export const gameMachine = setup({
           p.id === oldId ? { ...p, id: newId, disconnected: false } : p
         )
       };
+    }),
+    applyLovers: assign(({ context, event }) => {
+      const lover1Id = event.lover1Id as string | undefined;
+      const lover2Id = event.lover2Id as string | undefined;
+      if (!lover1Id || !lover2Id) return {} as Partial<GameContext>;
+
+      // Tạo bản sao mới của danh sách người chơi để tránh mutation trực tiếp
+      const updatedPlayers = context.players.map(p => {
+        if (p.id === lover1Id || p.id === lover2Id) {
+          const partnerId = p.id === lover1Id ? lover2Id : lover1Id;
+          const partner = context.players.find(x => x.id === partnerId);
+          
+          const role1 = p.role ? ROLES[p.role as keyof typeof ROLES] : null;
+          const role2 = partner?.role ? ROLES[partner.role as keyof typeof ROLES] : null;
+          
+          if (role1 && role2 && role1.faction !== role2.faction) {
+            return { ...p, faction: 'THIRD_PARTY' as const };
+          }
+        }
+        return p;
+      });
+
+      return {
+        lovers: [lover1Id, lover2Id],
+        players: updatedPlayers
+      } as Partial<GameContext>;
     }),
     setupGame: assign(({ context, event }) => {
       const playersList = event.players || context.players;
@@ -101,6 +127,8 @@ export const gameMachine = setup({
         witchHeals: false,
         witchPoisons: false,
         lovers: [],
+        pendingRetaliation: false,
+        pendingRetaliationHunterId: null,
       };
     }),
     applyNightResults: assign(({ context, event }) => {
@@ -108,26 +136,8 @@ export const gameMachine = setup({
       const deadIds = new Set(initialNightDeaths.map((d) => d.id));
       const nightDeaths = [...initialNightDeaths];
 
-      // Xử lý chết chùm người tình ban đêm
-      if (context.lovers && context.lovers.length === 2) {
-        const [l1, l2] = context.lovers;
-        const lover1Died = deadIds.has(l1);
-        const lover2Died = deadIds.has(l2);
-
-        if (lover1Died && !lover2Died) {
-          const partner = context.players.find(p => p.id === l2);
-          if (partner && partner.isAlive) {
-            nightDeaths.push({ ...partner, isAlive: false });
-            deadIds.add(l2);
-          }
-        } else if (lover2Died && !lover1Died) {
-          const partner = context.players.find(p => p.id === l1);
-          if (partner && partner.isAlive) {
-            nightDeaths.push({ ...partner, isAlive: false });
-            deadIds.add(l1);
-          }
-        }
-      }
+      // Xử lý chết chùm người tình ban đêm bằng helper dùng chung
+      addLoverDeaths(deadIds, context.lovers, context.players, nightDeaths);
 
       // Cập nhật người chơi chết
       const updatedPlayers = context.players.map((p) => {
@@ -137,16 +147,8 @@ export const gameMachine = setup({
         return p;
       });
 
-      // Kích hoạt onDeath hooks
-      updatedPlayers.forEach(p => {
-        if (!p.isAlive && !context.players.find(oldP => oldP.id === p.id && !oldP.isAlive)) {
-          // Player vừa mới chết
-          const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
-          if (handler && handler.onDeath) {
-            handler.onDeath('', p, context, {} as unknown as GameData, 'night');
-          }
-        }
-      });
+      // Xác định các player vừa chết bằng helper dùng chung để xử lý onDeath hook ở action sau
+      const newlyDeadPlayerIds = getNewlyDeadPlayerIds(context.players, updatedPlayers);
 
       return {
         players: updatedPlayers,
@@ -154,6 +156,7 @@ export const gameMachine = setup({
         phase: 'dayStart',
         dayDeath: null,
         hunterShotPlayer: null, // Reset
+        newlyDeadPlayerIds,
       };
     }),
     applyVotingResults: assign(({ context, event }) => {
@@ -163,12 +166,8 @@ export const gameMachine = setup({
         deadIds.add(eliminatedPlayer.id);
       }
 
-      // Xử lý chết chùm người tình khi bị vote
-      if (context.lovers && context.lovers.length === 2) {
-        const [l1, l2] = context.lovers;
-        if (deadIds.has(l1)) deadIds.add(l2);
-        if (deadIds.has(l2)) deadIds.add(l1);
-      }
+      // Xử lý chết chùm người tình khi bị vote bằng helper dùng chung
+      addLoverDeaths(deadIds, context.lovers, context.players);
 
       const updatedPlayers = context.players.map((p) => {
         if (deadIds.has(p.id)) {
@@ -177,22 +176,15 @@ export const gameMachine = setup({
         return p;
       });
 
-      // Kích hoạt onDeath hooks
-      updatedPlayers.forEach(p => {
-        if (!p.isAlive && !context.players.find(oldP => oldP.id === p.id && !oldP.isAlive)) {
-          // Player vừa mới chết
-          const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
-          if (handler && handler.onDeath) {
-            handler.onDeath('', p, context, {} as unknown as GameData, 'vote');
-          }
-        }
-      });
+      // Xác định các player vừa chết bằng helper dùng chung để xử lý onDeath hook ở action sau
+      const newlyDeadPlayerIds = getNewlyDeadPlayerIds(context.players, updatedPlayers);
 
       return {
         players: updatedPlayers,
         dayDeath: eliminatedPlayer,
         phase: 'night', // Sẽ được cập nhật lại nếu qua Hunter
         hunterShotPlayer: null,
+        newlyDeadPlayerIds,
       };
     }),
     applyHunterShot: assign(({ context, event }) => {
@@ -202,12 +194,8 @@ export const gameMachine = setup({
         deadIds.add(shotPlayerId);
       }
 
-      // Xử lý chết chùm người tình khi bị Thợ Săn bắn
-      if (context.lovers && context.lovers.length === 2) {
-        const [l1, l2] = context.lovers;
-        if (deadIds.has(l1)) deadIds.add(l2);
-        if (deadIds.has(l2)) deadIds.add(l1);
-      }
+      // Xử lý chết chùm người tình khi bị Thợ Săn bắn bằng helper dùng chung
+      addLoverDeaths(deadIds, context.lovers, context.players);
 
       const updatedPlayers = context.players.map((p) => {
         if (deadIds.has(p.id)) {
@@ -218,16 +206,8 @@ export const gameMachine = setup({
 
       const shotPlayer = context.players.find((p) => p.id === shotPlayerId);
 
-      // Kích hoạt onDeath hooks
-      updatedPlayers.forEach(p => {
-        if (!p.isAlive && !context.players.find(oldP => oldP.id === p.id && !oldP.isAlive)) {
-          // Player vừa mới chết
-          const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
-          if (handler && handler.onDeath) {
-            handler.onDeath('', p, context, {} as unknown as GameData, 'hunter');
-          }
-        }
-      });
+      // Xác định các player vừa chết bằng helper dùng chung để xử lý onDeath hook ở action sau
+      const newlyDeadPlayerIds = getNewlyDeadPlayerIds(context.players, updatedPlayers);
 
       return {
         players: updatedPlayers,
@@ -235,10 +215,39 @@ export const gameMachine = setup({
         timerDuration: null,
         timerStartAt: null,
         pendingRetaliation: false, // Clear flag sau khi Hunter đã bắn
+        pendingRetaliationHunterId: null,
+        newlyDeadPlayerIds,
+      };
+    }),
+    triggerDeathHooks: assign(({ context, event }) => {
+      const deadIds = context.newlyDeadPlayerIds || [];
+      if (deadIds.length === 0) return {};
+
+      let additionalUpdates: Partial<GameContext> = {};
+      const cause = event.type === 'ALL_NIGHT_ACTIONS_DONE' ? 'night'
+                  : event.type === 'VOTING_DONE' ? 'vote'
+                  : 'hunter';
+
+      deadIds.forEach(id => {
+        const p = context.players.find(x => x.id === id);
+        if (p) {
+          const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
+          if (handler && handler.onDeath) {
+            const updates = handler.onDeath('', p, context, cause);
+            if (updates) {
+              additionalUpdates = { ...additionalUpdates, ...updates };
+            }
+          }
+        }
+      });
+
+      return {
+        ...additionalUpdates,
+        newlyDeadPlayerIds: [], // Reset danh sách
       };
     }),
     setWinner: assign(({ context }) => {
-      const winResult = checkWinCondition(context.players, context.lovers);
+      const winResult = checkWinCondition(context.players);
       return {
         phase: 'gameOver' as const,
         winner: winResult.winner as import('../types/game.ts').Faction | null,
@@ -249,7 +258,7 @@ export const gameMachine = setup({
   },
   guards: {
     checkWinCondition: ({ context }) => {
-      const winResult = checkWinCondition(context.players, context.lovers);
+      const winResult = checkWinCondition(context.players);
       return winResult.isGameOver;
     },
     hasHunterDiedNight: ({ context }) => {
@@ -278,6 +287,9 @@ export const gameMachine = setup({
     witchHeals: false,
     witchPoisons: false,
     lovers: [],
+    pendingRetaliation: false,
+    pendingRetaliationHunterId: null,
+    newlyDeadPlayerIds: [],
   },
   states: {
     Lobby: {
@@ -309,6 +321,9 @@ export const gameMachine = setup({
         PLAYER_RECONNECTED: {
           actions: ['applyPlayerReconnect'],
         },
+        SET_LOVERS: {
+          actions: ['applyLovers', 'notifyPlayers'],
+        },
         FIRST_NIGHT_DONE: {
           target: 'NightPhase',
           actions: [
@@ -326,7 +341,7 @@ export const gameMachine = setup({
         },
         ALL_NIGHT_ACTIONS_DONE: {
           target: 'NightResolve',
-          actions: ['applyNightResults'],
+          actions: ['applyNightResults', 'triggerDeathHooks'],
         },
       },
     },
@@ -381,7 +396,7 @@ export const gameMachine = setup({
       on: {
         VOTING_DONE: {
           target: 'VoteResolve',
-          actions: ['applyVotingResults'],
+          actions: ['applyVotingResults', 'triggerDeathHooks'],
         },
         TIMER_EXPIRED: {
           actions: ['autoResolveVotes'],
@@ -423,13 +438,22 @@ export const gameMachine = setup({
       on: {
         HUNTER_SHOT_DONE: {
           target: 'HunterResolve',
-          actions: ['applyHunterShot'],
+          actions: ['applyHunterShot', 'triggerDeathHooks'],
         },
         TIMER_EXPIRED: [
           {
             target: 'DayPhase',
             guard: ({ context }) => context.hunterNextPhase === 'dayStart',
-            actions: [assign({ phase: 'dayStart', timerDuration: null, timerStartAt: null }), 'notifyPlayers'],
+            actions: [
+              assign({
+                phase: 'dayStart',
+                timerDuration: null,
+                timerStartAt: null,
+                pendingRetaliation: false,
+                pendingRetaliationHunterId: null
+              }),
+              'notifyPlayers'
+            ],
           },
           {
             target: 'NightPhase',
@@ -441,6 +465,8 @@ export const gameMachine = setup({
                 voteTally: {},
                 timerDuration: null,
                 timerStartAt: null,
+                pendingRetaliation: false,
+                pendingRetaliationHunterId: null
               }),
               'notifyPlayers',
             ],

@@ -1,68 +1,66 @@
 import type { Server, Socket } from 'socket.io';
-import type { GameContext, Player, Role } from '../types/game.ts';
+import type { GameContext, Player, Role, NightActionPayload } from '../types/game.ts';
 import type { GameData } from '../engine/gameStateManager.ts';
 
 export interface RoleHandler {
   /**
-   * Called at the start of the First Night (for roles like Cupid or Werewolves to act/reveal).
-   * @param roomId The game room ID
-   * @param context The current game context
-   * @param gameData The current game data state
-   * @param io The socket.io server instance
+   * Được gọi lúc bắt đầu Đêm Đầu Tiên (dành cho các vai trò như Cupid hoặc Ma Sói hành động/tiết lộ).
+   * @param roomId ID phòng game
+   * @param context Context game hiện tại
+   * @param gameData State dữ liệu game hiện tại
+   * @param io Thực thể server socket.io
    */
   onFirstNightStart?(roomId: string, context: GameContext, gameData: GameData, io: Server): void;
 
   /**
-   * Called when it's this role's turn during the Night Phase.
-   * Prompts the relevant players to take their actions.
-   * @param roomId The game room ID
-   * @param player The player instance who has this role
-   * @param context The current game context
-   * @param gameData The current game data state
-   * @param socket The socket instance of the player
+   * Được gọi khi đến lượt của vai trò này trong Đêm.
+   * Nhắc nhở người chơi tương ứng thực hiện hành động.
+   * @param roomId ID phòng game
+   * @param player Thực thể người chơi có vai trò này
+   * @param context Context game hiện tại
+   * @param gameData State dữ liệu game hiện tại
+   * @param socket Thực thể socket của người chơi
    */
   promptNightAction?(roomId: string, player: Player, context: GameContext, gameData: GameData, socket: Socket): void;
 
   /**
-   * Called when a player with this role submits an action.
-   * @param roomId The game room ID
-   * @param player The player instance acting
-   * @param targetId The selected target ID (if any)
-   * @param context The current game context
-   * @param gameData The current game data state
-   * @param io The socket.io server instance
-   * @param extraData Any extra data sent from the client (like poisonTargetId)
-   * @returns boolean true if the action was successfully processed and the turn should advance
+   * Được gọi khi một người chơi có vai trò này gửi hành động.
+   * @param roomId ID phòng game
+   * @param player Thực thể người chơi hành động
+   * @param payload Payload chứa targetId hoặc các tham số hành động khác
+   * @param context Context game hiện tại
+   * @param gameData State dữ liệu game hiện tại
+   * @param io Thực thể server socket.io
+   * @returns boolean trả về true nếu hành động xử lý thành công và lượt chơi nên chuyển tiếp
    */
   submitNightAction?(
     roomId: string,
     player: Player,
-    targetId: string | null,
+    payload: NightActionPayload,
     context: GameContext,
     gameData: GameData,
-    io: Server,
-    extraData?: unknown
+    io: Server
   ): boolean;
 
   /**
-   * Called after all night actions are submitted to resolve the night's outcome.
-   * @param roomId The game room ID
-   * @param context The current game context
-   * @param gameData The current game data state
-   * @param deaths A Set of player IDs who are scheduled to die tonight. Handlers can add or remove IDs.
-   * @param io The socket.io server instance
+   * Được gọi sau khi tất cả hành động ban đêm được gửi để tính toán kết quả ban đêm.
+   * @param roomId ID phòng game
+   * @param context Context game hiện tại
+   * @param gameData State dữ liệu game hiện tại
+   * @param deaths Tập hợp ID người chơi dự kiến sẽ chết đêm nay. Các handler có thể thêm hoặc bớt ID.
+   * @param io Thực thể server socket.io
    */
   resolveNight?(roomId: string, context: GameContext, gameData: GameData, deaths: Set<string>, io: Server): void;
 
   /**
-   * Called when a player with this role dies.
-   * @param roomId The game room ID
-   * @param deadPlayer The player who died
-   * @param context The current game context
-   * @param gameData The current game data state
-   * @param cause The phase or reason they died ('night', 'vote', 'hunter')
+   * Được gọi khi một người chơi có vai trò này chết.
+   * @param roomId ID phòng game
+   * @param deadPlayer Người chơi đã chết
+   * @param context Context game hiện tại
+   * @param cause Nguyên nhân chết ('night', 'vote', 'hunter')
+   * @returns Trả về một phần context cập nhật (Partial<GameContext>) hoặc void
    */
-  onDeath?(roomId: string, deadPlayer: Player, context: GameContext, gameData: GameData, cause: string): void;
+  onDeath?(roomId: string, deadPlayer: Player, context: GameContext, cause: string): Partial<GameContext> | void;
 }
 
 class RoleRegistryClass {
