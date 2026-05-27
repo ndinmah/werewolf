@@ -28,7 +28,6 @@ export const createRoom = (roomId: string, hostId: string): Room => {
     status: 'Lobby',
     settings: {
       roles: [], // Các role được chọn trong phòng
-      turnDuration: 60,
     },
   };
   rooms.set(roomId, newRoom);
@@ -38,7 +37,7 @@ export const createRoom = (roomId: string, hostId: string): Room => {
 /**
  * Xóa phòng
  */
-export const deleteRoom = (roomId: string): void => {
+const deleteRoom = (roomId: string): void => {
   rooms.delete(roomId);
 };
 

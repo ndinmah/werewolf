@@ -1,7 +1,7 @@
 import type { Server } from 'socket.io';
 import { getGameData } from '../engine/gameStateManager.ts';
 import { ROLES } from '../roles/index.ts';
-import type { Player } from '../types/game.ts';
+import type { Player, NightActionPayload, NightActionInput } from '../types/game.ts';
 import { RoleRegistry } from '../roles/RoleHandler.ts';
 
 // Chắc chắn các handler đã được đăng ký bằng cách import chúng
@@ -24,21 +24,66 @@ export const startFirstNight = (roomId: string, io: Server): void => {
   gameData.nightActionSubmitted = new Set();
   gameData.votes = {};
 
-  // Tìm các role cần hành động trong First Night (hiện tại có CUPID, hoặc fallback sang WEREWOLF)
-  const cupid = alivePlayers.find(p => p.role === 'CUPID');
+  // Tìm các role cần hành động trong First Night dựa trên firstNightPriority > 0
+  const firstNightRoles = [...new Set(alivePlayers.map(p => p.role))]
+    .filter((roleId): roleId is keyof typeof ROLES => {
+      if (typeof roleId !== 'string' || !ROLES[roleId as keyof typeof ROLES]) return false;
+      const roleConfig = ROLES[roleId as keyof typeof ROLES] as unknown as { firstNightPriority?: number };
+      return typeof roleConfig.firstNightPriority === 'number' && roleConfig.firstNightPriority > 0;
+    })
+    .sort((a, b) => {
+      const configA = ROLES[a as keyof typeof ROLES] as unknown as { firstNightPriority?: number };
+      const configB = ROLES[b as keyof typeof ROLES] as unknown as { firstNightPriority?: number };
+      return (configB.firstNightPriority || 0) - (configA.firstNightPriority || 0);
+    });
 
-  if (cupid) {
-    const handler = RoleRegistry.getHandler('CUPID');
-    if (handler && handler.onFirstNightStart) {
-      handler.onFirstNightStart(roomId, context, gameData, io);
-    }
-  } else {
-    // Không có CUPID, tiến hành cho Sói nhận diện
-    const handler = RoleRegistry.getHandler('WEREWOLF');
-    if (handler && handler.onFirstNightStart) {
-      handler.onFirstNightStart(roomId, context, gameData, io);
-    }
+  gameData.pendingNightRoles = firstNightRoles as string[];
+  gameData.currentNightRoleIndex = 0;
+
+  promptNextFirstNightRole(roomId, io);
+};
+
+export const promptNextFirstNightRole = (roomId: string, io: Server): void => {
+  const gameData = getGameData(roomId);
+  if (!gameData) return;
+
+  const { pendingNightRoles, currentNightRoleIndex } = gameData;
+  if (!pendingNightRoles || currentNightRoleIndex === undefined) return;
+
+  if (currentNightRoleIndex >= pendingNightRoles.length) {
+    // Kết thúc đêm đầu tiên, báo cho XState machine
+    gameData.actor.send({ type: 'FIRST_NIGHT_DONE' });
+    return;
   }
+
+  const currentRole = pendingNightRoles[currentNightRoleIndex] as keyof typeof ROLES;
+  const snapshot = gameData.actor.getSnapshot();
+  const context = snapshot.context;
+  const alivePlayers = context.players.filter(p => p.isAlive);
+
+  const rolePlayers = alivePlayers.filter(p => p.role === currentRole);
+
+  if (rolePlayers.length === 0) {
+    gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
+    promptNextFirstNightRole(roomId, io);
+    return;
+  }
+
+  const handler = RoleRegistry.getHandler(currentRole);
+  if (handler && handler.onFirstNightStart) {
+    handler.onFirstNightStart(roomId, context, gameData, io);
+  } else {
+    // Nếu role không có onFirstNightStart, tự động chuyển tiếp
+    gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
+    promptNextFirstNightRole(roomId, io);
+  }
+};
+
+export const advanceFirstNightRole = (roomId: string, io: Server): void => {
+  const gameData = getGameData(roomId);
+  if (!gameData || gameData.currentNightRoleIndex === undefined) return;
+  gameData.currentNightRoleIndex++;
+  promptNextFirstNightRole(roomId, io);
 };
 
 export const startNight = (roomId: string, io: Server): void => {
@@ -69,13 +114,14 @@ export const promptNextNightRole = (roomId: string, io: Server): void => {
   if (!gameData) return;
 
   const { pendingNightRoles, currentNightRoleIndex } = gameData;
+  if (!pendingNightRoles || currentNightRoleIndex === undefined) return;
 
-  if (!pendingNightRoles || currentNightRoleIndex! >= pendingNightRoles.length) {
+  if (currentNightRoleIndex >= pendingNightRoles.length) {
     resolveNight(roomId, io);
     return;
   }
 
-  const currentRole = pendingNightRoles[currentNightRoleIndex!] as keyof typeof ROLES;
+  const currentRole = pendingNightRoles[currentNightRoleIndex] as keyof typeof ROLES;
   const snapshot = gameData.actor.getSnapshot();
   const context = snapshot.context;
   const alivePlayers = context.players.filter(p => p.isAlive);
@@ -83,17 +129,18 @@ export const promptNextNightRole = (roomId: string, io: Server): void => {
   const rolePlayers = alivePlayers.filter(p => p.role === currentRole);
 
   if (rolePlayers.length === 0) {
-    gameData.currentNightRoleIndex!++;
+    gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
     promptNextNightRole(roomId, io);
     return;
   }
 
   const handler = RoleRegistry.getHandler(currentRole);
   if (handler && handler.promptNightAction) {
+    const promptAction = handler.promptNightAction;
     rolePlayers.forEach(player => {
       const socket = io.sockets.sockets.get(player.id);
       if (socket) {
-        handler.promptNightAction!(roomId, player, context, gameData, socket);
+        promptAction(roomId, player, context, gameData, socket);
       }
     });
 
@@ -102,19 +149,25 @@ export const promptNextNightRole = (roomId: string, io: Server): void => {
     });
   } else {
     // Nếu role chưa có handler prompt, chuyển luôn sang role tiếp
-    gameData.currentNightRoleIndex!++;
+    gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
     promptNextNightRole(roomId, io);
   }
 };
 
-export const submitNightAction = (roomId: string, actorId: string, targetId: string, io: Server): boolean => {
+export const submitNightAction = (
+  roomId: string,
+  actorId: string,
+  payload: NightActionInput,
+  io: Server
+): boolean => {
   const gameData = getGameData(roomId);
   if (!gameData) return false;
 
   const { pendingNightRoles, currentNightRoleIndex } = gameData;
-  if (!pendingNightRoles || currentNightRoleIndex! >= pendingNightRoles.length) return false;
+  if (!pendingNightRoles || currentNightRoleIndex === undefined) return false;
+  if (currentNightRoleIndex >= pendingNightRoles.length) return false;
 
-  const currentRole = pendingNightRoles[currentNightRoleIndex!] as keyof typeof ROLES;
+  const currentRole = pendingNightRoles[currentNightRoleIndex] as keyof typeof ROLES;
   const snapshot = gameData.actor.getSnapshot();
   const context = snapshot.context;
 
@@ -123,9 +176,10 @@ export const submitNightAction = (roomId: string, actorId: string, targetId: str
 
   const handler = RoleRegistry.getHandler(currentRole);
   if (handler && handler.submitNightAction) {
-    const shouldAdvance = handler.submitNightAction(roomId, actor, targetId, context, gameData, io);
+    const actionPayload = { role: currentRole, ...payload } as unknown as NightActionPayload;
+    const shouldAdvance = handler.submitNightAction(roomId, actor, actionPayload, context, gameData, io);
     if (shouldAdvance) {
-      gameData.currentNightRoleIndex!++;
+      gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
       promptNextNightRole(roomId, io);
       return true;
     }
@@ -152,8 +206,7 @@ export const submitCupidAction = (
 
   const handler = RoleRegistry.getHandler('CUPID');
   if (handler && handler.submitNightAction) {
-    // Truyền lover1Id làm targetId, lover2Id qua extraData
-    return handler.submitNightAction(roomId, actor, lover1Id, context, gameData, io, { lover2Id });
+    return handler.submitNightAction(roomId, actor, { role: 'CUPID', lover1Id, lover2Id }, context, gameData, io);
   }
   return false;
 };
@@ -165,25 +218,7 @@ export const submitWitchAction = (
   poisonTargetId: string | null,
   io: Server
 ): boolean => {
-  const gameData = getGameData(roomId);
-  if (!gameData) return false;
-
-  const snapshot = gameData.actor.getSnapshot();
-  const context = snapshot.context;
-  
-  const actor = context.players.find(p => p.id === actorId);
-  if (!actor || actor.role !== 'WITCH') return false;
-
-  const handler = RoleRegistry.getHandler('WITCH');
-  if (handler && handler.submitNightAction) {
-    const shouldAdvance = handler.submitNightAction(roomId, actor, healTargetId, context, gameData, io, { poisonTargetId });
-    if (shouldAdvance) {
-      gameData.currentNightRoleIndex!++;
-      promptNextNightRole(roomId, io);
-      return true;
-    }
-  }
-  return false;
+  return submitNightAction(roomId, actorId, { healTargetId, poisonTargetId }, io);
 };
 
 export const resolveNight = (roomId: string, io: Server): void => {

@@ -9,11 +9,3 @@ export const addMessage = (roomId: string, channel: keyof ChatLogs, message: Cha
   }
   return false;
 };
-
-export const getMessages = (roomId: string, channel: keyof ChatLogs) => {
-  const gameData = getGameData(roomId);
-  if (gameData && gameData.chatLogs[channel]) {
-    return gameData.chatLogs[channel];
-  }
-  return [];
-};
