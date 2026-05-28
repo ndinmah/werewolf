@@ -9,7 +9,11 @@ export type Role =
   | 'BODYGUARD'
   | 'HUNTER'
   | 'WITCH'
-  | 'CUPID';
+  | 'CUPID'
+  | 'TANNER'
+  | 'ELDER'
+  | 'CURSED'
+  | 'DOPPELGANGER';
 
 export type GamePhase =
   | 'lobby'
@@ -63,6 +67,10 @@ export interface GameState {
   timerDuration?: number;
   timerStartAt?: number;
   hunterNextPhase?: string;
+  elderShields?: number;
+  villagersLostPowers?: boolean;
+  doppelgangerTargetId?: string;
+  nightWave?: 1 | 2;
 }
 
 export interface ChatMessage {

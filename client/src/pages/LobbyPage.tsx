@@ -145,10 +145,7 @@ export const LobbyPage = () => {
   };
 
   const roleCounts = getRoleCounts();
-  const totalStrength = AVAILABLE_ROLES.reduce(
-    (sum, r) => sum + (roleCounts[r.id] || 0) * r.strength,
-    0,
-  );
+  const totalStrength = AVAILABLE_ROLES.reduce((sum, r) => sum + (roleCounts[r.id] || 0) * r.strength, 0);
 
   const roomSettings = room?.settings;
 
@@ -181,7 +178,6 @@ export const LobbyPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* Cột danh sách Người chơi */}
         <div className="lg:col-span-2 space-y-4">
           <LobbyPlayerList
@@ -190,13 +186,17 @@ export const LobbyPage = () => {
             myPlayerId={socket?.id}
             isHost={isHost}
             onKick={(player) => {
-              socket?.emit('KICK_PLAYER', { roomId: room.id, targetPlayerId: player.id }, (res: { success: boolean; error?: string }) => {
-                if (res && !res.success) {
-                  showToast(res.error || 'Lỗi không xác định', 'error');
-                } else {
-                  showToast(`Đã trục xuất người chơi ${player.name}`, 'success');
-                }
-              });
+              socket?.emit(
+                'KICK_PLAYER',
+                { roomId: room.id, targetPlayerId: player.id },
+                (res: { success: boolean; error?: string }) => {
+                  if (res && !res.success) {
+                    showToast(res.error || 'Lỗi không xác định', 'error');
+                  } else {
+                    showToast(`Đã trục xuất người chơi ${player.name}`, 'success');
+                  }
+                },
+              );
             }}
           />
         </div>
@@ -211,11 +211,7 @@ export const LobbyPage = () => {
               </p>
             </div>
 
-            <LobbyTimerSettings
-              roomSettings={roomSettings}
-              isHost={isHost}
-              onTimerChange={handleTimerChange}
-            />
+            <LobbyTimerSettings roomSettings={roomSettings} isHost={isHost} onTimerChange={handleTimerChange} />
 
             <LobbyRoleDeck
               isHost={isHost}
@@ -225,7 +221,6 @@ export const LobbyPage = () => {
             />
           </div>
         </div>
-
       </div>
     </div>
   );

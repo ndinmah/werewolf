@@ -1,6 +1,8 @@
 import type { Server } from 'socket.io';
 import type { GameContext } from '../types/game.ts';
 import { SOCKET_EVENTS } from '../constants/events.ts';
+import { getGameData } from '../engine/gameStateManager.ts';
+import { addMessage } from './chatManager.ts';
 
 /**
  * Gửi cập nhật trạng thái game được cá nhân hóa đến từng người chơi trong phòng
@@ -8,6 +10,29 @@ import { SOCKET_EVENTS } from '../constants/events.ts';
  */
 export const notifyPlayers = (roomId: string, context: GameContext, io: Server): void => {
   if (!io) return;
+
+  // Phát hiện và thông báo ngay lập tức nếu Lời nguyền Già làng kích hoạt
+  if (context.villagersLostPowers) {
+    const gameData = getGameData(roomId);
+    if (gameData && !gameData.curseNotified) {
+      gameData.curseNotified = true;
+
+      // Phát sự kiện khẩn cấp cho cả phòng
+      io.to(roomId).emit('ELDER_CURSE_ACTIVATED');
+
+      // Gửi tin nhắn hệ thống vào kênh chat chung
+      const systemMessage = {
+        id: `sys-${Date.now()}`,
+        senderId: 'SYSTEM',
+        senderName: 'Trọng Tài',
+        channel: 'general',
+        content: '⚠️ LỜI NGUYỀN GIÀ LÀNG: Già làng đã bị chết do sự ngu ngốc của dân làng! Lời nguyền trỗi dậy, toàn bộ dân làng có chức năng đặc biệt đã mất đi kỹ năng.',
+        timestamp: new Date().toISOString()
+      };
+      addMessage(roomId, 'general', systemMessage);
+      io.to(roomId).emit('CHAT_MESSAGE', systemMessage);
+    }
+  }
 
   io.to(roomId).fetchSockets().then(sockets => {
     sockets.forEach(s => {
@@ -47,7 +72,10 @@ export const notifyPlayers = (roomId: string, context: GameContext, io: Server):
         dayDeath: context.dayDeath,
         winner: context.winner,
         timerDuration: context.timerDuration,
-        timerStartAt: context.timerStartAt
+        timerStartAt: context.timerStartAt,
+        elderShields: myPlayer?.role === 'ELDER' ? context.elderShields : undefined,
+        villagersLostPowers: context.villagersLostPowers,
+        doppelgangerTargetId: myPlayer?.role === 'DOPPELGANGER' ? context.doppelgangerTargets?.[s.id] : undefined,
       });
     });
   });

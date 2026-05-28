@@ -9,7 +9,11 @@ export type Role =
   | 'BODYGUARD'
   | 'HUNTER'
   | 'WITCH'
-  | 'CUPID';
+  | 'CUPID'
+  | 'TANNER'
+  | 'ELDER'
+  | 'CURSED'
+  | 'DOPPELGANGER';
 
 export type Faction = 'VILLAGER' | 'WEREWOLF' | 'THIRD_PARTY';
 
@@ -79,6 +83,16 @@ export interface GameContext {
   pendingRetaliationHunterId?: string | null;
   /** Danh sách ID người chơi vừa mới chết trong transition hiện tại */
   newlyDeadPlayerIds?: string[];
+  /** ID của phòng game */
+  roomId?: string;
+  /** Số khiên của Già làng (mặc định 1) */
+  elderShields?: number;
+  /** Cờ báo hiệu dân làng mất chức năng */
+  villagersLostPowers?: boolean;
+  /** Bản đồ lưu mối quan hệ: doppelgangerId -> targetId */
+  doppelgangerTargets?: Record<string, string>;
+  /** Đợt (Wave) hành động ban đêm */
+  nightWave?: 1 | 2;
 }
 
 export interface GameEvent {
@@ -91,6 +105,10 @@ export interface GameEvent {
   /** Event PLAYER_RECONNECTED: cập nhật socket id mới cho player */
   oldId?: string;
   newId?: string;
+  roomId?: string;
+  elderShields?: number;
+  transformedIds?: string[];
+  doppelgangerTargets?: Record<string, string>;
   [key: string]: unknown;
 }
 
@@ -120,7 +138,8 @@ export type NightActionPayload =
   | { role: 'SEER'; targetId: string }
   | { role: 'BODYGUARD'; targetId: string }
   | { role: 'WITCH'; healTargetId: string | null; poisonTargetId: string | null }
-  | { role: 'CUPID'; lover1Id: string; lover2Id: string };
+  | { role: 'CUPID'; lover1Id: string; lover2Id: string }
+  | { role: 'DOPPELGANGER'; targetId: string };
 
 export type NightActionInput = Partial<{
   targetId: string;

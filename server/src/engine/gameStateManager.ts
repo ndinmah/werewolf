@@ -2,7 +2,7 @@ import { createActor, assign, Actor } from 'xstate';
 import type { Server } from 'socket.io';
 import { gameMachine } from './gameMachine.ts';
 import type { ChatLogs, SeerVision } from '../types/game.ts';
-import { startFirstNight, startNight } from '../socket/nightManager.ts';
+import { startFirstNight, startNightWave1, startNightWave2, resolveNight } from '../socket/nightManager.ts';
 import { getRoom, updateRoomStatus, getRooms } from '../socket/roomManager.ts';
 import { finalizeVoting } from '../socket/voteManager.ts';
 import { findPendingHunter } from './gameHelpers.ts';
@@ -32,6 +32,8 @@ export interface GameData {
   wolfVotes?: Record<string, string>;
   /** Ma Sói vote timestamps */
   wolfVoteTimes?: Record<string, number>;
+  /** Báo hiệu Lời nguyền Già làng đã được thông báo phòng hay chưa */
+  curseNotified?: boolean;
 }
 
 // Map lưu trữ: roomId -> { machine, actor, chatLogs, votes, disconnectTimers, phaseTimer, lastProtectedId, seerVisions }
@@ -54,9 +56,23 @@ export const createGameActor = (roomId: string, io: Server) => {
       startRoleRevealTimer: assign(() => {
         return startTimerAction(roomId, 10 * 1000);
       }),
-      runNightStart: () => {
-        startNight(roomId, io);
+      runNightWave1Start: () => {
+        startNightWave1(roomId, io);
       },
+      runNightWave2Start: () => {
+        startNightWave2(roomId, io);
+      },
+      startNightWave1Timer: assign(() => {
+        return startTimerAction(roomId, 35 * 1000, () => {
+          const actor = getGameActor(roomId);
+          if (actor) actor.send({ type: 'NIGHT_WAVE1_DONE' });
+        });
+      }),
+      startNightWave2Timer: assign(() => {
+        return startTimerAction(roomId, 20 * 1000, () => {
+          resolveNight(roomId, io);
+        });
+      }),
       startDayStartTimer: assign(({ context }) => {
         const duration = (context.settings?.dayStartDuration || 8) * 1000;
         return startTimerAction(roomId, duration);
@@ -133,6 +149,7 @@ export const createGameActor = (roomId: string, io: Server) => {
     voteSubmitted: new Set(),
     wolfVotes: {},
     wolfVoteTimes: {},
+    curseNotified: false,
   });
 
   return actor;

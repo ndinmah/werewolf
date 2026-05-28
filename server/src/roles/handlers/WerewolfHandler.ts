@@ -78,51 +78,11 @@ class WerewolfHandler implements RoleHandler {
     });
 
     const allWolvesSubmitted = wolves.every(w => gameData.nightActionSubmitted.has(w.id));
-    if (!allWolvesSubmitted) {
-      return false; // Chưa xong, chờ sói khác
+    if (allWolvesSubmitted) {
+      computeWerewolfTarget(context, gameData);
     }
 
-    // Đã chốt, tính vote
-    const tally: Record<string, number> = {};
-    wolves.forEach(w => {
-      const tId = wolfVotes[w.id];
-      if (tId) tally[tId] = (tally[tId] || 0) + 1;
-    });
-
-    let maxVotes = 0;
-    let candidates: string[] = [];
-    Object.entries(tally).forEach(([tId, count]) => {
-      if (count > maxVotes) {
-        maxVotes = count;
-        candidates = [tId];
-      } else if (count === maxVotes) {
-        candidates.push(tId);
-      }
-    });
-
-    let finalTargetId: string | null = null;
-    if (candidates.length === 1) {
-      finalTargetId = candidates[0];
-    } else if (candidates.length > 1) {
-      let earliestTime = Infinity;
-      candidates.forEach(tId => {
-        const voters = wolves.filter(w => wolfVotes[w.id] === tId);
-        voters.forEach(w => {
-          const voteTime = wolfVoteTimes[w.id] || Infinity;
-          if (voteTime < earliestTime) {
-            earliestTime = voteTime;
-            finalTargetId = tId;
-          }
-        });
-      });
-    }
-
-    if (finalTargetId) {
-      if (!gameData.nightActions) gameData.nightActions = {};
-      gameData.nightActions['WEREWOLF'] = { actorId: 'WEREWOLF', targetId: finalTargetId };
-    }
-
-    return true; // Done, chuyển role tiếp theo
+    return true;
   }
 
   resolveNight(roomId: string, context: GameContext, gameData: GameData, deaths: Set<string>, _io: Server): void {
@@ -134,3 +94,48 @@ class WerewolfHandler implements RoleHandler {
 }
 
 RoleRegistry.register('WEREWOLF', new WerewolfHandler());
+
+export const computeWerewolfTarget = (context: GameContext, gameData: GameData): void => {
+  const wolves = context.players.filter(p => p.role === 'WEREWOLF' && p.isAlive);
+  const wolfVotes = gameData.wolfVotes || {};
+  const wolfVoteTimes = gameData.wolfVoteTimes || {};
+
+  const tally: Record<string, number> = {};
+  wolves.forEach(w => {
+    const tId = wolfVotes[w.id];
+    if (tId) tally[tId] = (tally[tId] || 0) + 1;
+  });
+
+  let maxVotes = 0;
+  let candidates: string[] = [];
+  Object.entries(tally).forEach(([tId, count]) => {
+    if (count > maxVotes) {
+      maxVotes = count;
+      candidates = [tId];
+    } else if (count === maxVotes) {
+      candidates.push(tId);
+    }
+  });
+
+  let finalTargetId: string | null = null;
+  if (candidates.length === 1) {
+    finalTargetId = candidates[0];
+  } else if (candidates.length > 1) {
+    let earliestTime = Infinity;
+    candidates.forEach(tId => {
+      const voters = wolves.filter(w => wolfVotes[w.id] === tId);
+      voters.forEach(w => {
+        const voteTime = wolfVoteTimes[w.id] || Infinity;
+        if (voteTime < earliestTime) {
+          earliestTime = voteTime;
+          finalTargetId = tId;
+        }
+      });
+    });
+  }
+
+  if (finalTargetId) {
+    if (!gameData.nightActions) gameData.nightActions = {};
+    gameData.nightActions['WEREWOLF'] = { actorId: 'WEREWOLF', targetId: finalTargetId };
+  }
+};

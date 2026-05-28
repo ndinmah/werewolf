@@ -36,10 +36,13 @@ export const HomePage = () => {
     if (!playerName.trim()) return;
     socket.emit('CREATE_ROOM', { playerName }, (response: { success: boolean; room: { id: string } }) => {
       if (response.success) {
-        sessionStorage.setItem('werewolf_session', JSON.stringify({
-          roomId: response.room.id,
-          playerName
-        }));
+        sessionStorage.setItem(
+          'werewolf_session',
+          JSON.stringify({
+            roomId: response.room.id,
+            playerName,
+          }),
+        );
         navigate(`/room/${response.room.id}`);
       }
     });
@@ -49,20 +52,27 @@ export const HomePage = () => {
     e.preventDefault();
     if (!playerName.trim() || !roomId.trim()) return;
 
-    socket.emit('JOIN_ROOM', { roomId: roomId.toUpperCase(), playerName }, (response: { success: boolean; room: { id: string }; error?: string }) => {
-      if (response.success) {
-        sessionStorage.setItem('werewolf_session', JSON.stringify({
-          roomId: response.room.id,
-          playerName
-        }));
-        navigate(`/room/${response.room.id}`);
-      } else {
-        showToast(response.error || 'Không thể vào phòng', 'error');
-      }
-    });
+    socket.emit(
+      'JOIN_ROOM',
+      { roomId: roomId.toUpperCase(), playerName },
+      (response: { success: boolean; room: { id: string }; error?: string }) => {
+        if (response.success) {
+          sessionStorage.setItem(
+            'werewolf_session',
+            JSON.stringify({
+              roomId: response.room.id,
+              playerName,
+            }),
+          );
+          navigate(`/room/${response.room.id}`);
+        } else {
+          showToast(response.error || 'Không thể vào phòng', 'error');
+        }
+      },
+    );
   };
 
-  const lobbyRooms = rooms.filter(r => r.status === 'Lobby');
+  const lobbyRooms = rooms.filter((r) => r.status === 'Lobby');
 
   return (
     <div className="min-h-screen pt-20 flex flex-col items-center justify-center px-4">
@@ -117,7 +127,10 @@ export const HomePage = () => {
           <h2 className="text-lg font-bold text-gray-200 mb-4">Phòng đang chờ ({lobbyRooms.length})</h2>
           <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
             {lobbyRooms.map((room) => (
-              <div key={room.id} className="flex justify-between items-center p-3 rounded-xl bg-darker/50 border border-gray-800 hover:border-gray-700 transition-all duration-300">
+              <div
+                key={room.id}
+                className="flex justify-between items-center p-3 rounded-xl bg-darker/50 border border-gray-800 hover:border-gray-700 transition-all duration-300"
+              >
                 <div>
                   <span className="font-mono font-bold text-wolf-light text-base">{room.id}</span>
                   <p className="text-xs text-gray-400 mt-0.5">{room.players.length} người chơi trong sảnh</p>

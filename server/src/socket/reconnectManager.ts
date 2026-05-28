@@ -3,6 +3,7 @@ import { getRoom } from './roomManager.ts';
 import { getGameData } from '../engine/gameStateManager.ts';
 import { findPendingHunter } from '../engine/gameHelpers.ts';
 import { SOCKET_EVENTS } from '../constants/events.ts';
+import { RoleRegistry } from '../roles/RoleHandler.ts';
 
 export type SocketCallback = (res: { success: boolean; error?: string; [key: string]: unknown }) => void;
 
@@ -54,22 +55,34 @@ export const handlePlayerReconnect = (
         seerVisions: myVisions,
       });
 
-      // Gửi prompt ban đêm nếu đang đến lượt
+      // Gửi prompt ban đêm nếu đang đến lượt (FirstNightPhase - tuần tự hoặc NightPhase - đồng thời)
       const snapshot = gameData.actor.getSnapshot();
       const context = snapshot.context;
-      if (snapshot.value === 'NightPhase' && gameData.pendingNightRoles) {
+      if (snapshot.value === 'FirstNightPhase' && gameData.pendingNightRoles) {
         const currentRole = gameData.pendingNightRoles[gameData.currentNightRoleIndex || 0];
         if (mPlayer && currentRole === mPlayer.role) {
-          const alivePlayers = snapshot.context.players.filter((p) => p.isAlive);
-          socket.emit(SOCKET_EVENTS.NIGHT_ACTION_PROMPT, {
-            role: currentRole,
-            targetablePlayers: alivePlayers.map((p) => ({
-              id: p.id,
-              name: p.name,
-              isAlive: p.isAlive,
-            })),
-            excludeTargetId: currentRole === 'BODYGUARD' ? gameData.lastProtectedId : null,
-          });
+          const handler = RoleRegistry.getHandler(currentRole);
+          if (handler && handler.promptNightAction) {
+            handler.promptNightAction(roomId, mPlayer, context, gameData, socket);
+          }
+        }
+      } else if (snapshot.matches('NightPhase') && mPlayer && mPlayer.role) {
+        if (!gameData.nightActionSubmitted.has(playerId)) {
+          const nightWave = context.nightWave;
+          const wave1Roles = ['WEREWOLF', 'SEER', 'BODYGUARD'];
+          const isRoleInCurrentWave =
+            (nightWave === 1 && wave1Roles.includes(mPlayer.role)) ||
+            (nightWave === 2 && mPlayer.role === 'WITCH');
+
+          const isSpecialVillager = ['SEER', 'BODYGUARD'].includes(mPlayer.role);
+          const lostPowers = !!context.villagersLostPowers && isSpecialVillager;
+
+          if (isRoleInCurrentWave && !lostPowers) {
+            const handler = RoleRegistry.getHandler(mPlayer.role);
+            if (handler && handler.promptNightAction) {
+              handler.promptNightAction(roomId, mPlayer, context, gameData, socket);
+            }
+          }
         }
       }
 

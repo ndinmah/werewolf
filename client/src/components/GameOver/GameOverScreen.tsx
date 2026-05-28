@@ -17,7 +17,7 @@ export const GameOverScreen = () => {
   const isGameOver = gameState?.phase === 'gameOver';
   const secondsLeft = useCountdownTimer(
     isGameOver ? gameState?.timerDuration : undefined,
-    isGameOver ? gameState?.timerStartAt : undefined
+    isGameOver ? gameState?.timerStartAt : undefined,
   );
 
   if (!gameState || gameState.phase !== 'gameOver') return null;
@@ -40,10 +40,13 @@ export const GameOverScreen = () => {
 
   return (
     <ModalOverlay opacity="dark" starsOpacity="heavy">
-      <div className={`w-full max-w-4xl bg-dark/95 border backdrop-blur-md rounded-2xl p-6 md:p-8 flex flex-col gap-6 relative z-10 ${factionInfo.shadow} border-gray-800`}>
-        
+      <div
+        className={`w-full max-w-4xl bg-dark/95 border backdrop-blur-md rounded-2xl p-6 md:p-8 flex flex-col gap-6 relative z-10 ${factionInfo.shadow} border-gray-800`}
+      >
         {/* Banner Victory/Defeat */}
-        <div className={`p-8 rounded-2xl border text-center flex flex-col items-center justify-center ${factionInfo.bannerBg}`}>
+        <div
+          className={`p-8 rounded-2xl border text-center flex flex-col items-center justify-center ${factionInfo.bannerBg}`}
+        >
           <div className="mb-4">
             {isMyFactionWinner ? (
               <div className="p-4 bg-yellow-500/20 text-yellow-500 rounded-full border border-yellow-500/30 animate-bounce">
@@ -55,15 +58,12 @@ export const GameOverScreen = () => {
               </div>
             )}
           </div>
-          
-          <h1 className="text-3xl md:text-5xl font-black tracking-widest uppercase">
-            {factionInfo.name} Chiến Thắng
-          </h1>
+
+          <h1 className="text-3xl md:text-5xl font-black tracking-widest uppercase">{factionInfo.name} Chiến Thắng</h1>
           <p className="text-sm md:text-base text-gray-300 mt-2 font-medium">
-            {isMyFactionWinner 
+            {isMyFactionWinner
               ? 'Chúc mừng! Phe của bạn đã giành chiến thắng vang dội!'
-              : 'Trận chiến đã kết thúc. Hãy may mắn hơn ở những ván đấu sau.'
-            }
+              : 'Trận chiến đã kết thúc. Hãy may mắn hơn ở những ván đấu sau.'}
           </p>
         </div>
 
@@ -73,7 +73,7 @@ export const GameOverScreen = () => {
             <Users className="w-5 h-5 text-indigo-400" />
             <span>Tổng kết người chơi</span>
           </h2>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -85,12 +85,15 @@ export const GameOverScreen = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/50 text-sm">
-                {players.map(player => {
+                {players.map((player) => {
                   const playerWon = player.faction === winnerFaction;
                   const isSelf = player.id === myPlayer?.id;
 
                   return (
-                    <tr key={player.id} className={`hover:bg-darker/30 transition-colors ${isSelf ? 'bg-indigo-950/10' : ''}`}>
+                    <tr
+                      key={player.id}
+                      className={`hover:bg-darker/30 transition-colors ${isSelf ? 'bg-indigo-950/10' : ''}`}
+                    >
                       <td className="py-3.5 pl-2 font-bold text-gray-200 flex items-center gap-3">
                         <Avatar name={player.name} size="xs" className="bg-slate-800 border-slate-750 text-gray-300" />
                         <span className="truncate max-w-[150px]">
@@ -109,9 +112,7 @@ export const GameOverScreen = () => {
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 text-center font-bold text-gray-300">
-                        {getRoleName(player.role)}
-                      </td>
+                      <td className="py-3.5 text-center font-bold text-gray-300">{getRoleName(player.role)}</td>
                       <td className="py-3.5 text-right pr-2 font-black">
                         {playerWon ? (
                           <span className="text-yellow-400">THẮNG 🏆</span>
@@ -132,10 +133,12 @@ export const GameOverScreen = () => {
           <Button
             size="lg"
             onClick={handleBackToLobby}
-            disabled={secondsLeft !== null && secondsLeft > 0}
+            // disabled={secondsLeft !== null && secondsLeft > 0}
             className="bg-indigo-600 hover:bg-indigo-700 px-10 shadow-lg shadow-indigo-600/20 font-bold tracking-wider flex items-center gap-2"
           >
-            <RefreshCw className={`w-5 h-5 ${secondsLeft !== null && secondsLeft > 0 ? 'animate-spin text-gray-400' : ''}`} />
+            <RefreshCw
+              className={`w-5 h-5 ${secondsLeft !== null && secondsLeft > 0 ? 'animate-spin text-gray-400' : ''}`}
+            />
             <span>QUAY LẠI LOBBY {secondsLeft !== null && secondsLeft > 0 ? `(${secondsLeft}s)` : ''}</span>
           </Button>
           {secondsLeft !== null && secondsLeft > 0 && (
@@ -144,7 +147,6 @@ export const GameOverScreen = () => {
             </p>
           )}
         </div>
-
       </div>
     </ModalOverlay>
   );

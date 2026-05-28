@@ -11,7 +11,7 @@ import {
 import { createGameActor, getGameData, destroyGameActor, clearGameTimer } from '../engine/gameStateManager.ts';
 import { addMessage } from './chatManager.ts';
 import { castVote, getVoteTally, finalizeVoting } from './voteManager.ts';
-import { submitNightAction, submitWitchAction, submitCupidAction } from './nightManager.ts';
+import { submitNightAction, submitWitchAction, submitCupidAction, handleNightPlayerDisconnect } from './nightManager.ts';
 import { findPendingHunter } from '../engine/gameHelpers.ts';
 import { handlePlayerReconnect } from './reconnectManager.ts';
 import type { ChatLogs, NightActionInput } from '../types/game.ts';
@@ -49,8 +49,6 @@ const escapeHtml = (unsafe: string): string => {
 
 /** Giới hạn số người chơi tối đa */
 const MAX_PLAYERS_PER_ROOM = 15;
-
-
 
 export const setupHandlers = (io: Server, socket: Socket): void => {
   const playerId = socket.id;
@@ -121,7 +119,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       }
 
       // Kiểm tra tên trùng
-      if (room.players.some(p => p.name.toLowerCase() === trimmedName.toLowerCase())) {
+      if (room.players.some((p) => p.name.toLowerCase() === trimmedName.toLowerCase())) {
         if (callback) callback({ success: false, error: 'Tên này đã có người dùng trong phòng' });
         return;
       }
@@ -159,7 +157,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       const updatedRoom = updateRoomSettings(roomId, settings);
       io.to(roomId).emit('ROOM_UPDATED', updatedRoom);
       if (callback) callback({ success: true, room: updatedRoom });
-    }
+    },
   );
 
   socket.on('START_GAME', ({ roomId }: { roomId: string }, callback?: SocketCallback) => {
@@ -180,7 +178,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       updateRoomStatus(roomId, 'InGame');
 
       const actor = createGameActor(roomId, io);
-      actor.send({ type: 'START_GAME', players: room.players, settings: room.settings });
+      actor.send({ type: 'START_GAME', roomId, players: room.players, settings: room.settings });
 
       io.to(roomId).emit('ROOM_UPDATED', getRoom(roomId));
       io.emit('ROOM_LIST', getRooms());
@@ -196,7 +194,12 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       const isGameOver = gameData && gameData.actor.getSnapshot().value === 'GameOver';
       const isHost = room.hostId === playerId;
 
-      if (isHost || isGameOver) {
+      if (isGameOver) {
+        // Mỗi socket ấn thì tự reset client của socket đó
+        socket.emit('GAME_RESET');
+        if (callback) callback({ success: true });
+      } else if (isHost) {
+        // Nếu game chưa kết thúc, chỉ chủ phòng mới được reset toàn bộ phòng chơi
         updateRoomStatus(roomId, 'Lobby');
         destroyGameActor(roomId);
 
@@ -255,10 +258,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
 
   socket.on(
     'SEND_CHAT',
-    (
-      { roomId, channel, content }: { roomId: string; channel: string; content: string },
-      callback?: SocketCallback
-    ) => {
+    ({ roomId, channel, content }: { roomId: string; channel: string; content: string }, callback?: SocketCallback) => {
       const chatError = validateChatContent(content);
       if (chatError) {
         if (callback) callback({ success: false, error: chatError });
@@ -329,7 +329,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       } else {
         if (callback) callback({ success: false, error: 'Không gửi được tin nhắn' });
       }
-    }
+    },
   );
 
   socket.on('CAST_VOTE', ({ roomId, targetId }: { roomId: string; targetId: string }, callback?: SocketCallback) => {
@@ -362,13 +362,17 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       }
       if (callback) callback({ success: true });
     } else {
-      if (callback) callback({ success: false, error: 'Vote không thành công (có thể bạn đã chết hoặc mục tiêu không hợp lệ)' });
+      if (callback)
+        callback({ success: false, error: 'Vote không thành công (có thể bạn đã chết hoặc mục tiêu không hợp lệ)' });
     }
   });
 
   socket.on(
     'NIGHT_ACTION',
-    ({ roomId, targetId, ...rest }: { roomId: string; targetId?: string } & NightActionInput, callback?: SocketCallback) => {
+    (
+      { roomId, targetId, ...rest }: { roomId: string; targetId?: string } & NightActionInput,
+      callback?: SocketCallback,
+    ) => {
       if (!roomId) {
         if (callback) callback({ success: false, error: 'Thiếu mã phòng' });
         return;
@@ -379,21 +383,21 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       } else {
         if (callback) callback({ success: false, error: 'Hành động không hợp lệ hoặc không đúng lượt' });
       }
-    }
+    },
   );
 
   socket.on('WOLF_DRAFT_TARGET', ({ roomId, targetId }: { roomId: string; targetId: string }) => {
     if (!roomId || typeof targetId !== 'string') return;
     const gameData = getGameData(roomId);
     if (!gameData) return;
-    
+
     const snapshot = gameData.actor.getSnapshot();
     const context = snapshot.context;
-    const player = context.players.find(p => p.id === playerId);
+    const player = context.players.find((p) => p.id === playerId);
     if (!player || !player.isAlive || player.role !== 'WEREWOLF') return;
 
-    const wolves = context.players.filter(p => p.role === 'WEREWOLF' && p.isAlive);
-    wolves.forEach(w => {
+    const wolves = context.players.filter((p) => p.role === 'WEREWOLF' && p.isAlive);
+    wolves.forEach((w) => {
       if (w.id !== playerId) {
         const wolfSocket = io.sockets.sockets.get(w.id);
         if (wolfSocket) {
@@ -406,8 +410,12 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
   socket.on(
     'WITCH_ACTION',
     (
-      { roomId, healTargetId, poisonTargetId }: { roomId: string; healTargetId: string | null; poisonTargetId: string | null },
-      callback?: SocketCallback
+      {
+        roomId,
+        healTargetId,
+        poisonTargetId,
+      }: { roomId: string; healTargetId: string | null; poisonTargetId: string | null },
+      callback?: SocketCallback,
     ) => {
       if (!roomId) {
         if (callback) callback({ success: false, error: 'Thiếu mã phòng' });
@@ -419,12 +427,15 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       } else {
         if (callback) callback({ success: false, error: 'Hành động của Phù Thủy không hợp lệ' });
       }
-    }
+    },
   );
 
   socket.on(
     'CUPID_ACTION',
-    ({ roomId, lover1Id, lover2Id }: { roomId: string; lover1Id: string; lover2Id: string }, callback?: SocketCallback) => {
+    (
+      { roomId, lover1Id, lover2Id }: { roomId: string; lover1Id: string; lover2Id: string },
+      callback?: SocketCallback,
+    ) => {
       if (!roomId || !lover1Id || !lover2Id) {
         if (callback) callback({ success: false, error: 'Thiếu thông tin phòng hoặc cặp đôi' });
         return;
@@ -435,7 +446,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       } else {
         if (callback) callback({ success: false, error: 'Hành động ghép đôi của Cupid không hợp lệ' });
       }
-    }
+    },
   );
 
   socket.on('HUNTER_SHOOT', ({ roomId, targetId }: { roomId: string; targetId: string }, callback?: SocketCallback) => {
@@ -536,6 +547,9 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
 
           const gameData = getGameData(r.id);
           if (gameData) {
+            gameData.actor.send({ type: 'PLAYER_DISCONNECTED', playerId });
+            handleNightPlayerDisconnect(r.id, playerId, io);
+
             gameData.disconnectTimers[playerId] = setTimeout(() => {
               const updatedRoom = leaveRoom(r.id, playerId);
               if (updatedRoom) {

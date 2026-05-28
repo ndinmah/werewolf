@@ -5,7 +5,8 @@ import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
 
 class SeerHandler implements RoleHandler {
   promptNightAction(roomId: string, player: Player, context: GameContext, gameData: GameData, socket: Socket): void {
-    const alivePlayers = context.players.filter(p => p.isAlive);
+    const hasPowers = !context.villagersLostPowers;
+    const alivePlayers = hasPowers ? context.players.filter(p => p.isAlive) : [];
     socket.emit('NIGHT_ACTION_PROMPT', {
       role: 'SEER',
       targetablePlayers: alivePlayers.map(p => ({
@@ -26,6 +27,7 @@ class SeerHandler implements RoleHandler {
     io: Server
   ): boolean {
     if (payload.role !== 'SEER') return false;
+    if (context.villagersLostPowers) return false;
     const targetId = payload.targetId;
     if (!targetId) return false;
     if (gameData.nightActionSubmitted.has(player.id)) return false;

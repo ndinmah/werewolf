@@ -1,16 +1,19 @@
 import type { Server } from 'socket.io';
-import { getGameData } from '../engine/gameStateManager.ts';
+import { getGameData, setGameTimer } from '../engine/gameStateManager.ts';
 import { ROLES } from '../roles/index.ts';
 import type { Player, NightActionPayload, NightActionInput } from '../types/game.ts';
 import { RoleRegistry } from '../roles/RoleHandler.ts';
 
 // Chắc chắn các handler đã được đăng ký bằng cách import chúng
 import '../roles/handlers/CupidHandler.ts';
-import '../roles/handlers/WerewolfHandler.ts';
+import { computeWerewolfTarget } from '../roles/handlers/WerewolfHandler.ts';
 import '../roles/handlers/WitchHandler.ts';
 import '../roles/handlers/SeerHandler.ts';
 import '../roles/handlers/BodyguardHandler.ts';
 import '../roles/handlers/HunterHandler.ts';
+import '../roles/handlers/ElderHandler.ts';
+import '../roles/handlers/CursedHandler.ts';
+import '../roles/handlers/DoppelgangerHandler.ts';
 
 export const startFirstNight = (roomId: string, io: Server): void => {
   const gameData = getGameData(roomId);
@@ -52,7 +55,12 @@ export const promptNextFirstNightRole = (roomId: string, io: Server): void => {
 
   if (currentNightRoleIndex >= pendingNightRoles.length) {
     // Kết thúc đêm đầu tiên, báo cho XState machine
-    gameData.actor.send({ type: 'FIRST_NIGHT_DONE' });
+    const doppelgangerTargets: Record<string, string> = {};
+    const doppelgangerAction = gameData.nightActions?.['DOPPELGANGER'];
+    if (doppelgangerAction) {
+      doppelgangerTargets[doppelgangerAction.actorId] = doppelgangerAction.targetId;
+    }
+    gameData.actor.send({ type: 'FIRST_NIGHT_DONE', doppelgangerTargets });
     return;
   }
 
@@ -62,8 +70,9 @@ export const promptNextFirstNightRole = (roomId: string, io: Server): void => {
   const alivePlayers = context.players.filter(p => p.isAlive);
 
   const rolePlayers = alivePlayers.filter(p => p.role === currentRole);
+  const connectedRolePlayers = rolePlayers.filter(p => io.sockets.sockets.has(p.id));
 
-  if (rolePlayers.length === 0) {
+  if (connectedRolePlayers.length === 0) {
     gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
     promptNextFirstNightRole(roomId, io);
     return;
@@ -86,7 +95,7 @@ export const advanceFirstNightRole = (roomId: string, io: Server): void => {
   promptNextFirstNightRole(roomId, io);
 };
 
-export const startNight = (roomId: string, io: Server): void => {
+export const startNightWave1 = (roomId: string, io: Server): void => {
   const gameData = getGameData(roomId);
   if (!gameData) return;
 
@@ -94,64 +103,67 @@ export const startNight = (roomId: string, io: Server): void => {
   const context = snapshot.context;
   const alivePlayers = context.players.filter(p => p.isAlive);
 
-  const activeRoles = [...new Set(alivePlayers.map(p => p.role))]
-    .filter((roleId): roleId is keyof typeof ROLES => typeof roleId === 'string' && !!ROLES[roleId as keyof typeof ROLES] && ROLES[roleId as keyof typeof ROLES].priority > 0)
-    .sort((a, b) => ROLES[b].priority - ROLES[a].priority);
-
   gameData.nightActions = {};
-  gameData.pendingNightRoles = activeRoles as string[];
-  gameData.currentNightRoleIndex = 0;
   gameData.nightActionSubmitted = new Set();
   gameData.wolfVotes = {};
   gameData.wolfVoteTimes = {};
   gameData.votes = {};
 
-  promptNextNightRole(roomId, io);
+  const wave1Roles = ['WEREWOLF', 'SEER', 'BODYGUARD'];
+
+  alivePlayers.forEach(player => {
+    if (player.role && wave1Roles.includes(player.role)) {
+      const handler = RoleRegistry.getHandler(player.role);
+      const isSpecialVillager = ['SEER', 'BODYGUARD'].includes(player.role);
+      const lostPowers = !!context.villagersLostPowers && isSpecialVillager;
+
+      if (io.sockets.sockets.has(player.id) && !lostPowers) {
+        if (handler && handler.promptNightAction) {
+          const socket = io.sockets.sockets.get(player.id);
+          if (socket) {
+            handler.promptNightAction(roomId, player, context, gameData, socket);
+          }
+        }
+      }
+    }
+  });
+
+  io.to(roomId).emit('NIGHT_STATUS_UPDATE', {
+    currentRoleName: 'các vai trò đặc biệt',
+    waitingFor: [],
+    done: []
+  });
 };
 
-export const promptNextNightRole = (roomId: string, io: Server): void => {
+export const startNightWave2 = (roomId: string, io: Server): void => {
   const gameData = getGameData(roomId);
   if (!gameData) return;
 
-  const { pendingNightRoles, currentNightRoleIndex } = gameData;
-  if (!pendingNightRoles || currentNightRoleIndex === undefined) return;
-
-  if (currentNightRoleIndex >= pendingNightRoles.length) {
-    resolveNight(roomId, io);
-    return;
-  }
-
-  const currentRole = pendingNightRoles[currentNightRoleIndex] as keyof typeof ROLES;
   const snapshot = gameData.actor.getSnapshot();
   const context = snapshot.context;
-  const alivePlayers = context.players.filter(p => p.isAlive);
 
-  const rolePlayers = alivePlayers.filter(p => p.role === currentRole);
-
-  if (rolePlayers.length === 0) {
-    gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
-    promptNextNightRole(roomId, io);
-    return;
+  if (!gameData.nightActions?.['WEREWOLF']) {
+    computeWerewolfTarget(context, gameData);
   }
 
-  const handler = RoleRegistry.getHandler(currentRole);
-  if (handler && handler.promptNightAction) {
-    const promptAction = handler.promptNightAction;
-    rolePlayers.forEach(player => {
-      const socket = io.sockets.sockets.get(player.id);
+  const witch = context.players.find(p => p.role === 'WITCH' && p.isAlive);
+  const lostPowers = !!context.villagersLostPowers;
+
+  if (witch && io.sockets.sockets.has(witch.id) && !lostPowers) {
+    const handler = RoleRegistry.getHandler('WITCH');
+    if (handler && handler.promptNightAction) {
+      const socket = io.sockets.sockets.get(witch.id);
       if (socket) {
-        promptAction(roomId, player, context, gameData, socket);
+        handler.promptNightAction(roomId, witch, context, gameData, socket);
       }
-    });
-
-    io.to(roomId).emit('NIGHT_STATUS_UPDATE', {
-      currentRoleName: ROLES[currentRole]?.name || currentRole
-    });
-  } else {
-    // Nếu role chưa có handler prompt, chuyển luôn sang role tiếp
-    gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
-    promptNextNightRole(roomId, io);
+    }
   }
+
+  io.to(roomId).emit('NIGHT_STATUS_UPDATE', {
+    currentRoleName: 'Phù Thủy',
+    waitingFor: [],
+    done: []
+  });
 };
 
 export const submitNightAction = (
@@ -163,26 +175,47 @@ export const submitNightAction = (
   const gameData = getGameData(roomId);
   if (!gameData) return false;
 
-  const { pendingNightRoles, currentNightRoleIndex } = gameData;
-  if (!pendingNightRoles || currentNightRoleIndex === undefined) return false;
-  if (currentNightRoleIndex >= pendingNightRoles.length) return false;
-
-  const currentRole = pendingNightRoles[currentNightRoleIndex] as keyof typeof ROLES;
   const snapshot = gameData.actor.getSnapshot();
   const context = snapshot.context;
+  const phase = snapshot.value;
 
   const actor = context.players.find(p => p.id === actorId);
-  if (!actor || !actor.isAlive || actor.role !== currentRole) return false;
+  if (!actor || !actor.isAlive || !actor.role) return false;
+
+  const currentRole = actor.role;
+
+  if (phase === 'FirstNightPhase') {
+    const { pendingNightRoles, currentNightRoleIndex } = gameData;
+    if (!pendingNightRoles || currentNightRoleIndex === undefined) return false;
+    if (currentNightRoleIndex >= pendingNightRoles.length) return false;
+
+    const expectedRole = pendingNightRoles[currentNightRoleIndex];
+    if (currentRole !== expectedRole) return false;
+
+    const handler = RoleRegistry.getHandler(currentRole);
+    if (handler && handler.submitNightAction) {
+      const actionPayload = { role: currentRole, ...payload } as unknown as NightActionPayload;
+      const valid = handler.submitNightAction(roomId, actor, actionPayload, context, gameData, io);
+      if (valid) {
+        gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
+        promptNextFirstNightRole(roomId, io);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  const nightWave = context.nightWave;
+  if (!nightWave) return false;
+
+  const wave1Roles = ['WEREWOLF', 'SEER', 'BODYGUARD'];
+  if (nightWave === 1 && !wave1Roles.includes(currentRole)) return false;
+  if (nightWave === 2 && currentRole !== 'WITCH') return false;
 
   const handler = RoleRegistry.getHandler(currentRole);
   if (handler && handler.submitNightAction) {
     const actionPayload = { role: currentRole, ...payload } as unknown as NightActionPayload;
-    const shouldAdvance = handler.submitNightAction(roomId, actor, actionPayload, context, gameData, io);
-    if (shouldAdvance) {
-      gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
-      promptNextNightRole(roomId, io);
-      return true;
-    }
+    return handler.submitNightAction(roomId, actor, actionPayload, context, gameData, io);
   }
 
   return false;
@@ -206,7 +239,12 @@ export const submitCupidAction = (
 
   const handler = RoleRegistry.getHandler('CUPID');
   if (handler && handler.submitNightAction) {
-    return handler.submitNightAction(roomId, actor, { role: 'CUPID', lover1Id, lover2Id }, context, gameData, io);
+    const valid = handler.submitNightAction(roomId, actor, { role: 'CUPID', lover1Id, lover2Id }, context, gameData, io);
+    if (valid && snapshot.value === 'FirstNightPhase' && gameData.currentNightRoleIndex !== undefined) {
+      gameData.currentNightRoleIndex++;
+      promptNextFirstNightRole(roomId, io);
+    }
+    return valid;
   }
   return false;
 };
@@ -238,6 +276,46 @@ export const resolveNight = (roomId: string, io: Server): void => {
   }
 
   const nightDeaths: Player[] = [];
+  const transformedIds: string[] = [];
+  
+  // Xử lý khiên của Già Làng trước Ma Sói
+  let nextElderShields = context.elderShields !== undefined ? context.elderShields : 1;
+  const elder = context.players.find(p => p.role === 'ELDER' && p.isAlive);
+  if (elder) {
+    const werewolfTargetId = gameData.nightActions?.['WEREWOLF']?.targetId;
+    const isElderBitten = werewolfTargetId === elder.id;
+    const wasHealed = gameData.nightActions?.['WITCH_HEAL']?.targetId === elder.id;
+    const wasProtected = gameData.nightActions?.['BODYGUARD']?.targetId === elder.id;
+    const wasPoisoned = gameData.nightActions?.['WITCH_POISON']?.targetId === elder.id;
+
+    if (isElderBitten && !wasHealed && !wasProtected) {
+      if (nextElderShields > 0) {
+        nextElderShields = 0;
+        if (!wasPoisoned) {
+          deaths.delete(elder.id);
+        }
+        io.to(roomId).emit('ELDER_SHIELD_BROKEN', { elderId: elder.id });
+      }
+    }
+  }
+
+  // Xử lý Hóa Sói của Kẻ Bị Nguyền Rủa
+  const cursedPlayers = context.players.filter(p => p.role === 'CURSED' && p.isAlive);
+  cursedPlayers.forEach(cursed => {
+    const werewolfTargetId = gameData.nightActions?.['WEREWOLF']?.targetId;
+    const isCursedBitten = werewolfTargetId === cursed.id;
+    const wasProtected = gameData.nightActions?.['BODYGUARD']?.targetId === cursed.id;
+    const wasPoisoned = gameData.nightActions?.['WITCH_POISON']?.targetId === cursed.id;
+
+    if (isCursedBitten && !wasProtected) {
+      if (!wasPoisoned) {
+        deaths.delete(cursed.id);
+        transformedIds.push(cursed.id);
+        io.to(roomId).emit('CURSED_TRANSFORMED', { playerId: cursed.id });
+      }
+    }
+  });
+
   deaths.forEach(id => {
     const p = context.players.find(x => x.id === id);
     if (p) {
@@ -252,6 +330,61 @@ export const resolveNight = (roomId: string, io: Server): void => {
 
   gameData.actor.send({
     type: 'ALL_NIGHT_ACTIONS_DONE',
-    nightDeaths
+    nightDeaths,
+    elderShields: nextElderShields,
+    transformedIds
   });
+};
+
+/**
+ * Xử lý ngắt kết nối trong đêm: Chỉ chạy trong FirstNightPhase (vì các Wave của NightPhase chạy timer tự động)
+ */
+export const handleNightPlayerDisconnect = (roomId: string, playerId: string, io: Server): void => {
+  const gameData = getGameData(roomId);
+  if (!gameData) return;
+
+  const snapshot = gameData.actor.getSnapshot();
+  const phase = snapshot.value;
+
+  if (phase !== 'FirstNightPhase') return;
+
+  const { pendingNightRoles, currentNightRoleIndex } = gameData;
+  if (!pendingNightRoles || currentNightRoleIndex === undefined) return;
+  if (currentNightRoleIndex >= pendingNightRoles.length) return;
+
+  const currentRole = pendingNightRoles[currentNightRoleIndex] as keyof typeof ROLES;
+  const context = snapshot.context;
+
+  // Tìm người chơi đã disconnect trong context
+  const player = context.players.find((p) => p.id === playerId);
+  if (!player || player.role !== currentRole || !player.isAlive) return;
+
+  // Kiểm tra xem còn người chơi nào khác cùng role này đang online hay không
+  const alivePlayers = context.players.filter((p) => p.isAlive && p.role === currentRole);
+  const connectedPlayers = alivePlayers.filter((p) => p.id !== playerId && io.sockets.sockets.has(p.id));
+
+  if (connectedPlayers.length === 0) {
+    const delay = 10000;
+    setGameTimer(roomId, delay, () => {
+      const refreshedGameData = getGameData(roomId);
+      if (!refreshedGameData) return;
+
+      const currentSnapshot = refreshedGameData.actor.getSnapshot();
+      if (
+        currentSnapshot.value === 'FirstNightPhase' &&
+        refreshedGameData.currentNightRoleIndex === currentNightRoleIndex
+      ) {
+        // Kiểm tra lại xem họ đã kết nối lại hay chưa
+        const currentContext = currentSnapshot.context;
+        const activeRole = refreshedGameData.pendingNightRoles![currentNightRoleIndex] as keyof typeof ROLES;
+        const currentAlivePlayers = currentContext.players.filter((p) => p.isAlive && p.role === activeRole);
+        const currentConnectedPlayers = currentAlivePlayers.filter((p) => io.sockets.sockets.has(p.id));
+
+        if (currentConnectedPlayers.length === 0) {
+          refreshedGameData.currentNightRoleIndex = currentNightRoleIndex + 1;
+          promptNextFirstNightRole(roomId, io);
+        }
+      }
+    });
+  }
 };

@@ -21,7 +21,16 @@ export const gameMachine = setup({
     startRoleRevealTimer: () => {
       // Sẽ được inject từ bên ngoài
     },
-    runNightStart: () => {
+    runNightWave1Start: () => {
+      // Sẽ được inject từ bên ngoài
+    },
+    runNightWave2Start: () => {
+      // Sẽ được inject từ bên ngoài
+    },
+    startNightWave1Timer: () => {
+      // Sẽ được inject từ bên ngoài
+    },
+    startNightWave2Timer: () => {
       // Sẽ được inject từ bên ngoài
     },
     startDayStartTimer: () => {
@@ -47,9 +56,14 @@ export const gameMachine = setup({
       const { oldId, newId } = event;
       if (!oldId || !newId) return {};
       return {
-        players: context.players.map(p =>
-          p.id === oldId ? { ...p, id: newId, disconnected: false } : p
-        )
+        players: context.players.map((p) => (p.id === oldId ? { ...p, id: newId, disconnected: false } : p)),
+      };
+    }),
+    applyPlayerDisconnect: assign(({ context, event }) => {
+      const playerId = event.playerId as string | undefined;
+      if (!playerId) return {};
+      return {
+        players: context.players.map((p) => (p.id === playerId ? { ...p, disconnected: true } : p)),
       };
     }),
     applyLovers: assign(({ context, event }) => {
@@ -58,14 +72,14 @@ export const gameMachine = setup({
       if (!lover1Id || !lover2Id) return {} as Partial<GameContext>;
 
       // Tạo bản sao mới của danh sách người chơi để tránh mutation trực tiếp
-      const updatedPlayers = context.players.map(p => {
+      const updatedPlayers = context.players.map((p) => {
         if (p.id === lover1Id || p.id === lover2Id) {
           const partnerId = p.id === lover1Id ? lover2Id : lover1Id;
-          const partner = context.players.find(x => x.id === partnerId);
-          
+          const partner = context.players.find((x) => x.id === partnerId);
+
           const role1 = p.role ? ROLES[p.role as keyof typeof ROLES] : null;
           const role2 = partner?.role ? ROLES[partner.role as keyof typeof ROLES] : null;
-          
+
           if (role1 && role2 && role1.faction !== role2.faction) {
             return { ...p, faction: 'THIRD_PARTY' as const };
           }
@@ -75,8 +89,13 @@ export const gameMachine = setup({
 
       return {
         lovers: [lover1Id, lover2Id],
-        players: updatedPlayers
+        players: updatedPlayers,
       } as Partial<GameContext>;
+    }),
+    applyDoppelgangerSelection: assign(({ event }) => {
+      return {
+        doppelgangerTargets: event.doppelgangerTargets || {},
+      };
     }),
     setupGame: assign(({ context, event }) => {
       const playersList = event.players || context.players;
@@ -129,18 +148,26 @@ export const gameMachine = setup({
         lovers: [],
         pendingRetaliation: false,
         pendingRetaliationHunterId: null,
+        roomId: event.roomId || context.roomId || '',
+        elderShields: assignedPlayers.some((p) => p.role === 'ELDER') ? 1 : 0,
+        villagersLostPowers: false,
+        doppelgangerTargets: {},
       };
     }),
     applyNightResults: assign(({ context, event }) => {
       const initialNightDeaths = event.nightDeaths || [];
       const deadIds = new Set(initialNightDeaths.map((d) => d.id));
       const nightDeaths = [...initialNightDeaths];
+      const transformedIds = new Set(event.transformedIds || []);
 
       // Xử lý chết chùm người tình ban đêm bằng helper dùng chung
       addLoverDeaths(deadIds, context.lovers, context.players, nightDeaths);
 
-      // Cập nhật người chơi chết
+      // Cập nhật người chơi chết và người chơi hóa Sói
       const updatedPlayers = context.players.map((p) => {
+        if (transformedIds.has(p.id)) {
+          return { ...p, role: 'WEREWOLF' as const, faction: 'WEREWOLF' as const };
+        }
         if (deadIds.has(p.id)) {
           return { ...p, isAlive: false };
         }
@@ -157,6 +184,7 @@ export const gameMachine = setup({
         dayDeath: null,
         hunterShotPlayer: null, // Reset
         newlyDeadPlayerIds,
+        elderShields: event.elderShields !== undefined ? event.elderShields : context.elderShields,
       };
     }),
     applyVotingResults: assign(({ context, event }) => {
@@ -224,16 +252,38 @@ export const gameMachine = setup({
       if (deadIds.length === 0) return {};
 
       let additionalUpdates: Partial<GameContext> = {};
-      const cause = event.type === 'ALL_NIGHT_ACTIONS_DONE' ? 'night'
-                  : event.type === 'VOTING_DONE' ? 'vote'
-                  : 'hunter';
+      const cause =
+        event.type === 'ALL_NIGHT_ACTIONS_DONE' ? 'night' : event.type === 'VOTING_DONE' ? 'vote' : 'hunter';
 
-      deadIds.forEach(id => {
-        const p = context.players.find(x => x.id === id);
+      const updatedPlayers = [...context.players];
+      let playersChanged = false;
+
+      deadIds.forEach((id) => {
+        const deadPlayer = context.players.find((x) => x.id === id);
+        if (!deadPlayer) return;
+
+        // Xử lý kế thừa vai trò của Kẻ nhân bản
+        Object.entries(context.doppelgangerTargets || {}).forEach(([dgId, targetId]) => {
+          if (targetId === id) {
+            const dgIdx = updatedPlayers.findIndex((p) => p.id === dgId && p.isAlive && p.role === 'DOPPELGANGER');
+            if (dgIdx !== -1) {
+              const originalRole = deadPlayer.role || 'VILLAGER';
+              const originalRoleConfig = ROLES[originalRole as keyof typeof ROLES] || ROLES.VILLAGER;
+              updatedPlayers[dgIdx] = {
+                ...updatedPlayers[dgIdx],
+                role: originalRole,
+                faction: originalRoleConfig.faction as Faction,
+              };
+              playersChanged = true;
+            }
+          }
+        });
+
+        const p = context.players.find((x) => x.id === id);
         if (p) {
           const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
           if (handler && handler.onDeath) {
-            const updates = handler.onDeath('', p, context, cause);
+            const updates = handler.onDeath(context.roomId || '', p, context, cause);
             if (updates) {
               additionalUpdates = { ...additionalUpdates, ...updates };
             }
@@ -243,11 +293,12 @@ export const gameMachine = setup({
 
       return {
         ...additionalUpdates,
+        players: playersChanged ? updatedPlayers : context.players,
         newlyDeadPlayerIds: [], // Reset danh sách
       };
     }),
     setWinner: assign(({ context }) => {
-      const winResult = checkWinCondition(context.players);
+      const winResult = checkWinCondition(context.players, context.dayDeath, context.lovers);
       return {
         phase: 'gameOver' as const,
         winner: winResult.winner as import('../types/game.ts').Faction | null,
@@ -258,7 +309,7 @@ export const gameMachine = setup({
   },
   guards: {
     checkWinCondition: ({ context }) => {
-      const winResult = checkWinCondition(context.players);
+      const winResult = checkWinCondition(context.players, context.dayDeath, context.lovers);
       return winResult.isGameOver;
     },
     hasHunterDiedNight: ({ context }) => {
@@ -290,6 +341,18 @@ export const gameMachine = setup({
     pendingRetaliation: false,
     pendingRetaliationHunterId: null,
     newlyDeadPlayerIds: [],
+    roomId: '',
+    elderShields: 0,
+    villagersLostPowers: false,
+    doppelgangerTargets: {},
+  },
+  on: {
+    PLAYER_RECONNECTED: {
+      actions: ['applyPlayerReconnect', 'notifyPlayers'],
+    },
+    PLAYER_DISCONNECTED: {
+      actions: ['applyPlayerDisconnect', 'notifyPlayers'],
+    },
   },
   states: {
     Lobby: {
@@ -305,43 +368,44 @@ export const gameMachine = setup({
       on: {
         TIMER_EXPIRED: {
           target: 'FirstNightPhase',
-          actions: [
-            assign({ phase: 'firstNight' }),
-            'notifyPlayers',
-          ],
-        },
-        PLAYER_RECONNECTED: {
-          actions: ['applyPlayerReconnect'],
+          actions: [assign({ phase: 'firstNight' }), 'notifyPlayers'],
         },
       },
     },
     FirstNightPhase: {
       entry: ['runFirstNightStart', 'notifyPlayers'],
       on: {
-        PLAYER_RECONNECTED: {
-          actions: ['applyPlayerReconnect'],
-        },
         SET_LOVERS: {
           actions: ['applyLovers', 'notifyPlayers'],
         },
         FIRST_NIGHT_DONE: {
           target: 'NightPhase',
-          actions: [
-            assign({ phase: 'night' }),
-            'notifyPlayers'
-          ],
+          actions: [assign({ phase: 'night' }), 'applyDoppelgangerSelection', 'notifyPlayers'],
         },
       },
     },
     NightPhase: {
-      entry: ['runNightStart', 'notifyPlayers'],
-      on: {
-        PLAYER_RECONNECTED: {
-          actions: ['applyPlayerReconnect'],
+      initial: 'NightWave1',
+      entry: [assign({ phase: 'night', nightWave: 1 }), 'runNightWave1Start', 'notifyPlayers'],
+      exit: [assign({ nightWave: undefined })],
+      states: {
+        NightWave1: {
+          entry: ['startNightWave1Timer'],
+          on: {
+            NIGHT_WAVE1_DONE: {
+              target: 'NightWave2',
+              actions: [assign({ nightWave: 2 }), 'runNightWave2Start', 'notifyPlayers'],
+            },
+          },
         },
-        ALL_NIGHT_ACTIONS_DONE: {
-          target: 'NightResolve',
-          actions: ['applyNightResults', 'triggerDeathHooks'],
+        NightWave2: {
+          entry: ['startNightWave2Timer'],
+          on: {
+            ALL_NIGHT_ACTIONS_DONE: {
+              target: '#werewolf-game.NightResolve',
+              actions: ['applyNightResults', 'triggerDeathHooks'],
+            },
+          },
         },
       },
     },
@@ -352,10 +416,7 @@ export const gameMachine = setup({
           // Nếu Thợ Săn chết đêm nay, họ vẫn có quyền bắn trả trước khi kết thúc game
           target: 'HunterRetaliation',
           guard: 'hasHunterDiedNight',
-          actions: [
-            assign({ phase: 'hunterRetaliation', hunterNextPhase: 'dayStart' }),
-            'notifyPlayers',
-          ],
+          actions: [assign({ phase: 'hunterRetaliation', hunterNextPhase: 'dayStart' }), 'notifyPlayers'],
         },
         {
           target: 'GameOver',
@@ -410,10 +471,7 @@ export const gameMachine = setup({
           // Nếu Thợ Săn bị vote chết, họ vẫn có quyền bắn trả trước khi kết thúc game
           target: 'HunterRetaliation',
           guard: 'hasHunterDiedVote',
-          actions: [
-            assign({ phase: 'hunterRetaliation', hunterNextPhase: 'night' }),
-            'notifyPlayers',
-          ],
+          actions: [assign({ phase: 'hunterRetaliation', hunterNextPhase: 'night' }), 'notifyPlayers'],
         },
         {
           target: 'GameOver',
@@ -450,9 +508,9 @@ export const gameMachine = setup({
                 timerDuration: null,
                 timerStartAt: null,
                 pendingRetaliation: false,
-                pendingRetaliationHunterId: null
+                pendingRetaliationHunterId: null,
               }),
-              'notifyPlayers'
+              'notifyPlayers',
             ],
           },
           {
@@ -466,7 +524,7 @@ export const gameMachine = setup({
                 timerDuration: null,
                 timerStartAt: null,
                 pendingRetaliation: false,
-                pendingRetaliationHunterId: null
+                pendingRetaliationHunterId: null,
               }),
               'notifyPlayers',
             ],
@@ -484,10 +542,7 @@ export const gameMachine = setup({
         {
           target: 'DayPhase',
           guard: ({ context }) => context.hunterNextPhase === 'dayStart',
-          actions: [
-            assign({ phase: 'dayStart', timerDuration: null, timerStartAt: null }),
-            'notifyPlayers',
-          ],
+          actions: [assign({ phase: 'dayStart', timerDuration: null, timerStartAt: null }), 'notifyPlayers'],
         },
         {
           target: 'NightPhase',
@@ -510,4 +565,3 @@ export const gameMachine = setup({
     },
   },
 });
-

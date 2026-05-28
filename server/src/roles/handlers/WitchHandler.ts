@@ -6,9 +6,28 @@ import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
 class WitchHandler implements RoleHandler {
   promptNightAction(_roomId: string, player: Player, context: GameContext, gameData: GameData, socket: Socket): void {
     const alivePlayers = context.players.filter((p) => p.isAlive);
+    const hasPowers = !context.villagersLostPowers;
+
     const werewolfTarget = gameData.nightActions?.['WEREWOLF']?.targetId || null;
-    const isSelfBitten = werewolfTarget === player.id;
-    const canHeal = !gameData.witchHealUsed && (!isSelfBitten || context.dayCount === 1);
+    let filteredWerewolfTarget = werewolfTarget;
+    if (werewolfTarget) {
+      const victim = context.players.find((p) => p.id === werewolfTarget);
+      const elderShields = context.elderShields !== undefined ? context.elderShields : 1;
+      const bodyguardTarget = gameData.nightActions?.['BODYGUARD']?.targetId || null;
+      
+      const isElderAndHasShield = victim && victim.role === 'ELDER' && elderShields > 0;
+      const isBodyguardProtected = werewolfTarget === bodyguardTarget;
+      const isCursed = victim && victim.role === 'CURSED';
+
+      if (isElderAndHasShield || isBodyguardProtected || isCursed) {
+        // Nếu mục tiêu sẽ không chết (khiên Già Làng, Bảo Vệ cứu, hoặc Kẻ Bị Nguyền hóa Sói), Phù Thủy không thấy nạn nhân
+        filteredWerewolfTarget = null;
+      }
+    }
+
+    const isSelfBitten = filteredWerewolfTarget === player.id;
+    const canHeal = hasPowers && !gameData.witchHealUsed && (!isSelfBitten || context.dayCount === 1);
+    const canPoison = hasPowers && !gameData.witchPoisonUsed;
 
     socket.emit('NIGHT_ACTION_PROMPT', {
       role: 'WITCH',
@@ -19,9 +38,9 @@ class WitchHandler implements RoleHandler {
       })),
       excludeTargetId: null,
       witchInfo: {
-        werewolfVictimId: werewolfTarget,
+        werewolfVictimId: filteredWerewolfTarget,
         canHeal,
-        canPoison: !gameData.witchPoisonUsed,
+        canPoison,
       },
     });
   }
@@ -35,6 +54,8 @@ class WitchHandler implements RoleHandler {
     _io: Server,
   ): boolean {
     if (payload.role !== 'WITCH') return false;
+    if (context.villagersLostPowers) return false; // Không có chức năng
+
     const healTargetId = payload.healTargetId || null;
     const poisonTargetId = payload.poisonTargetId || null;
 
@@ -46,7 +67,24 @@ class WitchHandler implements RoleHandler {
 
     if (healTargetId) {
       const werewolfTarget = gameData.nightActions?.['WEREWOLF']?.targetId || null;
-      if (healTargetId !== werewolfTarget) return false;
+      
+      // Hợp lệ hóa mục tiêu cứu
+      let filteredWerewolfTarget = werewolfTarget;
+      if (werewolfTarget) {
+        const victim = context.players.find((p) => p.id === werewolfTarget);
+        const elderShields = context.elderShields !== undefined ? context.elderShields : 1;
+        const bodyguardTarget = gameData.nightActions?.['BODYGUARD']?.targetId || null;
+        
+        const isElderAndHasShield = victim && victim.role === 'ELDER' && elderShields > 0;
+        const isBodyguardProtected = werewolfTarget === bodyguardTarget;
+        const isCursed = victim && victim.role === 'CURSED';
+
+        if (isElderAndHasShield || isBodyguardProtected || isCursed) {
+          filteredWerewolfTarget = null;
+        }
+      }
+
+      if (healTargetId !== filteredWerewolfTarget) return false;
       if (healTargetId === player.id && context.dayCount > 1) return false;
     }
 

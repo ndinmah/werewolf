@@ -45,6 +45,15 @@ export const VotePanel = () => {
 
   return (
     <div className="bg-dark/50 p-6 rounded-xl border border-gray-800">
+      {gameState?.villagersLostPowers && (
+        <div className="mb-6 p-4 bg-red-950/40 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-200 shadow-[0_0_25px_rgba(239,68,68,0.15)] animate-pulse">
+          <span className="text-2xl">🚫</span>
+          <div className="text-left text-xs md:text-sm">
+            <p className="font-extrabold text-red-400 uppercase tracking-wide">Cơn Thịnh Nộ Của Già Làng</p>
+            <p className="text-gray-400 mt-0.5">Già Làng đã bị sát hại bởi chính dân làng! Lời nguyền trỗi dậy tước đi toàn bộ sức mạnh thần bí của các vai trò đặc biệt.</p>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Danh sách người chơi</h2>
         {phase === 'voting' && (
