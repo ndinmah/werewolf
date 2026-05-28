@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Shield, Search, Users, Target, FlaskConical, Heart } from 'lucide-react';
+import { Eye, Shield, Search, Users, Target, FlaskConical, Heart, Skull, Award, ShieldAlert, Copy } from 'lucide-react';
 import type { Role } from '../types/game';
 
 export interface RoleMeta {
@@ -136,6 +136,63 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
     iconComponent: Users,
     cardBg: 'from-slate-900 via-zinc-950 to-blue-950/50 border-blue-900/50 shadow-[0_0_40px_rgba(59,130,246,0.2)]',
   },
+  TANNER: {
+    id: 'TANNER',
+    name: 'Kẻ Chán Đời',
+    emoji: '🤡',
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-600',
+    strength: -1,
+    factionName: 'Phe Thứ Ba',
+    factionColor: 'text-orange-400 bg-orange-950/60 border-orange-800',
+    desc: 'Không có kỹ năng vào ban đêm. Mục tiêu duy nhất là làm mọi cách để bị nghi ngờ và bị treo cổ vào ban ngày. Nếu bị làng vote treo cổ, bạn lập tức thắng cuộc một mình và ván chơi kết thúc.',
+    iconComponent: Skull,
+    cardBg: 'from-slate-900 via-zinc-950 to-orange-950/50 border-orange-900/50 shadow-[0_0_40px_rgba(249,115,22,0.2)]',
+  },
+  ELDER: {
+    id: 'ELDER',
+    name: 'Già Làng',
+    emoji: '🎖️',
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-600',
+    strength: 2,
+    factionName: 'Phe Dân Làng',
+    factionColor: 'text-green-400 bg-green-950/60 border-green-800',
+    desc: 'Có 2 mạng trước Ma Sói. Nếu bị Làng hại chết (treo cổ, đầu độc, bắn trả), tất cả vai trò đặc biệt khác sẽ bị mất hết kỹ năng.',
+    iconComponent: Award,
+    cardBg: 'from-slate-900 via-zinc-950 to-amber-950/50 border-amber-900/50 shadow-[0_0_40px_rgba(245,158,11,0.2)]',
+  },
+  CURSED: {
+    id: 'CURSED',
+    name: 'Kẻ Bị Nguyền Rủa',
+    emoji: '💀',
+    color: 'text-zinc-400',
+    bgColor: 'bg-zinc-600',
+    strength: -1,
+    factionName: 'Phe Dân Làng',
+    factionColor: 'text-green-400 bg-green-950/60 border-green-800',
+    desc: 'Ban đầu là Dân làng. Nếu bị Ma sói cắn trúng mà không có Bảo vệ cứu, sẽ không chết mà lập tức hóa thành Ma sói và về phe Sói.',
+    iconComponent: ShieldAlert,
+    cardBg: 'from-slate-900 via-zinc-950 to-zinc-900/50 border-zinc-700/50 shadow-[0_0_40px_rgba(156,163,175,0.15)]',
+  },
+  DOPPELGANGER: {
+    id: 'DOPPELGANGER',
+    name: 'Kẻ Nhân Bản',
+    emoji: '👥',
+    color: 'text-cyan-400',
+    bgColor: 'bg-cyan-600',
+    strength: -2,
+    factionName: 'Phe Dân Làng',
+    factionColor: 'text-green-400 bg-green-950/60 border-green-800',
+    desc: 'Chỉ thức dậy duy nhất vào đêm đầu tiên để chọn một người chơi làm Bản gốc. Khi Bản gốc chết, bạn kế thừa vai trò và phe của họ.',
+    iconComponent: Copy,
+    cardBg: 'from-slate-900 via-zinc-950 to-cyan-950/50 border-cyan-900/50 shadow-[0_0_40px_rgba(34,211,238,0.2)]',
+    nightAction: {
+      title: 'Kẻ Nhân Bản',
+      desc: 'Chọn 1 người chơi làm Bản gốc để kế thừa vai trò của họ khi họ chết.',
+      headerColor: 'border-cyan-600 shadow-[0_0_20px_rgba(34,211,238,0.2)]',
+    },
+  },
 };
 
 export const AVAILABLE_ROLES: RoleMeta[] = [
@@ -145,6 +202,10 @@ export const AVAILABLE_ROLES: RoleMeta[] = [
   ROLE_METADATA.HUNTER,
   ROLE_METADATA.WITCH,
   ROLE_METADATA.CUPID,
+  ROLE_METADATA.TANNER,
+  ROLE_METADATA.ELDER,
+  ROLE_METADATA.CURSED,
+  ROLE_METADATA.DOPPELGANGER,
   ROLE_METADATA.VILLAGER,
 ];
 
