@@ -1,19 +1,25 @@
-import type { GameContext, Player } from '../../types/game.ts';
+import type { GameContext, Player, NightActionRecord } from '../../types/game.ts';
 import { getGameData } from '../../engine/gameStateManager.ts';
 import { RoleHandler, RoleRegistry } from '../RoleHandler.ts';
 
 class ElderHandler implements RoleHandler {
-  onDeath(roomId: string, deadPlayer: Player, context: GameContext, cause: string): Partial<GameContext> | void {
+  onDeath(roomId: string, deadPlayer: Player, context: GameContext, cause: string, nightActions?: NightActionRecord): Partial<GameContext> | void {
     if (deadPlayer.role !== 'ELDER') return;
 
-    // Use roomId if passed, otherwise fallback to context.roomId
-    const actualRoomId = roomId || context.roomId;
-    if (!actualRoomId) return;
+    // Sử dụng nightActions được truyền vào từ triggerDeathHooks (safe từ race condition)
+    // Nếu không có (ví dụ bị vote chết ban ngày), fallback gọi getGameData (mặc dù ban ngày thì poison cũng đã clear)
+    let actions = nightActions;
+    if (!actions) {
+      const actualRoomId = roomId || context.roomId;
+      if (actualRoomId) {
+        const gameData = getGameData(actualRoomId);
+        actions = gameData?.nightActions;
+      }
+    }
 
-    const gameData = getGameData(actualRoomId);
     const wasPoisonedByWitch =
-      !!gameData?.nightActions?.['WITCH_POISON']?.targetId &&
-      gameData.nightActions['WITCH_POISON'].targetId === deadPlayer.id;
+      !!actions?.['WITCH_POISON']?.targetId &&
+      actions['WITCH_POISON'].targetId === deadPlayer.id;
 
     // Lời nguyền của Già làng kích hoạt nếu chết do:
     // 1. Biểu quyết treo cổ (cause === 'vote')

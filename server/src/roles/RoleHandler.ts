@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import type { GameContext, Player, Role, NightActionPayload } from '../types/game.ts';
+import type { GameContext, Player, Role, NightActionPayload, NightActionRecord } from '../types/game.ts';
 import type { GameData } from '../engine/gameStateManager.ts';
 
 export interface RoleHandler {
@@ -58,9 +58,10 @@ export interface RoleHandler {
    * @param deadPlayer Người chơi đã chết
    * @param context Context game hiện tại
    * @param cause Nguyên nhân chết ('night', 'vote', 'hunter')
+   * @param nightActions Dữ liệu action ban đêm truyền từ gameMachine (để lấy witch_poison, v.v...)
    * @returns Trả về một phần context cập nhật (Partial<GameContext>) hoặc void
    */
-  onDeath?(roomId: string, deadPlayer: Player, context: GameContext, cause: string): Partial<GameContext> | void;
+  onDeath?(roomId: string, deadPlayer: Player, context: GameContext, cause: string, nightActions?: NightActionRecord): Partial<GameContext> | void;
 }
 
 class RoleRegistryClass {

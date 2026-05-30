@@ -11,10 +11,14 @@ import type { Player, Faction, SlimPlayer } from '../types/game.ts';
 export const checkWinCondition = (
   players: Player[],
   dayDeath?: SlimPlayer | null,
-  lovers?: string[]
+  lovers?: string[],
+  hunterShotPlayer?: SlimPlayer | null
 ): { isGameOver: boolean; winner: Faction | null } => {
-  // Nếu Tanner bị vote treo cổ vào ban ngày, Tanner thắng lập tức
-  if (dayDeath && dayDeath.role === 'TANNER') {
+  // Nếu Tanner bị vote treo cổ vào ban ngày hoặc bị Thợ Săn bắn, Tanner thắng lập tức
+  if (
+    (dayDeath && dayDeath.role === 'TANNER') ||
+    (hunterShotPlayer && hunterShotPlayer.role === 'TANNER')
+  ) {
     return { isGameOver: true, winner: FACTIONS.THIRD_PARTY as Faction };
   }
 

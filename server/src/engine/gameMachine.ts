@@ -257,6 +257,7 @@ export const gameMachine = setup({
 
       const updatedPlayers = [...context.players];
       let playersChanged = false;
+      const nightActions = event.nightActions;
 
       deadIds.forEach((id) => {
         const deadPlayer = context.players.find((x) => x.id === id);
@@ -283,7 +284,7 @@ export const gameMachine = setup({
         if (p) {
           const handler = p.role ? RoleRegistry.getHandler(p.role) : null;
           if (handler && handler.onDeath) {
-            const updates = handler.onDeath(context.roomId || '', p, context, cause);
+            const updates = handler.onDeath(context.roomId || '', p, context, cause, nightActions);
             if (updates) {
               additionalUpdates = { ...additionalUpdates, ...updates };
             }
@@ -298,7 +299,7 @@ export const gameMachine = setup({
       };
     }),
     setWinner: assign(({ context }) => {
-      const winResult = checkWinCondition(context.players, context.dayDeath, context.lovers);
+      const winResult = checkWinCondition(context.players, context.dayDeath, context.lovers, context.hunterShotPlayer);
       return {
         phase: 'gameOver' as const,
         winner: winResult.winner as import('../types/game.ts').Faction | null,
@@ -309,7 +310,7 @@ export const gameMachine = setup({
   },
   guards: {
     checkWinCondition: ({ context }) => {
-      const winResult = checkWinCondition(context.players, context.dayDeath, context.lovers);
+      const winResult = checkWinCondition(context.players, context.dayDeath, context.lovers, context.hunterShotPlayer);
       return winResult.isGameOver;
     },
     hasHunterDiedNight: ({ context }) => {

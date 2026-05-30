@@ -86,12 +86,7 @@ class CupidHandler implements RoleHandler {
       }
     });
 
-    // Sau 5s chuyển sang role tiếp theo trong First Night
-    setTimeout(() => {
-      advanceFirstNightRole(roomId, io);
-    }, 5000);
-
-    return true; // Hành động đã được xử lý, không tự động chuyển tiếp trong nightManager (chúng ta xử lý chuyển tiếp không đồng bộ ở đây)
+    return true; // nightManager.ts (submitCupidAction) sẽ lo việc delay và chuyển tiếp role
   }
 }
 

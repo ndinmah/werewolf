@@ -1,7 +1,7 @@
 export const FACTIONS = {
   VILLAGER: 'VILLAGER',
   WEREWOLF: 'WEREWOLF',
-  THIRD_PARTY: 'THIRD_PARTY'
+  THIRD_PARTY: 'THIRD_PARTY',
 };
 
 export const ROLES = {
@@ -12,28 +12,28 @@ export const ROLES = {
     strength: 1,
     priority: 0,
     description: 'Ngủ vào ban đêm. Thức dậy vào ban ngày để thảo luận và vote.',
-    icon: 'Users'
+    icon: 'Users',
   },
   WEREWOLF: {
     id: 'WEREWOLF',
     name: 'Ma sói',
     faction: FACTIONS.WEREWOLF,
-    strength: -2,
+    strength: -6,
     priority: 10,
     firstNightPriority: 10,
     nightWave: 1,
     description: 'Thức dậy vào ban đêm để chọn một nạn nhân. Cố gắng giả làm người vào ban ngày.',
-    icon: 'Eye'
+    icon: 'Eye',
   },
   SEER: {
     id: 'SEER',
     name: 'Tiên tri',
     faction: FACTIONS.VILLAGER,
-    strength: 3,
+    strength: 7,
     priority: 20,
     nightWave: 1,
     description: 'Thức dậy mỗi đêm để soi xem một người có phải là Sói hay không.',
-    icon: 'Search'
+    icon: 'Search',
   },
   BODYGUARD: {
     id: 'BODYGUARD',
@@ -42,46 +42,47 @@ export const ROLES = {
     strength: 3,
     priority: 30,
     nightWave: 1,
-    description: 'Thậy dậy mỗi đêm để bảo vệ một người khỏi bị Sói cắn. Không thể bảo vệ cùng 1 người 2 đêm liên tiếp.',
-    icon: 'Shield'
+    description: 'Thức dậy mỗi đêm để bảo vệ một người khỏi bị Sói cắn. Không thể bảo vệ cùng 1 người 2 đêm liên tiếp.',
+    icon: 'Shield',
   },
   HUNTER: {
     id: 'HUNTER',
     name: 'Thợ săn',
     faction: FACTIONS.VILLAGER,
-    strength: 2,
+    strength: 3,
     priority: 0,
     description: 'Khi chết, được bắn chết 1 người khác.',
-    icon: 'Target'
+    icon: 'Target',
   },
   WITCH: {
     id: 'WITCH',
     name: 'Phù Thủy',
     faction: FACTIONS.VILLAGER,
-    strength: 3,
+    strength: 4,
     priority: 5,
     nightWave: 2,
     description: 'Có 1 lần hồi sinh và 1 lần đầu độc mỗi game. Thức dậy sau Sói để quyết định số phận nạn nhân.',
-    icon: 'FlaskConical'
+    icon: 'FlaskConical',
   },
   CUPID: {
     id: 'CUPID',
     name: 'Thần Tình Yêu',
     faction: FACTIONS.VILLAGER,
-    strength: 2,
+    strength: -3,
     priority: 0,
     firstNightPriority: 50,
     description: 'Thức dậy vào đêm đầu tiên để ghép đôi 2 người chơi thành một cặp tình nhân.',
-    icon: 'Heart'
+    icon: 'Heart',
   },
   TANNER: {
     id: 'TANNER',
     name: 'Kẻ chán đời',
     faction: FACTIONS.THIRD_PARTY,
-    strength: -1,
+    strength: -2,
     priority: 0,
-    description: 'Không có kỹ năng vào ban đêm. Mục tiêu duy nhất là làm mọi cách để bị nghi ngờ và bị treo cổ vào ban ngày. Nếu bị làng vote treo cổ, Kẻ chán đời lập tức giành chiến thắng một mình và ván chơi kết thúc. Nếu bị Sói cắn chết, bị Phù thủy đầu độc, bị Thợ săn bắn, hoặc sống sót đến khi ván đấu kết thúc, Kẻ chán đời sẽ thua cuộc.',
-    icon: 'Skull'
+    description:
+      'Không có kỹ năng vào ban đêm. Mục tiêu duy nhất là làm mọi cách để bị nghi ngờ và bị treo cổ vào ban ngày. Nếu bị làng vote treo cổ, Kẻ chán đời lập tức giành chiến thắng một mình và ván chơi kết thúc. Nếu bị Sói cắn chết, bị Phù thủy đầu độc, bị Thợ săn bắn, hoặc sống sót đến khi ván đấu kết thúc, Kẻ chán đời sẽ thua cuộc.',
+    icon: 'Skull',
   },
   ELDER: {
     id: 'ELDER',
@@ -89,17 +90,19 @@ export const ROLES = {
     faction: FACTIONS.VILLAGER,
     strength: 2,
     priority: 0,
-    description: 'Có 2 mạng trước Ma Sói. Nếu bị Làng hại chết (vote treo cổ, Phù thủy độc, Thợ săn bắn), tất cả vai trò đặc biệt khác của Dân Làng sẽ mất hết kỹ năng.',
-    icon: 'Award'
+    description:
+      'Có 2 mạng trước Ma Sói. Nếu bị Làng hại chết (vote treo cổ, Phù thủy độc, Thợ săn bắn), tất cả vai trò đặc biệt khác của Dân Làng sẽ mất hết kỹ năng.',
+    icon: 'Award',
   },
   CURSED: {
     id: 'CURSED',
     name: 'Kẻ bị nguyền',
     faction: FACTIONS.VILLAGER,
-    strength: -1,
+    strength: -3,
     priority: 0,
-    description: 'Ban đầu là Dân làng. Nếu bị Ma sói cắn trúng mà không có Bảo vệ cứu, sẽ không chết mà hóa thành Ma sói.',
-    icon: 'ShieldAlert'
+    description:
+      'Ban đầu là Dân làng. Nếu bị Ma sói cắn trúng mà không có Bảo vệ cứu, sẽ không chết mà hóa thành Ma sói.',
+    icon: 'ShieldAlert',
   },
   DOPPELGANGER: {
     id: 'DOPPELGANGER',
@@ -108,7 +111,8 @@ export const ROLES = {
     strength: -2,
     priority: 0,
     firstNightPriority: 95, // Awakens early on Night 1
-    description: 'Thức dậy đêm đầu tiên chọn 1 người chơi làm Bản gốc. Khi Bản gốc chết, bạn kế thừa vai trò và phe của họ.',
-    icon: 'Copy'
-  }
+    description:
+      'Thức dậy đêm đầu tiên chọn 1 người chơi làm Bản gốc. Khi Bản gốc chết, bạn kế thừa vai trò và phe của họ.',
+    icon: 'Copy',
+  },
 };
