@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock } from 'lucide-react';
+import { Hourglass } from 'lucide-react';
 import type { RoomSettings } from '../../types/game';
 
 interface LobbyTimerSettingsProps {
@@ -8,48 +8,52 @@ interface LobbyTimerSettingsProps {
   onTimerChange: (key: keyof RoomSettings, value: string) => void;
 }
 
-export const LobbyTimerSettings: React.FC<LobbyTimerSettingsProps> = ({
-  roomSettings,
-  isHost,
-  onTimerChange,
-}) => {
+export const LobbyTimerSettings: React.FC<LobbyTimerSettingsProps> = ({ roomSettings, isHost, onTimerChange }) => {
   return (
-    <div className="bg-dark/50 p-6 rounded-xl border border-gray-800 backdrop-blur-xs flex flex-col justify-between gap-4">
+    <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 p-6 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#8a0303] to-transparent opacity-50"></div>
+
       <div>
-        <h3 className="text-xs font-extrabold uppercase tracking-widest text-indigo-400 flex items-center gap-1.5 mb-4">
-          <Clock className="w-4 h-4" />
-          <span>Thời gian các Phase (giây)</span>
+        <h3 className="text-sm font-['Cinzel_Decorative',serif] uppercase tracking-[0.2em] text-[#aa8c55] flex items-center gap-2 mb-6">
+          <Hourglass className="w-4 h-4" />
+          <span>Sands of Time (s)</span>
         </h3>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="text-[10px] text-gray-400 font-bold block mb-1">Bình minh</label>
+        <div className="grid grid-cols-3 gap-6">
+          <div className="relative group/input">
+            <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2 font-sans">
+              Bình minh
+            </label>
             <input
               type="number"
               disabled={!isHost}
               value={roomSettings?.dayStartDuration || 8}
               onChange={(e) => onTimerChange('dayStartDuration', e.target.value)}
-              className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
+              className="w-full bg-transparent border-0 border-b border-white/20 pb-2 text-white text-center text-xl focus:ring-0 focus:border-[#aa8c55] focus:outline-none transition-colors disabled:opacity-50 font-['Cinzel_Decorative',serif]"
             />
           </div>
-          <div>
-            <label className="text-[10px] text-gray-400 block mb-1 font-bold">Thảo luận</label>
+          <div className="relative group/input">
+            <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2 font-sans">
+              Thảo luận
+            </label>
             <input
               type="number"
               disabled={!isHost}
               value={roomSettings?.discussionTime || 120}
               onChange={(e) => onTimerChange('discussionTime', e.target.value)}
-              className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
+              className="w-full bg-transparent border-0 border-b border-white/20 pb-2 text-white text-center text-xl focus:ring-0 focus:border-[#aa8c55] focus:outline-none transition-colors disabled:opacity-50 font-['Cinzel_Decorative',serif]"
             />
           </div>
-          <div>
-            <label className="text-[10px] text-gray-400 block mb-1 font-bold">Biểu quyết</label>
+          <div className="relative group/input">
+            <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2 font-sans">
+              Biểu quyết
+            </label>
             <input
               type="number"
               disabled={!isHost}
               value={roomSettings?.voteTime || 60}
               onChange={(e) => onTimerChange('voteTime', e.target.value)}
-              className="w-full bg-darker border border-gray-800 rounded-lg py-2 px-3 text-white text-center disabled:opacity-50"
+              className="w-full bg-transparent border-0 border-b border-white/20 pb-2 text-white text-center text-xl focus:ring-0 focus:border-[#aa8c55] focus:outline-none transition-colors disabled:opacity-50 font-['Cinzel_Decorative',serif]"
             />
           </div>
         </div>

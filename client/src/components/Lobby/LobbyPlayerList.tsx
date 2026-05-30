@@ -1,6 +1,7 @@
 import React from 'react';
 import { Avatar } from '../UI/Avatar';
 import type { Player } from '../../types/game';
+import { Skull } from 'lucide-react';
 
 interface LobbyPlayerListProps {
   players: Player[];
@@ -18,34 +19,38 @@ export const LobbyPlayerList: React.FC<LobbyPlayerListProps> = ({
   onKick,
 }) => {
   return (
-    <div className="bg-dark/50 p-6 rounded-xl border border-gray-800 backdrop-blur-xs">
-      <h2 className="text-xl font-bold mb-4 flex items-center justify-between">
-        <span>Người chơi tham gia ({players.length})</span>
+    <div className="bg-[#0a0a0a]/80 backdrop-blur-xl border border-white/5 p-8 relative overflow-hidden group">
+      {/* Edge highlights */}
+      <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#aa8c55] to-transparent opacity-30"></div>
+      
+      <h2 className="text-2xl font-['Cinzel_Decorative',serif] text-white mb-6 flex items-center justify-between tracking-widest">
+        <span>Souls Gathered ({players.length})</span>
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
         {players.map((player) => (
           <div
             key={player.id}
-            className="bg-darker/60 p-4 rounded-lg flex items-center justify-between border border-gray-800 hover:border-gray-700 transition-colors"
+            className="group/player bg-white/2 p-4 flex items-center justify-between border border-white/5 hover:border-[#8a0303]/50 hover:bg-[#8a0303]/10 transition-all duration-300"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Avatar
                 name={player.name}
                 size="sm"
-                className="bg-linear-to-tr from-indigo-600 to-indigo-500 text-white"
+                className="bg-[#030303] border border-[#aa8c55]/30 text-[#aa8c55] group-hover/player:border-[#8a0303] group-hover/player:text-[#ffdddd] transition-colors"
               />
-              <div>
-                <p className="font-bold text-gray-200">{player.name}</p>
-                {player.id === hostId && <span className="text-xs text-yellow-500 font-bold">Chủ phòng</span>}
+              <div className="flex flex-col">
+                <p className="font-bold text-white text-lg tracking-wide font-['Cinzel_Decorative',serif]">{player.name}</p>
+                {player.id === hostId && <span className="text-[10px] text-[#aa8c55] uppercase tracking-widest font-sans">Ritual Master</span>}
               </div>
             </div>
             {isHost && player.id !== myPlayerId && (
               <button
                 onClick={() => onKick(player)}
-                className="px-3 py-1.5 rounded-lg bg-red-950/40 border border-red-900/65 text-red-400 hover:text-white hover:bg-red-600 hover:border-red-600 transition-all cursor-pointer text-xs font-bold"
-                title="Kick người chơi"
+                className="p-2 rounded-none border border-[#8a0303]/30 text-[#8a0303] hover:text-[#ffdddd] hover:bg-[#8a0303] transition-all cursor-pointer group-hover/player:border-[#8a0303]"
+                title="Banish Soul"
               >
-                Kick
+                <Skull className="w-4 h-4" />
               </button>
             )}
           </div>

@@ -1,5 +1,5 @@
 import { useGame } from '../../context/GameContext';
-import { Scale, HeartCrack } from 'lucide-react';
+import { Skull, Ghost } from 'lucide-react';
 
 export const VotingResultBanner = () => {
   const { votingResult } = useGame();
@@ -9,44 +9,49 @@ export const VotingResultBanner = () => {
   const { eliminated: eliminatedPlayer, isTie } = votingResult;
 
   return (
-    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-xl px-4 animate-slide-down">
+    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4 animate-slide-down font-['Cormorant_Garamond',serif]">
       <div
-        className={`p-6 rounded-2xl border backdrop-blur-md shadow-2xl flex items-center gap-4
+        className={`p-8 rounded-none border backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.8)] flex items-center gap-6 relative overflow-hidden
         ${
           eliminatedPlayer
-            ? 'bg-red-950/90 border-red-500/30 text-white shadow-[0_10px_30px_rgba(220,38,38,0.2)]'
-            : 'bg-slate-900/90 border-indigo-500/30 text-indigo-200'
+            ? 'bg-[#0a0a0a]/95 border-[#8a0303]/50 text-white'
+            : 'bg-[#0a0a0a]/95 border-[#aa8c55]/50 text-[#e2e8f0]'
         }
       `}
       >
+        {/* Glow behind */}
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[150%] blur-[80px] -z-10 ${eliminatedPlayer ? 'bg-[#8a0303]/20' : 'bg-[#aa8c55]/10'}`}></div>
+
+        {/* Edge Lines */}
+        <div className={`absolute top-0 left-0 w-full h-px ${eliminatedPlayer ? 'bg-linear-to-r from-transparent via-[#8a0303] to-transparent' : 'bg-linear-to-r from-transparent via-[#aa8c55] to-transparent'}`}></div>
+
         {/* Banner Icon */}
         <div
-          className={`p-3.5 rounded-xl bg-opacity-20 border
+          className={`p-5 rounded-none border relative shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]
           ${
             eliminatedPlayer
-              ? 'bg-red-500 border-red-500/30 text-red-400'
-              : 'bg-indigo-500 border-indigo-500/30 text-indigo-400'
+              ? 'bg-[#030303] border-[#8a0303] text-[#8a0303]'
+              : 'bg-[#030303] border-[#aa8c55] text-[#aa8c55]'
           }
         `}
         >
-          {eliminatedPlayer ? <HeartCrack className="w-8 h-8 animate-pulse" /> : <Scale className="w-8 h-8" />}
+          {eliminatedPlayer ? <Skull className="w-10 h-10 animate-pulse" /> : <Ghost className="w-10 h-10" />}
         </div>
 
         {/* Content */}
         <div className="flex-1">
-          <h3 className="font-extrabold text-xl tracking-wide uppercase">
-            {eliminatedPlayer ? '⚖️ Kết quả biểu quyết' : '🤝 Không ai bị treo cổ'}
+          <h3 className={`font-['Cinzel_Decorative',serif] text-2xl tracking-[0.2em] uppercase mb-2 ${eliminatedPlayer ? 'text-[#ffdddd]' : 'text-[#aa8c55]'}`}>
+            {eliminatedPlayer ? 'Lệnh Hành Quyết' : 'Hội Đồng Bất Phân'}
           </h3>
-          <p className="text-gray-300 text-sm mt-1 leading-relaxed">
+          <p className="text-gray-300 text-lg leading-relaxed italic border-l border-white/20 pl-4">
             {eliminatedPlayer ? (
               <>
-                Dân làng đồng lòng treo cổ <span className="font-extrabold text-red-300">{eliminatedPlayer.name}</span>.
-                Họ đã ra đi mãi mãi...
+                Linh hồn của <span className="font-['Cinzel_Decorative',serif] text-[#8a0303] text-xl mx-1 font-bold">{eliminatedPlayer.name}</span> đã bị thiêu rụi trên giàn hỏa thiêu. Màn đêm sẽ định đoạt phần còn lại.
               </>
             ) : isTie ? (
-              'Kết quả bỏ phiếu bị hòa! Thần linh quyết định tha mạng cho tất cả mọi người hôm nay.'
+              'Không một lời phán xét nào được thi hành. Thần linh quyết định tha mạng cho tất cả mọi người hôm nay, nhưng bóng tối vẫn đang chờ đợi.'
             ) : (
-              'Không có phiếu bầu nào được đưa ra. Ngày hôm nay kết thúc trong yên lặng.'
+              'Sự im lặng bao trùm quảng trường. Ngày hôm nay kết thúc trong yên lặng đáng sợ.'
             )}
           </p>
         </div>

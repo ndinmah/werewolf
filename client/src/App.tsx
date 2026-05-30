@@ -16,7 +16,7 @@ function App() {
         <ToastProvider>
           <SocketProvider>
             <GameProvider>
-              <div className="min-h-screen text-gray-100 font-sans selection:bg-wolf/30">
+              <div className="min-h-screen bg-[#030303] text-gray-300 font-['Cormorant_Garamond',serif] selection:bg-[#8a0303]/50 selection:text-white">
                 <Navbar />
                 <Routes>
                   <Route path="/" element={<HomePage />} />

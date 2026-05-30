@@ -3,14 +3,22 @@ import { ModalOverlay } from '../../UI/ModalOverlay';
 
 export const FirstNightWaitingOverlay: React.FC = () => {
   return (
-    <ModalOverlay opacity="normal" showStars={false}>
-      <div className="text-center px-4 relative z-10 animate-fade-in">
-        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-blue-900/20 border border-blue-500/20 mb-6 shadow-[0_0_40px_rgba(59,130,246,0.1)] animate-pulse">
-          <span className="text-5xl opacity-50">🌙</span>
+    <ModalOverlay opacity="deep" showStars={true}>
+      <div className="text-center px-6 relative z-10 animate-fade-in font-['Cormorant_Garamond',serif] flex flex-col items-center">
+        {/* Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-900 rounded-full blur-[150px] opacity-10 pointer-events-none"></div>
+
+        <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-[#030303] border border-indigo-500/30 mb-8 shadow-[inset_0_0_30px_rgba(99,102,241,0.2),0_0_40px_rgba(99,102,241,0.1)] relative">
+          <div className="absolute inset-0 rounded-full border border-indigo-500/10 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"></div>
+          <span className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] animate-pulse">🌙</span>
         </div>
-        <h2 className="text-2xl md:text-4xl font-bold text-blue-100 mb-3 tracking-wide">Đêm Đầu Tiên</h2>
-        <p className="text-blue-300/60 text-lg md:text-xl">
-          Xin hãy nhắm mắt lại. Chỉ có một số vai trò đặc biệt được phép thức dậy...
+        
+        <h2 className="text-4xl md:text-5xl font-['Cinzel_Decorative',serif] text-indigo-200 mb-4 tracking-[0.15em] uppercase drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+          Đêm Đầu Tiên
+        </h2>
+        <div className="h-px w-32 bg-linear-to-r from-transparent via-indigo-500/50 to-transparent mx-auto mb-6"></div>
+        <p className="text-indigo-200/60 text-xl md:text-2xl italic max-w-xl leading-relaxed">
+          "Xin hãy khép hờ đôi mắt. Trong màn đêm sâu thẳm, những thế lực cổ xưa đang rục rịch tỉnh giấc..."
         </p>
       </div>
     </ModalOverlay>

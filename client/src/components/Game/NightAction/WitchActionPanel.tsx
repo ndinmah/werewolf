@@ -47,83 +47,92 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
   };
 
   return (
-    <ModalOverlay opacity="dark">
+    <ModalOverlay opacity="deep">
       <div
-        className={`w-full max-w-4xl bg-dark/95 border backdrop-blur-md rounded-2xl p-6 md:p-8 flex flex-col gap-6 relative z-10 ${roleHeader.color}`}
+        className={`w-full max-w-5xl bg-[#030303] border border-[#a855f7]/30 rounded-none p-8 md:p-12 flex flex-col gap-8 relative z-10 font-['Cormorant_Garamond',serif] shadow-[0_0_50px_rgba(168,85,247,0.2)]`}
       >
+        {/* Glow background */}
+        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full blur-[200px] opacity-10 pointer-events-none transition-colors duration-1000 ${witchUsePoison ? 'bg-[#84cc16]' : witchUseHeal ? 'bg-[#aa8c55]' : 'bg-[#a855f7]'}`}></div>
+
+        {/* Edge highlights */}
+        <div className={`absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#a855f7] to-transparent opacity-80 transition-colors ${witchUsePoison ? 'via-[#84cc16]' : witchUseHeal ? 'via-[#aa8c55]' : 'via-[#a855f7]'}`}></div>
+
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-center gap-4 border-b border-gray-800 pb-6">
-          <div className="p-4 bg-darker rounded-2xl border border-gray-800">{roleHeader.icon}</div>
+        <div className="flex flex-col md:flex-row items-center gap-6 border-b border-[#a855f7]/20 pb-8 relative z-10">
+          <div className="p-6 bg-[#0a0a0a] rounded-none border border-[#a855f7]/50 shadow-[inset_0_0_20px_rgba(168,85,247,0.3)]">
+            {roleHeader.icon}
+          </div>
           <div className="text-center md:text-left">
-            <h2 className="text-3xl font-extrabold text-white tracking-wide">{roleHeader.title}</h2>
-            <p className="text-gray-400 mt-1 max-w-2xl">{roleHeader.desc}</p>
+            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#d8b4fe] tracking-widest uppercase">{roleHeader.title}</h2>
+            <p className="text-gray-400 mt-2 text-xl italic max-w-2xl">"{roleHeader.desc}"</p>
           </div>
         </div>
 
         {/* Thông tin nạn nhân của Sói */}
-        <div className="bg-red-950/30 border border-red-800/50 rounded-xl p-4 flex items-center gap-3">
-          <Skull className="w-6 h-6 text-red-400 shrink-0" />
-          <div>
-            <p className="text-sm text-gray-400">Sói đã chọn giết đêm nay:</p>
-            <p className="font-bold text-red-300 text-lg">
-              {victimPlayer ? victimPlayer.name : '(Sói chưa chọn / không có nạn nhân)'}
+        <div className="bg-[#8a0303]/10 border border-[#8a0303]/50 rounded-none p-6 flex items-center gap-6 relative z-10 shadow-[inset_0_0_20px_rgba(138,3,3,0.2)]">
+          <Skull className="w-10 h-10 text-[#8a0303] shrink-0 animate-bounce" />
+          <div className="border-l border-[#8a0303]/30 pl-6">
+            <p className="text-sm text-[#8a0303] font-['Cinzel_Decorative',serif] tracking-[0.2em] uppercase font-bold">Dấu vết của quỷ:</p>
+            <p className="font-bold text-[#ffdddd] text-2xl tracking-wider">
+              {victimPlayer ? victimPlayer.name : '(Đêm nay bình yên)'}
             </p>
           </div>
         </div>
 
         {/* Chọn hành động */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
           {/* HỘP BÌNH CỨU */}
           <div
-            className={`p-5 rounded-2xl border flex flex-col gap-4 bg-darker/60 backdrop-blur-sm transition-all duration-300
-            ${witchUseHeal ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-gray-800'}`}
+            className={`p-8 rounded-none border flex flex-col gap-6 transition-all duration-500 relative
+            ${witchUseHeal ? 'bg-[#aa8c55]/10 border-[#aa8c55] shadow-[inset_0_0_30px_rgba(170,140,85,0.2)]' : 'bg-[#0a0a0a] border-white/10'}`}
           >
-            <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
+            {witchUseHeal && <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-[#aa8c55]/20 to-transparent pointer-events-none"></div>}
+            
+            <div className="flex items-center gap-4 border-b border-white/10 pb-4">
               <Shield
-                className={`w-6 h-6 ${witchInfo.canHeal && victimPlayer ? 'text-green-400' : 'text-gray-600'}`}
+                className={`w-8 h-8 ${witchInfo.canHeal && victimPlayer ? 'text-[#aa8c55]' : 'text-gray-600'}`}
               />
-              <h3 className="font-bold text-lg text-gray-200">Bình Cứu (Hồi sinh)</h3>
+              <h3 className={`font-['Cinzel_Decorative',serif] text-2xl tracking-widest uppercase ${witchInfo.canHeal && victimPlayer ? 'text-[#aa8c55]' : 'text-gray-500'}`}>Hồi Sinh Nhan</h3>
             </div>
 
             {witchInfo.canHeal && victimPlayer ? (
-              <div className="flex flex-col justify-between h-full gap-4">
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  Sử dụng bình cứu để hồi sinh <span className="font-bold text-red-400">{victimPlayer.name}</span> khỏi
-                  cái chết đêm nay.
+              <div className="flex flex-col justify-between h-full gap-6 relative z-10">
+                <p className="text-lg text-gray-300 leading-relaxed italic">
+                  Sử dụng bình tiên để cứu rỗi linh hồn <span className="font-['Cinzel_Decorative',serif] font-bold text-[#aa8c55] text-xl mx-1">{victimPlayer.name}</span> khỏi nanh vuốt cái chết.
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   <button
                     type="button"
-                    onClick={() => setWitchUseHeal(true)}
-                    className={`flex-1 py-2.5 rounded-xl border font-bold text-sm transition-all duration-200 cursor-pointer
+                    onClick={() => { setWitchUseHeal(true); setWitchUsePoison(false); setWitchPoisonTargetId(null); }}
+                    className={`flex-1 py-3 rounded-none border font-['Cinzel_Decorative',serif] text-lg tracking-widest uppercase transition-all duration-300 cursor-pointer
                       ${
                         witchUseHeal
-                          ? 'bg-green-600 border-green-500 text-white'
-                          : 'bg-dark border-gray-850 text-gray-400 hover:border-green-700 hover:text-green-400'
+                          ? 'bg-[#aa8c55] border-[#aa8c55] text-[#030303] shadow-[0_0_15px_rgba(170,140,85,0.5)]'
+                          : 'bg-transparent border-[#aa8c55]/50 text-[#aa8c55] hover:bg-[#aa8c55]/10'
                       }`}
                   >
-                    Cứu
+                    Ban Sự Sống
                   </button>
                   <button
                     type="button"
                     onClick={() => setWitchUseHeal(false)}
-                    className={`flex-1 py-2.5 rounded-xl border font-bold text-sm transition-all duration-200 cursor-pointer
+                    className={`flex-1 py-3 rounded-none border font-['Cinzel_Decorative',serif] text-lg tracking-widest uppercase transition-all duration-300 cursor-pointer
                       ${
-                        !witchUseHeal
-                          ? 'bg-gray-700 border-gray-600 text-white'
-                          : 'bg-dark border-gray-850 text-gray-400 hover:border-gray-650'
+                        !witchUseHeal && !witchUsePoison
+                          ? 'bg-[#030303] border-white/30 text-white shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]'
+                          : 'bg-transparent border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
                       }`}
                   >
-                    Không cứu
+                    Mặc Kệ
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col justify-center items-center h-full text-center py-4">
-                <p className="text-sm text-gray-500 italic">
+              <div className="flex flex-col justify-center items-center h-full text-center py-6">
+                <p className="text-lg text-gray-600 italic">
                   {!witchInfo.canHeal
-                    ? 'Bình Cứu đã được sử dụng trước đó hoặc bạn không thể tự cứu vào lúc này.'
-                    : 'Không có nạn nhân bị Sói cắn đêm nay.'}
+                    ? '"Lọ thuốc cứu mạng đã vỡ nát từ lâu..."'
+                    : '"Màn đêm tĩnh lặng, không một ai đổ máu."'}
                 </p>
               </div>
             )}
@@ -131,31 +140,33 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
 
           {/* HỘP BÌNH ĐỘC */}
           <div
-            className={`p-5 rounded-2xl border flex flex-col gap-4 bg-darker/60 backdrop-blur-sm transition-all duration-300
-            ${witchUsePoison ? 'border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.1)]' : 'border-gray-800'}`}
+            className={`p-8 rounded-none border flex flex-col gap-6 transition-all duration-500 relative
+            ${witchUsePoison ? 'bg-[#84cc16]/10 border-[#84cc16] shadow-[inset_0_0_30px_rgba(132,204,22,0.15)]' : 'bg-[#0a0a0a] border-white/10'}`}
           >
-            <div className="flex items-center gap-3 border-b border-gray-800 pb-3">
-              <Swords className={`w-6 h-6 ${witchInfo.canPoison ? 'text-purple-400' : 'text-gray-600'}`} />
-              <h3 className="font-bold text-lg text-gray-200">Bình Độc (Đầu độc)</h3>
+            {witchUsePoison && <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-[#84cc16]/20 to-transparent pointer-events-none"></div>}
+
+            <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+              <Swords className={`w-8 h-8 ${witchInfo.canPoison ? 'text-[#84cc16]' : 'text-gray-600'}`} />
+              <h3 className={`font-['Cinzel_Decorative',serif] text-2xl tracking-widest uppercase ${witchInfo.canPoison ? 'text-[#84cc16]' : 'text-gray-500'}`}>Tịch Diệt Lộ</h3>
             </div>
 
             {witchInfo.canPoison ? (
-              <div className="flex flex-col gap-4 h-full">
-                <p className="text-sm text-gray-400 leading-relaxed">
-                  Sử dụng bình độc để loại bỏ 1 người chơi bất kỳ ngay lập tức.
+              <div className="flex flex-col gap-6 h-full relative z-10">
+                <p className="text-lg text-gray-300 leading-relaxed italic">
+                  Nhỏ một giọt kịch độc để đoạt mạng bất kỳ kẻ nào ngáng đường. Cái chết là tuyệt đối.
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   <button
                     type="button"
-                    onClick={() => setWitchUsePoison(true)}
-                    className={`flex-1 py-2.5 rounded-xl border font-bold text-sm transition-all duration-200 cursor-pointer
+                    onClick={() => { setWitchUsePoison(true); setWitchUseHeal(false); }}
+                    className={`flex-1 py-3 rounded-none border font-['Cinzel_Decorative',serif] text-lg tracking-widest uppercase transition-all duration-300 cursor-pointer
                       ${
                         witchUsePoison
-                          ? 'bg-purple-600 border-purple-500 text-white'
-                          : 'bg-dark border-gray-850 text-gray-400 hover:border-purple-700 hover:text-purple-400'
+                          ? 'bg-[#84cc16] border-[#84cc16] text-[#030303] shadow-[0_0_15px_rgba(132,204,22,0.5)]'
+                          : 'bg-transparent border-[#84cc16]/50 text-[#84cc16] hover:bg-[#84cc16]/10'
                       }`}
                   >
-                    Đầu độc
+                    Đầu Độc
                   </button>
                   <button
                     type="button"
@@ -163,20 +174,20 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
                       setWitchUsePoison(false);
                       setWitchPoisonTargetId(null);
                     }}
-                    className={`flex-1 py-2.5 rounded-xl border font-bold text-sm transition-all duration-200 cursor-pointer
+                    className={`flex-1 py-3 rounded-none border font-['Cinzel_Decorative',serif] text-lg tracking-widest uppercase transition-all duration-300 cursor-pointer
                       ${
-                        !witchUsePoison
-                          ? 'bg-gray-700 border-gray-600 text-white'
-                          : 'bg-dark border-gray-850 text-gray-400 hover:border-gray-650'
+                        !witchUsePoison && !witchUseHeal
+                          ? 'bg-[#030303] border-white/30 text-white shadow-[inset_0_0_10px_rgba(255,255,255,0.1)]'
+                          : 'bg-transparent border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
                       }`}
                   >
-                    Không dùng
+                    Khoan Dung
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col justify-center items-center h-full text-center py-4">
-                <p className="text-sm text-gray-500 italic">Bình Độc đã được sử dụng trước đó.</p>
+              <div className="flex flex-col justify-center items-center h-full text-center py-6">
+                <p className="text-lg text-gray-600 italic">"Chai thuốc độc chỉ còn lại cặn bã vô hại."</p>
               </div>
             )}
           </div>
@@ -184,9 +195,9 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
 
         {/* Danh sách người chơi để đầu độc */}
         {witchUsePoison && witchInfo.canPoison && (
-          <div className="border-t border-gray-800 pt-4 flex flex-col gap-3">
-            <p className="text-sm font-bold text-purple-300">Chọn người chơi muốn đầu độc:</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-y-auto max-h-[30vh] pr-2 custom-scrollbar">
+          <div className="border-t border-[#84cc16]/30 pt-6 flex flex-col gap-4 relative z-10 animate-fade-in">
+            <p className="text-lg font-['Cinzel_Decorative',serif] text-[#84cc16] tracking-widest uppercase text-center">Tế Đàn Tuyệt Mệnh</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto max-h-[30vh] pr-2 scrollbar-thin scrollbar-thumb-[#84cc16]/50 scrollbar-track-transparent pb-4">
               {targets
                 .filter((p) => p.id !== witchInfo.werewolfVictimId && p.id !== myPlayer?.id)
                 .map((player) => {
@@ -196,24 +207,24 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
                     <div
                       key={player.id}
                       onClick={() => setWitchPoisonTargetId(player.id)}
-                      className={`relative p-3 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer min-h-[90px] select-none
+                      className={`relative p-4 rounded-none border transition-all duration-300 flex flex-col items-center justify-center text-center cursor-pointer min-h-[120px] select-none
                       ${
                         isSelected
-                          ? 'bg-purple-950/40 border-purple-500 scale-[1.03] shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                          : 'bg-dark border-gray-850 hover:border-gray-750'
+                          ? 'bg-[#84cc16]/20 border-[#84cc16] scale-105 shadow-[0_0_20px_rgba(132,204,22,0.4)]'
+                          : 'bg-[#0a0a0a] border-white/10 hover:border-[#84cc16]/50'
                       }`}
                     >
                       <Avatar
                         name={player.name}
-                        size="xs"
+                        size="sm"
                         className={
                           isSelected
-                            ? 'bg-purple-600 border-purple-400 text-white'
-                            : 'bg-gray-850 border-gray-700 text-gray-300'
+                            ? 'bg-[#030303] border-[#84cc16] text-[#ecfccb] shadow-[0_0_10px_rgba(132,204,22,0.8)]'
+                            : 'bg-[#030303] border-white/20 text-gray-400'
                         }
                       />
-                      <span className="font-bold text-gray-200 text-xs truncate max-w-full flex items-center justify-center gap-1 mt-1.5">
-                        {fullPlayer?.isLover && <span className="animate-pulse">❤️</span>}
+                      <span className={`font-['Cinzel_Decorative',serif] text-sm tracking-wider mt-3 flex items-center justify-center gap-1 ${isSelected ? 'text-[#ecfccb]' : 'text-gray-300'}`}>
+                        {fullPlayer?.isLover && <span className="animate-pulse text-[10px]">❤️</span>}
                         <span>{player.name}</span>
                       </span>
                     </div>
@@ -223,18 +234,15 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end gap-4 border-t border-gray-800 pt-6 mt-2">
+        <div className="flex justify-center border-t border-white/10 pt-8 mt-2 relative z-10">
           <Button
             size="lg"
+            variant={hasConfirmed ? 'ghost' : 'secondary'}
             disabled={hasConfirmed || !canConfirm}
             onClick={handleConfirmClick}
-            className={`px-8 font-bold tracking-wider ${
-              hasConfirmed
-                ? 'bg-gray-600 cursor-not-allowed'
-                : 'bg-pink-700 hover:bg-pink-800 shadow-md shadow-pink-700/20'
-            }`}
+            className={`min-w-[300px] ${!hasConfirmed && (witchUsePoison ? 'border-[#84cc16] text-[#84cc16] hover:bg-[#84cc16]/10' : witchUseHeal ? 'border-[#aa8c55] text-[#aa8c55] hover:bg-[#aa8c55]/10' : 'border-[#a855f7] text-[#d8b4fe] hover:bg-[#a855f7]/10')}`}
           >
-            {hasConfirmed ? 'ĐÃ THỰC HIỆN' : 'CHỐT HÀNH ĐỘNG'}
+            {hasConfirmed ? 'PHÉP THUẬT ĐÃ BAN' : 'THI TRIỂN QUYỀN NĂNG'}
           </Button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Skull, RefreshCw } from 'lucide-react';
 import { Button } from './Button';
 
 interface Props {
@@ -38,39 +38,43 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-center p-6 select-none relative overflow-hidden">
-          <div className="absolute inset-0 stars-bg opacity-30 pointer-events-none"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-red-500/5 rounded-full blur-3xl -z-10 animate-pulse"></div>
+        <div className="min-h-screen bg-[#030303] flex flex-col items-center justify-center text-center p-6 select-none relative overflow-hidden font-['Cormorant_Garamond',serif]">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#8a0303] rounded-full blur-[150px] opacity-20 animate-pulse"></div>
+          </div>
 
-          <div className="max-w-md w-full bg-dark border border-red-500/30 p-8 rounded-2xl shadow-2xl relative z-10">
+          <div className="max-w-md w-full bg-[#0a0a0a]/90 backdrop-blur-xl border border-[#8a0303]/30 p-10 relative z-10 shadow-[0_0_50px_rgba(138,3,3,0.3)]">
+            <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#8a0303] to-transparent opacity-80"></div>
+
             <div className="flex justify-center mb-6">
-              <div className="p-4 bg-red-950/50 rounded-full border border-red-500/20 text-red-500">
-                <AlertTriangle className="w-12 h-12" />
+              <div className="p-5 bg-[#030303] rounded-none border border-[#8a0303]/50 text-[#8a0303] shadow-[inset_0_0_20px_rgba(138,3,3,0.5)]">
+                <Skull className="w-12 h-12 animate-pulse" />
               </div>
             </div>
 
-            <h2 className="text-2xl font-extrabold text-white mb-2 tracking-wide">Đã Xảy Ra Sự Cố</h2>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Ứng dụng đã gặp lỗi không mong muốn. Vui lòng tải lại trang hoặc quay lại màn hình chính.
+            <h2 className="text-3xl font-['Cinzel_Decorative',serif] text-white mb-2 tracking-widest uppercase">Đã Xảy Ra Sự Cố</h2>
+            <p className="text-gray-400 text-lg leading-relaxed mb-6 italic border-l border-r border-[#8a0303]/20 px-4">
+              "Thế giới hắc ám đã bị gián đoạn. Xin hãy triệu hồi lại."
             </p>
 
             {this.state.error && (
-              <div className="mb-6 p-3 bg-darker border border-gray-800 rounded-lg text-left overflow-x-auto text-[10px] font-mono text-red-400 max-h-32">
+              <div className="mb-8 p-4 bg-[#030303] border border-white/5 text-left overflow-x-auto text-xs font-sans tracking-widest text-[#8a0303] max-h-32">
                 {this.state.error.toString()}
               </div>
             )}
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               <Button
                 onClick={this.handleReset}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl border border-red-500 flex items-center justify-center gap-2"
+                variant="primary"
+                className="w-full"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Tải lại trang</span>
+                <span>Triệu hồi lại</span>
               </Button>
               <a
                 href="/"
-                className="w-full text-center text-xs text-gray-500 hover:text-gray-400 font-medium py-1 transition-colors"
+                className="w-full text-center text-xs text-gray-500 hover:text-[#aa8c55] font-sans uppercase tracking-[0.2em] transition-colors mt-2"
               >
                 Về trang chủ
               </a>

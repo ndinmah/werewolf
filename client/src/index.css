@@ -18,27 +18,18 @@
 }
 
 @layer utilities {
-  .stars-bg {
-    background-image:
-      radial-gradient(2px 2px at 20px 30px, #eee, rgba(0, 0, 0, 0)),
-      radial-gradient(2px 2px at 40px 70px, #fff, rgba(0, 0, 0, 0)),
-      radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0, 0, 0, 0)),
-      radial-gradient(2px 2px at 90px 40px, #fff, rgba(0, 0, 0, 0)),
-      radial-gradient(2px 2px at 130px 80px, #fff, rgba(0, 0, 0, 0)),
-      radial-gradient(2px 2px at 160px 120px, #ddd, rgba(0, 0, 0, 0));
-    background-repeat: repeat;
-    background-size: 200px 200px;
-    animation: stars-move 100s linear infinite;
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
   }
-}
-
-@keyframes stars-move {
-  from {
-    background-position: 0 0;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
   }
-
-  to {
-    background-position: 1000px 500px;
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #334155;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #475569;
   }
 }
 

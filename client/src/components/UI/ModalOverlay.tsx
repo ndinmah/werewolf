@@ -17,22 +17,22 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
   starsOpacity = 'normal',
 }) => {
   const bgOpacityClasses = {
-    light: 'bg-slate-950/80',
-    normal: 'bg-slate-950/95',
-    dark: 'bg-slate-950/98',
-    deep: 'bg-slate-950/99',
+    light: 'bg-[#030303]/80',
+    normal: 'bg-[#030303]/90',
+    dark: 'bg-[#030303]/95',
+    deep: 'bg-[#030303]/99',
   };
 
   const starsOpacityClasses = {
-    light: 'opacity-20',
-    normal: 'opacity-30',
-    heavy: 'opacity-40',
+    light: 'opacity-10',
+    normal: 'opacity-20',
+    heavy: 'opacity-30',
   };
 
   return (
     <div
       className={clsx(
-        'fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto animate-fade-in',
+        'fixed inset-0 z-50 flex items-center justify-center px-4 py-8 overflow-y-auto animate-fade-in backdrop-blur-sm',
         bgOpacityClasses[opacity],
         className
       )}
@@ -40,7 +40,7 @@ export const ModalOverlay: React.FC<ModalOverlayProps> = ({
       {showStars && (
         <div
           className={clsx(
-            'absolute inset-0 stars-bg pointer-events-none',
+            'absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-[#8a0303] via-[#030303] to-[#030303]',
             starsOpacityClasses[starsOpacity]
           )}
         />
