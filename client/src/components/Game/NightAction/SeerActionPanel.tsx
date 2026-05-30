@@ -51,9 +51,11 @@ export const SeerActionPanel: React.FC<SeerActionPanelProps> = ({
 
         {/* Grid người chơi */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto max-h-[50vh] pr-2">
-          {targets.map((player) => {
-            const isSelected = selectedId === player.id;
-            const isSelf = player.id === myPlayer.id;
+          {targets
+            .filter((player) => player.id !== myPlayer.id)
+            .map((player) => {
+              const isSelected = selectedId === player.id;
+              const isSelf = player.id === myPlayer.id;
 
             const fullPlayer = players.find((p) => p.id === player.id);
 

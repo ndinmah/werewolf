@@ -14,6 +14,7 @@ interface WitchActionPanelProps {
   };
   targets: Pick<Player, 'id' | 'name' | 'isAlive'>[];
   players: Player[];
+  myPlayer?: Player;
   witchInfo: WitchInfo;
   hasConfirmed: boolean;
   onConfirm: (healTargetId: string | null, poisonTargetId: string | null) => void;
@@ -23,6 +24,7 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
   roleHeader,
   targets,
   players,
+  myPlayer,
   witchInfo,
   hasConfirmed,
   onConfirm,
@@ -186,7 +188,7 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
             <p className="text-sm font-bold text-purple-300">Chọn người chơi muốn đầu độc:</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-y-auto max-h-[30vh] pr-2 custom-scrollbar">
               {targets
-                .filter((p) => p.id !== witchInfo.werewolfVictimId)
+                .filter((p) => p.id !== witchInfo.werewolfVictimId && p.id !== myPlayer?.id)
                 .map((player) => {
                   const isSelected = witchPoisonTargetId === player.id;
                   const fullPlayer = players.find((p) => p.id === player.id);

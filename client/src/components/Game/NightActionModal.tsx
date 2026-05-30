@@ -96,6 +96,7 @@ export const NightActionModal = () => {
         roleHeader={roleHeader}
         targets={targets}
         players={players}
+        myPlayer={myPlayer}
         witchInfo={witchInfo}
         hasConfirmed={hasConfirmed}
         onConfirm={(healTargetId, poisonTargetId) => {
