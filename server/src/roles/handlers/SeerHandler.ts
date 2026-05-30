@@ -14,7 +14,7 @@ class SeerHandler implements RoleHandler {
         name: p.name,
         isAlive: p.isAlive
       })),
-      excludeTargetId: null
+      excludeTargetId: player.id
     });
   }
 
@@ -29,7 +29,7 @@ class SeerHandler implements RoleHandler {
     if (payload.role !== 'SEER') return false;
     if (context.villagersLostPowers) return false;
     const targetId = payload.targetId;
-    if (!targetId) return false;
+    if (!targetId || targetId === player.id) return false;
     if (gameData.nightActionSubmitted.has(player.id)) return false;
 
     const targetPlayer = context.players.find(p => p.id === targetId);
@@ -51,7 +51,11 @@ class SeerHandler implements RoleHandler {
 
     if (!gameData.seerVisions) gameData.seerVisions = {};
     if (!gameData.seerVisions[player.id]) gameData.seerVisions[player.id] = [];
-    if (!gameData.seerVisions[player.id].some(v => v.targetId === targetPlayer.id)) {
+    
+    const existingVision = gameData.seerVisions[player.id].find(v => v.targetId === targetPlayer.id);
+    if (existingVision) {
+      existingVision.isWerewolf = isWerewolf;
+    } else {
       gameData.seerVisions[player.id].push({
         targetId: targetPlayer.id,
         targetName: targetPlayer.name,

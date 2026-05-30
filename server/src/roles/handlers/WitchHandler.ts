@@ -64,6 +64,7 @@ class WitchHandler implements RoleHandler {
     // Kiểm tra tính hợp lệ
     if (healTargetId && gameData.witchHealUsed) return false;
     if (poisonTargetId && gameData.witchPoisonUsed) return false;
+    if (poisonTargetId === player.id) return false;
 
     if (healTargetId) {
       const werewolfTarget = gameData.nightActions?.['WEREWOLF']?.targetId || null;
@@ -88,6 +89,11 @@ class WitchHandler implements RoleHandler {
       if (healTargetId === player.id && context.dayCount > 1) return false;
     }
 
+    if (poisonTargetId) {
+      const target = context.players.find((p) => p.id === poisonTargetId);
+      if (!target || !target.isAlive) return false;
+    }
+
     gameData.nightActionSubmitted.add(player.id);
     if (!gameData.nightActions) gameData.nightActions = {};
 
@@ -96,8 +102,6 @@ class WitchHandler implements RoleHandler {
       gameData.nightActions['WITCH_HEAL'] = { actorId: player.id, targetId: healTargetId };
     }
     if (poisonTargetId) {
-      const target = context.players.find((p) => p.id === poisonTargetId);
-      if (!target || !target.isAlive) return false;
       gameData.witchPoisonUsed = true;
       gameData.nightActions['WITCH_POISON'] = { actorId: player.id, targetId: poisonTargetId };
     }
