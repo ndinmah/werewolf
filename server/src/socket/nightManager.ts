@@ -241,8 +241,14 @@ export const submitCupidAction = (
   if (handler && handler.submitNightAction) {
     const valid = handler.submitNightAction(roomId, actor, { role: 'CUPID', lover1Id, lover2Id }, context, gameData, io);
     if (valid && snapshot.value === 'FirstNightPhase' && gameData.currentNightRoleIndex !== undefined) {
-      gameData.currentNightRoleIndex++;
-      promptNextFirstNightRole(roomId, io);
+      // Delay 5s để client hiện animation lovers reveal trước khi chuyển role
+      setTimeout(() => {
+        const gd = getGameData(roomId);
+        if (gd && gd.actor.getSnapshot().value === 'FirstNightPhase') {
+          gd.currentNightRoleIndex = (gd.currentNightRoleIndex ?? 0) + 1;
+          promptNextFirstNightRole(roomId, io);
+        }
+      }, 5000);
     }
     return valid;
   }
@@ -267,10 +273,24 @@ export const resolveNight = (roomId: string, io: Server): void => {
   const context = snapshot.context;
   const deaths = new Set<string>();
 
-  // Để từng Role handler xử lý logic chết (Sói cắn, Phù thuỷ cứu/độc, Bảo vệ)
+  // Thứ tự resolveNight rất quan trọng (Order Dependency):
+  // 1. WEREWOLF cắn (thêm vào deaths)
+  // 2. BODYGUARD bảo vệ (xóa khỏi deaths) -> chặn Sói cắn
+  // 3. WITCH cứu/độc (xóa khỏi deaths / thêm vào deaths) -> Độc của phù thủy không bị chặn bởi bảo vệ
+  const resolveOrder = ['WEREWOLF', 'BODYGUARD', 'WITCH', 'HUNTER', 'ELDER', 'CUPID', 'SEER', 'CURSED', 'DOPPELGANGER'];
+  
+  // Chạy các handler theo thứ tự định sẵn
+  for (const roleId of resolveOrder) {
+    const handler = RoleRegistry.getHandler(roleId as import('../types/game.ts').Role);
+    if (handler && handler.resolveNight) {
+      handler.resolveNight(roomId, context, gameData, deaths, io);
+    }
+  }
+
+  // Chạy nốt các handler còn lại nếu chưa có trong danh sách (để an toàn)
   const handlers = RoleRegistry.getAllHandlers();
-  for (const [, handler] of handlers) {
-    if (handler.resolveNight) {
+  for (const [role, handler] of handlers) {
+    if (!resolveOrder.includes(role) && handler.resolveNight) {
       handler.resolveNight(roomId, context, gameData, deaths, io);
     }
   }
@@ -312,6 +332,25 @@ export const resolveNight = (roomId: string, io: Server): void => {
         deaths.delete(cursed.id);
         transformedIds.push(cursed.id);
         io.to(roomId).emit('CURSED_TRANSFORMED', { playerId: cursed.id });
+
+        // Cập nhật lại Seer vision cache: nếu Tiên Tri đã soi người này, kết quả giờ thành Sói
+        if (gameData.seerVisions) {
+          for (const seerId in gameData.seerVisions) {
+            const vision = gameData.seerVisions[seerId].find(v => v.targetId === cursed.id);
+            if (vision) {
+              vision.isWerewolf = true;
+              // Bắn event để client của Tiên Tri (nếu đang online) có thể cập nhật ngay lập tức
+              const seerSocket = io.sockets.sockets.get(seerId);
+              if (seerSocket) {
+                seerSocket.emit('SEER_RESULT', {
+                  targetId: cursed.id,
+                  targetName: cursed.name,
+                  isWerewolf: true
+                });
+              }
+            }
+          }
+        }
       }
     }
   });
@@ -332,7 +371,8 @@ export const resolveNight = (roomId: string, io: Server): void => {
     type: 'ALL_NIGHT_ACTIONS_DONE',
     nightDeaths,
     elderShields: nextElderShields,
-    transformedIds
+    transformedIds,
+    nightActions: gameData.nightActions
   });
 };
 

@@ -70,3 +70,25 @@ export const getNewlyDeadPlayerIds = (oldPlayers: Player[], newPlayers: Player[]
   });
   return newlyDeadIds;
 };
+
+/**
+ * Kiểm tra xem một người chơi có phải là Ma Sói hay không.
+ * Đã tính đến trường hợp Kẻ bị nguyền rủa (CURSED) bị Sói cắn và không được Bảo vệ cứu hay Phù Thủy độc đêm nay.
+ */
+export const isPlayerWerewolf = (
+  player: Player | undefined,
+  nightActions?: Record<string, { actorId: string; targetId: string }>
+): boolean => {
+  if (!player) return false;
+  if (player.role === 'WEREWOLF') return true;
+  if (player.role === 'CURSED' && nightActions) {
+    const werewolfTargetId = nightActions['WEREWOLF']?.targetId;
+    const wasProtected = nightActions['BODYGUARD']?.targetId === player.id;
+    const wasPoisoned = nightActions['WITCH_POISON']?.targetId === player.id;
+    if (werewolfTargetId === player.id && !wasProtected && !wasPoisoned) {
+      return true;
+    }
+  }
+  return false;
+};
+

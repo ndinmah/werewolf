@@ -3,6 +3,7 @@ import type { GameContext } from '../types/game.ts';
 import { SOCKET_EVENTS } from '../constants/events.ts';
 import { getGameData } from '../engine/gameStateManager.ts';
 import { addMessage } from './chatManager.ts';
+import { isPlayerWerewolf } from '../engine/gameHelpers.ts';
 
 /**
  * Gửi cập nhật trạng thái game được cá nhân hóa đến từng người chơi trong phòng
@@ -11,9 +12,10 @@ import { addMessage } from './chatManager.ts';
 export const notifyPlayers = (roomId: string, context: GameContext, io: Server): void => {
   if (!io) return;
 
+  const gameData = getGameData(roomId);
+
   // Phát hiện và thông báo ngay lập tức nếu Lời nguyền Già làng kích hoạt
   if (context.villagersLostPowers) {
-    const gameData = getGameData(roomId);
     if (gameData && !gameData.curseNotified) {
       gameData.curseNotified = true;
 
@@ -37,11 +39,16 @@ export const notifyPlayers = (roomId: string, context: GameContext, io: Server):
   io.to(roomId).fetchSockets().then(sockets => {
     sockets.forEach(s => {
       const myPlayer = context.players.find(p => p.id === s.id);
+      const nightActions = gameData?.nightActions;
 
       const personalizedPlayers = context.players.map(p => {
         const isSelf = p.id === s.id;
         const isDead = !p.isAlive;
-        const isWolfTeam = myPlayer?.role === 'WEREWOLF' && p.role === 'WEREWOLF';
+        
+        const myPlayerIsWolf = isPlayerWerewolf(myPlayer, nightActions);
+        const pIsWolf = isPlayerWerewolf(p, nightActions);
+        const isWolfTeam = myPlayerIsWolf && pIsWolf;
+        
         const isGameOver = context.phase === 'gameOver';
 
         const isLoverOfCurrentUser = context.lovers &&
@@ -49,10 +56,18 @@ export const notifyPlayers = (roomId: string, context: GameContext, io: Server):
           context.lovers.includes(s.id) &&
           context.lovers.includes(p.id);
 
-        // Chỉ hiển thị role và faction của bản thân, người đã chết, đồng bọn sói hoặc khi kết thúc game
+        // Chỉ hiển thị role và faction của bản thân, người đã chết, đồng bọn sối hoặc khi kết thúc game
         if (isSelf || isDead || isWolfTeam || isGameOver) {
+          let finalRole = p.role;
+          let finalFaction = p.faction;
+          if (pIsWolf && p.role === 'CURSED') {
+            finalRole = 'WEREWOLF';
+            finalFaction = 'WEREWOLF';
+          }
           return {
             ...p,
+            role: finalRole,
+            faction: finalFaction,
             isLover: isLoverOfCurrentUser ? true : undefined
           };
         }

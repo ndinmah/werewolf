@@ -12,7 +12,7 @@ import { createGameActor, getGameData, destroyGameActor, clearGameTimer } from '
 import { addMessage } from './chatManager.ts';
 import { castVote, getVoteTally, finalizeVoting } from './voteManager.ts';
 import { submitNightAction, submitWitchAction, submitCupidAction, handleNightPlayerDisconnect } from './nightManager.ts';
-import { findPendingHunter } from '../engine/gameHelpers.ts';
+import { findPendingHunter, isPlayerWerewolf } from '../engine/gameHelpers.ts';
 import { handlePlayerReconnect } from './reconnectManager.ts';
 import type { ChatLogs, NightActionInput } from '../types/game.ts';
 
@@ -285,7 +285,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
       }
       if (
         channel === 'wolves' &&
-        (player.role !== 'WEREWOLF' ||
+        (!isPlayerWerewolf(player, gameData.nightActions) ||
           !player.isAlive ||
           context.phase === 'roleReveal' ||
           context.phase === 'gameOver')
@@ -318,7 +318,7 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
               let canView = false;
               if (channel === 'general') canView = true;
               else if (channel === 'ghost') canView = !targetPlayer.isAlive;
-              else if (channel === 'wolves') canView = targetPlayer.role === 'WEREWOLF';
+              else if (channel === 'wolves') canView = isPlayerWerewolf(targetPlayer, gameData.nightActions);
 
               if (canView) {
                 s.emit('CHAT_MESSAGE', message);

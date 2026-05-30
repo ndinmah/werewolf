@@ -109,6 +109,7 @@ export interface GameEvent {
   elderShields?: number;
   transformedIds?: string[];
   doppelgangerTargets?: Record<string, string>;
+  nightActions?: NightActionRecord;
   [key: string]: unknown;
 }
 
@@ -132,6 +133,8 @@ export interface SeerVision {
   targetName: string;
   isWerewolf: boolean;
 }
+
+export type NightActionRecord = Record<string, { actorId: string; targetId: string }>;
 
 export type NightActionPayload =
   | { role: 'WEREWOLF'; targetId: string }
