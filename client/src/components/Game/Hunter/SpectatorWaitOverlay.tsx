@@ -1,6 +1,7 @@
 import React from 'react';
 import { Target } from 'lucide-react';
 import { ModalOverlay } from '../../UI/ModalOverlay';
+import { S } from '../../../constants/strings';
 
 export const SpectatorWaitOverlay: React.FC = () => {
   return (
@@ -14,11 +15,11 @@ export const SpectatorWaitOverlay: React.FC = () => {
       </div>
       
       <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#ffdddd] mb-4 tracking-[0.15em] uppercase drop-shadow-[0_0_10px_rgba(138,3,3,0.5)]">
-        Phút Giây Sinh Tử
+        {S.hunter.spectatorTitle}
       </h2>
       <div className="h-px w-24 bg-linear-to-r from-transparent via-[#8a0303] to-transparent mx-auto mb-6"></div>
       <p className="text-gray-400 text-2xl italic max-w-lg leading-relaxed px-6 border-l border-r border-[#8a0303]/20">
-        Thợ Săn đang trút hơi thở cuối cùng, ngón tay vẫn siết chặt cò súng. Hãy cầu nguyện bóng đêm che chở cho bạn...
+        {S.hunter.spectatorStory}
       </p>
     </ModalOverlay>
   );

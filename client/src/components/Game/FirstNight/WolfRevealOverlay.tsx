@@ -1,6 +1,7 @@
 import React from 'react';
 import { ModalOverlay } from '../../UI/ModalOverlay';
 import type { Player } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface WolfRevealOverlayProps {
   myPlayer: Player | undefined | null;
@@ -22,13 +23,13 @@ export const WolfRevealOverlay: React.FC<WolfRevealOverlayProps> = ({
           <span className="text-5xl animate-pulse drop-shadow-[0_0_10px_rgba(138,3,3,0.8)]">🐺</span>
         </div>
         
-        <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#ffdddd] tracking-widest uppercase mb-4 drop-shadow-[0_0_10px_rgba(138,3,3,0.8)]">Bầy Đàn Thức Giấc</h2>
+        <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#ffdddd] tracking-widest uppercase mb-4 drop-shadow-[0_0_10px_rgba(138,3,3,0.8)]">{S.wolfReveal.title}</h2>
         <div className="h-px w-32 bg-linear-to-r from-transparent via-[#8a0303] to-transparent mx-auto mb-6"></div>
 
         <div className="space-y-4 relative z-10">
           <div className="p-5 bg-[#030303] border border-[#8a0303]/50 rounded-none relative overflow-hidden group">
             <div className="absolute inset-0 bg-linear-to-r from-transparent via-[#8a0303]/10 to-transparent"></div>
-            <span className="font-['Cinzel_Decorative',serif] text-[#ffdddd] text-2xl tracking-wider relative z-10">{myPlayer?.name} <span className="text-sm text-gray-400 font-sans tracking-widest uppercase ml-2">(Ngươi)</span></span>
+            <span className="font-['Cinzel_Decorative',serif] text-[#ffdddd] text-2xl tracking-wider relative z-10">{myPlayer?.name} <span className="text-sm text-gray-400 font-sans tracking-widest uppercase ml-2">{S.wolfReveal.youLabel}</span></span>
           </div>
 
           {teammates.length > 0 ? (
@@ -39,7 +40,7 @@ export const WolfRevealOverlay: React.FC<WolfRevealOverlayProps> = ({
             ))
           ) : (
             <div className="p-5 bg-[#030303] border border-white/10 rounded-none border-dashed relative">
-              <span className="text-gray-500 italic text-xl">Ngươi là con sói độc hành trong đêm nay...</span>
+              <span className="text-gray-500 italic text-xl">{S.wolfReveal.soloWolf}</span>
             </div>
           )}
         </div>

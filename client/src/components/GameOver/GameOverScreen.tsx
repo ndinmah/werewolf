@@ -7,6 +7,7 @@ import { Avatar } from '../UI/Avatar';
 import { ModalOverlay } from '../UI/ModalOverlay';
 import { Crown, Skull, RefreshCw } from 'lucide-react';
 import { getRoleName, getFactionDisplay } from '../../constants/roles';
+import { S } from '../../constants/strings';
 
 export const GameOverScreen = () => {
   const { id: roomId } = useParams();
@@ -65,29 +66,29 @@ export const GameOverScreen = () => {
           </div>
 
           <h1 className={`text-5xl md:text-6xl font-['Cinzel_Decorative',serif] tracking-widest uppercase text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]`}>
-            {factionInfo.name} <br/><span className={isMyFactionWinner ? 'text-[#aa8c55]' : 'text-[#8a0303]'}>Chiến Thắng</span>
+            {factionInfo.name} <br/><span className={isMyFactionWinner ? 'text-[#aa8c55]' : 'text-[#8a0303]'}>{S.gameOver.winnerLabel}</span>
           </h1>
           <p className="text-xl text-gray-400 mt-6 italic border-l border-r border-white/20 px-6">
             {isMyFactionWinner
-              ? '"Ánh sáng vinh quang chiếu rọi. Phe của bạn đã sống sót và làm chủ vận mệnh."'
-              : '"Bóng tối nuốt chửng tất cả. Thất bại là cái giá phải trả bằng máu."'}
+              ? S.gameOver.winStory
+              : S.gameOver.lossStory}
           </p>
         </div>
 
         {/* Players List */}
         <div className="bg-[#0a0a0a]/80 border border-white/5 p-6 md:p-8 relative">
           <h2 className="text-2xl font-['Cinzel_Decorative',serif] text-white tracking-widest uppercase mb-6 flex items-center justify-between">
-            <span>Cuốn sổ tử thần</span>
+            <span>{S.gameOver.tableTitle}</span>
           </h2>
 
           <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="border-b border-white/10 text-gray-500 text-xs font-sans uppercase tracking-[0.2em]">
-                  <th className="pb-4 pl-4 font-normal">Linh hồn</th>
-                  <th className="pb-4 text-center font-normal">Trạng thái</th>
-                  <th className="pb-4 text-center font-normal">Chân tướng</th>
-                  <th className="pb-4 text-right pr-4 font-normal">Định mệnh</th>
+                  <th className="pb-4 pl-4 font-normal">{S.gameOver.colSoul}</th>
+                  <th className="pb-4 text-center font-normal">{S.gameOver.colStatus}</th>
+                  <th className="pb-4 text-center font-normal">{S.gameOver.colRole}</th>
+                  <th className="pb-4 text-right pr-4 font-normal">{S.gameOver.colFate}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-lg">
@@ -104,17 +105,17 @@ export const GameOverScreen = () => {
                         <Avatar name={player.name} size="sm" className="border-white/10" />
                         <span className="tracking-wider text-xl">
                           {player.name}
-                          {isSelf ? <span className="text-xs text-[#aa8c55] ml-3 uppercase font-sans tracking-[0.2em]">(Ngươi)</span> : null}
+                          {isSelf ? <span className="text-xs text-[#aa8c55] ml-3 uppercase font-sans tracking-[0.2em]">{S.gameOver.youLabel}</span> : null}
                         </span>
                       </td>
                       <td className="py-4 text-center font-sans">
                         {player.isAlive ? (
                           <span className="text-xs tracking-[0.2em] text-[#aa8c55] uppercase">
-                            Sống sót
+                            {S.gameOver.statusAlive}
                           </span>
                         ) : (
                           <span className="text-xs tracking-[0.2em] text-[#8a0303] uppercase">
-                            Tử nạn
+                            {S.gameOver.statusDead}
                           </span>
                         )}
                       </td>
@@ -123,9 +124,9 @@ export const GameOverScreen = () => {
                       </td>
                       <td className="py-4 text-right pr-4">
                         {playerWon ? (
-                          <span className="text-[#aa8c55] font-['Cinzel_Decorative',serif] text-xl tracking-widest uppercase">Thắng</span>
+                          <span className="text-[#aa8c55] font-['Cinzel_Decorative',serif] text-xl tracking-widest uppercase">{S.gameOver.fateWin}</span>
                         ) : (
-                          <span className="text-gray-600 font-['Cinzel_Decorative',serif] text-xl tracking-widest uppercase">Thua</span>
+                          <span className="text-gray-600 font-['Cinzel_Decorative',serif] text-xl tracking-widest uppercase">{S.gameOver.fateLoss}</span>
                         )}
                       </td>
                     </tr>
@@ -145,7 +146,7 @@ export const GameOverScreen = () => {
             className="w-full md:w-auto min-w-[300px]"
           >
             <RefreshCw className={`w-5 h-5 mr-3 ${secondsLeft !== null && secondsLeft > 0 ? 'animate-spin' : ''}`} />
-            Luân Hồi {secondsLeft !== null && secondsLeft > 0 ? `(${secondsLeft}s)` : ''}
+            {S.gameOver.btnRestart(secondsLeft)}
           </Button>
         </div>
       </div>

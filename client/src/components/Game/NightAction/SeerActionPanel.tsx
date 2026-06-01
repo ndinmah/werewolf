@@ -4,6 +4,7 @@ import { Avatar } from '../../UI/Avatar';
 import { ModalOverlay } from '../../UI/ModalOverlay';
 import { SeerResultModal } from './SeerResultModal';
 import type { Player, SeerVision } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface SeerActionPanelProps {
   roleHeader: {
@@ -113,12 +114,12 @@ export const SeerActionPanel: React.FC<SeerActionPanelProps> = ({
                     )}
                     {isSelf && (
                       <span className="text-[10px] font-sans bg-[#030303] border border-[#a855f7]/50 text-[#a855f7] px-1.5 py-0.5 uppercase tracking-widest">
-                        Ngươi
+                        {S.nightAction.badgeYou}
                       </span>
                     )}
                     {isSeerInvestigated && investigatedVision && (
                       <span className="text-[10px] font-sans bg-[#030303] border border-[#a855f7]/50 text-[#d8b4fe] px-1.5 py-0.5 uppercase tracking-widest animate-pulse shadow-sm">
-                        {investigatedVision.isWerewolf ? '🐺 Ma Sói' : '✅ Lương Dân'}
+                        {investigatedVision.isWerewolf ? S.seer.badgeWerewolf : S.seer.badgeVillager}
                       </span>
                     )}
                   </span>
@@ -136,7 +137,7 @@ export const SeerActionPanel: React.FC<SeerActionPanelProps> = ({
             onClick={onConfirm}
             className={`min-w-[300px] ${!hasConfirmed && 'border-[#a855f7] text-[#a855f7] hover:bg-[#a855f7]/10'}`}
           >
-            {hasConfirmed ? 'ĐÃ NHÌN THẤY TƯƠNG LAI' : 'SOI SÁNG DANH TÍNH'}
+            {hasConfirmed ? S.seer.btnDone : S.seer.btnReveal}
           </Button>
         </div>
       </div>

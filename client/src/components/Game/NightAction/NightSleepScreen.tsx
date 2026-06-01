@@ -2,6 +2,7 @@ import React from 'react';
 import { Moon } from 'lucide-react';
 import type { NightStatus } from '../../../types/game';
 import { ModalOverlay } from '../../UI/ModalOverlay';
+import { S } from '../../../constants/strings';
 
 interface NightSleepScreenProps {
   nightStatus: NightStatus | null;
@@ -21,24 +22,24 @@ export const NightSleepScreen: React.FC<NightSleepScreenProps> = ({ nightStatus 
       </div>
       
       <h2 className="text-5xl font-['Cinzel_Decorative',serif] text-white tracking-[0.15em] uppercase mb-4 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-        Màn Đêm Tĩnh Lặng
+        {S.nightSleep.title}
       </h2>
       
       <p className="text-gray-400 text-2xl italic max-w-xl px-6 leading-relaxed mb-10 border-l border-r border-indigo-500/20">
-        "Đừng mở mắt, đừng hé môi. Trong bóng tối, những kẻ săn mồi đang thức giấc..."
+        {S.nightSleep.quote}
       </p>
 
       {nightStatus?.currentRoleName ? (
         <div className="px-8 py-4 rounded-none bg-[#030303] border border-[#aa8c55]/30 flex flex-col gap-2 items-center min-w-[300px]">
-          <span className="text-xs font-sans text-gray-500 uppercase tracking-widest">Tiếng động trong đêm</span>
+          <span className="text-xs font-sans text-gray-500 uppercase tracking-widest">{S.nightSleep.statusLabel}</span>
           <div className="text-lg text-[#aa8c55] animate-pulse font-bold tracking-widest uppercase flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#aa8c55] inline-block"></span>
-            Đang chờ {nightStatus.currentRoleName}
+            {S.nightSleep.waitingFor(nightStatus.currentRoleName)}
           </div>
         </div>
       ) : (
         <div className="text-gray-600 italic animate-pulse text-lg font-['Cinzel_Decorative',serif] tracking-widest">
-          Sương mù đang phủ kín lối đi...
+          {S.nightSleep.fogText}
         </div>
       )}
     </ModalOverlay>

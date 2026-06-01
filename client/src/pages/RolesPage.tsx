@@ -1,4 +1,5 @@
 import { AVAILABLE_ROLES } from '../constants/roles';
+import { S } from '../constants/strings';
 
 export const RolesPage = () => {
   return (
@@ -12,7 +13,7 @@ export const RolesPage = () => {
       {/* Giant Typography Background */}
       <div className="fixed inset-0 pointer-events-none flex items-center justify-center overflow-hidden opacity-5 z-0 select-none">
         <h1 className="text-[15vw] leading-none font-black text-transparent bg-clip-text bg-linear-to-b from-white to-transparent tracking-widest font-['Cinzel_Decorative',serif]">
-          GRIMOIRE
+          {S.rolesPage.bgWatermark}
         </h1>
       </div>
 
@@ -20,13 +21,13 @@ export const RolesPage = () => {
         {/* Header Section */}
         <div className="flex flex-col items-center mb-16 space-y-4 text-center">
           <div className="inline-block border-b border-[#8a0303] pb-2 mb-2">
-            <span className="text-[#aa8c55] tracking-[0.3em] uppercase text-sm font-light">The Book of Souls</span>
+            <span className="text-[#aa8c55] tracking-[0.3em] uppercase text-sm font-light">{S.rolesPage.tagline}</span>
           </div>
           <h1 className="text-5xl md:text-6xl text-white font-['Cinzel_Decorative',serif] drop-shadow-[0_0_15px_rgba(138,3,3,0.5)]">
-            Thư Viện Vai Trò
+            {S.rolesPage.title}
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl italic mt-6 leading-relaxed border-l-2 border-r-2 border-[#8a0303] px-6 py-2">
-            "Khám phá những bản ngã ẩn giấu trong màn đêm. Kẻ là Sói, người là Cừu."
+            {S.rolesPage.quote}
           </p>
         </div>
 
@@ -83,7 +84,7 @@ export const RolesPage = () => {
                 </div>
 
                 <div className="flex justify-between items-center text-xs font-sans tracking-widest px-4 py-2 border border-white/20 bg-black/80 backdrop-blur-sm group-hover:border-[#aa8c55]/50 transition-colors duration-300">
-                  <span className="text-gray-400 uppercase">Cân bằng:</span>
+                  <span className="text-gray-400 uppercase">{S.rolesPage.balanceLabel}</span>
                   <span className={`font-bold text-sm ${role.strength > 0 ? 'text-[#aa8c55]' : 'text-[#8a0303]'}`}>
                     {role.strength > 0 ? `+${role.strength}` : role.strength}
                   </span>

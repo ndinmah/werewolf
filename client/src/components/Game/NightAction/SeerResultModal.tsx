@@ -2,6 +2,7 @@ import React from 'react';
 import { Eye } from 'lucide-react';
 import { Button } from '../../UI/Button';
 import type { SeerVision } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface SeerResultModalProps {
   selectedId: string;
@@ -31,18 +32,18 @@ export const SeerResultModal: React.FC<SeerResultModalProps> = ({
 
         {vision ? (
           <>
-            <h3 className="text-3xl font-['Cinzel_Decorative',serif] text-[#d8b4fe] tracking-widest uppercase">Tương Lai Đã Mở</h3>
+            <h3 className="text-3xl font-['Cinzel_Decorative',serif] text-[#d8b4fe] tracking-widest uppercase">{S.seer.resultTitle}</h3>
             <div className="py-6 px-8 w-full bg-[#030303] border border-[#a855f7]/20 flex flex-col gap-4 relative">
               <div className="absolute top-0 left-0 w-full h-full bg-[#a855f7]/5 pointer-events-none"></div>
               <p className="text-gray-400 text-xl italic relative z-10">
-                Linh hồn của <span className="font-['Cinzel_Decorative',serif] font-bold text-[#f3e8ff] text-2xl mx-1">{vision.targetName}</span> là:
+                {S.seer.resultNarrative(vision.targetName)}
               </p>
               <p
                 className={`text-4xl font-['Cinzel_Decorative',serif] uppercase tracking-[0.2em] relative z-10 mt-2 ${
                   vision.isWerewolf ? 'text-[#8a0303] drop-shadow-[0_0_10px_rgba(138,3,3,0.8)]' : 'text-[#aa8c55] drop-shadow-[0_0_10px_rgba(170,140,85,0.8)]'
                 }`}
               >
-                {vision.isWerewolf ? '🐺 MA SÓI' : '✅ LƯƠNG DÂN'}
+                {vision.isWerewolf ? S.seer.resultWerewolf : S.seer.resultVillager}
               </p>
             </div>
             <Button
@@ -51,12 +52,12 @@ export const SeerResultModal: React.FC<SeerResultModalProps> = ({
               variant="secondary"
               className="w-full mt-4 border-[#a855f7]/50 text-[#d8b4fe] hover:bg-[#a855f7]/10"
             >
-              KHÉP LẠI TẦM NHÌN
+              {S.seer.btnClose}
             </Button>
           </>
         ) : (
           <>
-            <h3 className="text-2xl font-['Cinzel_Decorative',serif] text-[#d8b4fe] tracking-widest uppercase animate-pulse">Đang rẽ sương mù...</h3>
+            <h3 className="text-2xl font-['Cinzel_Decorative',serif] text-[#d8b4fe] tracking-widest uppercase animate-pulse">{S.seer.resultLoading}</h3>
             <div className="w-12 h-12 border-2 border-[#a855f7] border-t-transparent rounded-full animate-spin mt-4"></div>
           </>
         )}

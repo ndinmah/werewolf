@@ -6,6 +6,7 @@ import { useSocketEvent } from '../../hooks/useSocketEvent';
 import { PlayerCard } from './PlayerCard';
 import { Button } from '../UI/Button';
 import { Flame } from 'lucide-react';
+import { S } from '../../constants/strings';
 
 export const VotePanel = () => {
   const { id: roomId } = useParams();
@@ -54,18 +55,18 @@ export const VotePanel = () => {
           <div className="absolute top-0 left-0 w-full h-full bg-[#8a0303]/10 pointer-events-none"></div>
           <Flame className="w-10 h-10 text-[#8a0303] animate-bounce relative z-10 shrink-0" />
           <div className="text-left relative z-10">
-            <p className="font-['Cinzel_Decorative',serif] text-xl text-[#8a0303] uppercase tracking-widest">Cơn Thịnh Nộ Của Già Làng</p>
-            <p className="text-gray-400 mt-1 italic text-lg">"Già Làng đã chết trong sự ngu ngốc của dân làng! Lời nguyền trỗi dậy tước đi toàn bộ sức mạnh thần bí."</p>
+            <p className="font-['Cinzel_Decorative',serif] text-xl text-[#8a0303] uppercase tracking-widest">{S.votePanel.elderCurseTitle}</p>
+            <p className="text-gray-400 mt-1 italic text-lg">{S.votePanel.elderCurseStory}</p>
           </div>
         </div>
       ) : null}
 
       <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-4">
-        <h2 className="text-3xl font-['Cinzel_Decorative',serif] uppercase tracking-widest text-white">Sổ Tử Thần</h2>
+        <h2 className="text-3xl font-['Cinzel_Decorative',serif] uppercase tracking-widest text-white">{S.votePanel.title}</h2>
         {phase === 'voting' ? (
           <div className="text-[#aa8c55] font-sans text-xs tracking-[0.2em] uppercase font-bold flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#aa8c55] animate-ping"></span>
-            Đang Phán Xét ({Object.values(voteData.tally).reduce((a,b)=>a+b, 0)}/{voteData.totalVoters})
+            {S.votePanel.votingStatus(Object.values(voteData.tally).reduce((a,b)=>a+b, 0), voteData.totalVoters)}
           </div>
         ) : null}
       </div>
@@ -95,7 +96,7 @@ export const VotePanel = () => {
                     <div
                       key={voter.id}
                       className="w-8 h-8 rounded-none bg-[#030303] border border-[#aa8c55] flex items-center justify-center text-sm font-['Cinzel_Decorative',serif] font-bold text-[#aa8c55] shadow-[0_0_10px_rgba(170,140,85,0.4)] cursor-help hover:-translate-y-1 transition-all duration-300"
-                      title={`${voter.name} đã bỏ phiếu`}
+                      title={S.votePanel.votedTooltip(voter.name)}
                     >
                       {voter.name.charAt(0).toUpperCase()}
                     </div>
@@ -117,7 +118,7 @@ export const VotePanel = () => {
             disabled={!selectedPlayerId || hasVoted}
             className="min-w-[200px]"
           >
-            {hasVoted ? 'Đã Niêm Phong' : 'Kết Liễu'}
+            {hasVoted ? S.votePanel.btnVoteDone : S.votePanel.btnVote}
           </Button>
         </div>
       ) : null}

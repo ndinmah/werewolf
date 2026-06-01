@@ -4,6 +4,8 @@ import { useSocket } from '../../context/SocketContext';
 import { useParams } from 'react-router-dom';
 import { getRoleMeta } from '../../constants/roles';
 import { useSocketEvent } from '../../hooks/useSocketEvent';
+import { S } from '../../constants/strings';
+import { ModalOverlay } from '../UI/ModalOverlay';
 
 // Sub-components
 import { NightSleepScreen } from './NightAction/NightSleepScreen';
@@ -23,6 +25,7 @@ export const NightActionModal = () => {
     nightStatus,
     players,
     seerVisions,
+    gameState,
   } = useGame();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -97,18 +100,18 @@ export const NightActionModal = () => {
   const witchInfo = nightActionPrompt.witchInfo;
 
   // Xử lý Giao diện Mất Năng Lực do Lời Nguyền Già Làng
-  const { villagersLostPowers } = useGame().gameState || {};
+  const villagersLostPowers = gameState?.villagersLostPowers;
   const isSpecialVillager = ['SEER', 'WITCH', 'BODYGUARD', 'HUNTER'].includes(myPlayer?.role || '');
   if (villagersLostPowers && isSpecialVillager) {
     return (
       <ModalOverlay opacity="deep">
         <div className="bg-[#0a0a0a] border border-[#8a0303] rounded-none p-8 md:p-12 max-w-2xl w-full text-center shadow-[0_0_80px_rgba(138,3,3,0.5)] transform scale-100 transition-all duration-300 relative overflow-hidden font-['Cormorant_Garamond',serif]">
-            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#8a0303] mb-4 tracking-[0.2em] uppercase">MẤT NĂNG LỰC</h2>
+            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#8a0303] mb-4 tracking-[0.2em] uppercase">{S.nightAction.lostPowerTitle}</h2>
             <p className="text-gray-300 text-2xl italic leading-relaxed mb-8">
-              "Quyền năng của bạn đã bị tước đoạt do sự phẫn nộ từ cái chết oan uổng của Già Làng."
+              {S.nightAction.lostPowerStory}
             </p>
             <div className="text-gray-400 text-lg py-4 px-6 bg-[#030303] border border-[#8a0303]/30 mb-8 max-w-md mx-auto">
-              ⚠️ Các nút bấm chọn mục tiêu đã bị khóa. Bạn không thể hành động trong đêm nay.
+              {S.nightAction.lostPowerDetail}
             </div>
             <button 
               onClick={() => {
@@ -118,7 +121,7 @@ export const NightActionModal = () => {
               }}
               className="w-full max-w-xs bg-transparent hover:bg-[#8a0303]/20 text-[#ffdddd] font-['Cinzel_Decorative',serif] py-4 px-8 rounded-none border border-[#8a0303] transition-all duration-300 hover:scale-105 active:scale-95 uppercase tracking-widest cursor-pointer text-xl"
             >
-              CHẤP NHẬN
+              {S.nightAction.lostPowerBtn}
             </button>
         </div>
       </ModalOverlay>

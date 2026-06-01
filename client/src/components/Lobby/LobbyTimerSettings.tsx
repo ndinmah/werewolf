@@ -1,6 +1,7 @@
 import React from 'react';
 import { Hourglass } from 'lucide-react';
 import type { RoomSettings } from '../../types/game';
+import { S } from '../../constants/strings';
 
 interface LobbyTimerSettingsProps {
   roomSettings: RoomSettings | undefined;
@@ -16,13 +17,13 @@ export const LobbyTimerSettings: React.FC<LobbyTimerSettingsProps> = ({ roomSett
       <div>
         <h3 className="text-sm font-['Cinzel_Decorative',serif] uppercase tracking-[0.2em] text-[#aa8c55] flex items-center gap-2 mb-6">
           <Hourglass className="w-4 h-4" />
-          <span>Sands of Time (s)</span>
+          <span>{S.lobbyUI.timerTitle}</span>
         </h3>
 
         <div className="grid grid-cols-3 gap-6">
           <div className="relative group/input">
             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2 font-sans">
-              Bình minh
+              {S.lobbyUI.timerDayStart}
             </label>
             <input
               type="number"
@@ -34,7 +35,7 @@ export const LobbyTimerSettings: React.FC<LobbyTimerSettingsProps> = ({ roomSett
           </div>
           <div className="relative group/input">
             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2 font-sans">
-              Thảo luận
+              {S.lobbyUI.timerDiscuss}
             </label>
             <input
               type="number"
@@ -46,7 +47,7 @@ export const LobbyTimerSettings: React.FC<LobbyTimerSettingsProps> = ({ roomSett
           </div>
           <div className="relative group/input">
             <label className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2 font-sans">
-              Biểu quyết
+              {S.lobbyUI.timerVote}
             </label>
             <input
               type="number"

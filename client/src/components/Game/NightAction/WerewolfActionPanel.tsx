@@ -3,6 +3,7 @@ import { Button } from '../../UI/Button';
 import { Avatar } from '../../UI/Avatar';
 import { ModalOverlay } from '../../UI/ModalOverlay';
 import type { Player } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface WerewolfActionPanelProps {
   roleHeader: {
@@ -77,7 +78,7 @@ export const WerewolfActionPanel: React.FC<WerewolfActionPanelProps> = ({
               .filter(([wolfId, targetId]) => targetId === player.id && wolfVotes.submitted.includes(wolfId))
               .map(([wolfId]) => {
                 const p = players.find((x) => x.id === wolfId);
-                return wolfId === myPlayer.id ? 'Ngươi' : p ? p.name : 'Đồng bọn';
+                return wolfId === myPlayer.id ? S.werewolf.badgeYou : p ? p.name : S.werewolf.badgePartner;
               });
 
             return (
@@ -118,17 +119,17 @@ export const WerewolfActionPanel: React.FC<WerewolfActionPanelProps> = ({
                   <span className="flex gap-2 flex-wrap justify-center mt-1">
                     {fullPlayer?.isLover && (
                       <span className="text-[10px] font-sans bg-[#030303] border border-pink-500/30 text-pink-500 px-1.5 py-0.5 uppercase tracking-widest animate-pulse">
-                        ❤️
+                        {S.nightAction.badgeLover}
                       </span>
                     )}
                     {isSelf && (
                       <span className="text-[10px] font-sans bg-[#030303] border border-[#8a0303]/50 text-[#8a0303] px-1.5 py-0.5 uppercase tracking-widest">
-                        Ngươi
+                        {S.nightAction.badgeYou}
                       </span>
                     )}
                     {isWolfAlly && !isSelf && (
                       <span className="text-[10px] font-sans bg-[#030303] border border-[#8a0303]/50 text-[#8a0303] px-1.5 py-0.5 uppercase tracking-widest">
-                        🐺 Đồng loại
+                        {S.nightAction.badgeWolfAlly}
                       </span>
                     )}
                   </span>
@@ -141,9 +142,9 @@ export const WerewolfActionPanel: React.FC<WerewolfActionPanelProps> = ({
                       <span
                         key={name}
                         className="text-[9px] font-sans bg-[#8a0303] text-white px-2 py-0.5 uppercase tracking-widest shadow animate-pulse"
-                        title={`${name} đang nhắm tới`}
+                        title={S.werewolf.badgeWolfAim(name)}
                       >
-                        🐺 {name}
+                        {S.werewolf.badgeWolfAimShort(name)}
                       </span>
                     ))}
                   </div>
@@ -156,9 +157,9 @@ export const WerewolfActionPanel: React.FC<WerewolfActionPanelProps> = ({
                       <span
                         key={name}
                         className="text-[9px] font-sans bg-[#030303] border border-[#8a0303] text-[#ffdddd] px-2 py-0.5 uppercase tracking-widest shadow"
-                        title={`${name} đã chốt`}
+                        title={S.werewolf.badgeLocked(name)}
                       >
-                        🩸 {name}
+                        {S.werewolf.badgeLockedShort(name)}
                       </span>
                     ))}
                   </div>
@@ -178,9 +179,9 @@ export const WerewolfActionPanel: React.FC<WerewolfActionPanelProps> = ({
           >
             {hasConfirmed
               ? players.filter((p) => p.role === 'WEREWOLF' && p.isAlive).length > 1
-                ? 'ĐÃ NHUỐM MÁU (CHỜ ĐỒNG LOẠI)'
-                : 'ĐÃ NHUỐM MÁU (CHỜ CÁC THẾ LỰC KHÁC)'
-              : 'CẮN XÉ'}
+                ? S.werewolf.btnWaitingAllies
+                : S.werewolf.btnWaitingOthers
+              : S.werewolf.btnBite}
           </Button>
         </div>
       </div>

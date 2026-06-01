@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { Skull, RefreshCw } from 'lucide-react';
 import { Button } from './Button';
+import { S } from '../../constants/strings';
 
 interface Props {
   children: ReactNode;
@@ -52,9 +53,9 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             </div>
 
-            <h2 className="text-3xl font-['Cinzel_Decorative',serif] text-white mb-2 tracking-widest uppercase">Đã Xảy Ra Sự Cố</h2>
+            <h2 className="text-3xl font-['Cinzel_Decorative',serif] text-white mb-2 tracking-widest uppercase">{S.error.title}</h2>
             <p className="text-gray-400 text-lg leading-relaxed mb-6 italic border-l border-r border-[#8a0303]/20 px-4">
-              "Thế giới hắc ám đã bị gián đoạn. Xin hãy triệu hồi lại."
+              {S.error.story}
             </p>
 
             {this.state.error && (
@@ -70,13 +71,13 @@ export class ErrorBoundary extends Component<Props, State> {
                 className="w-full"
               >
                 <RefreshCw className="w-4 h-4" />
-                <span>Triệu hồi lại</span>
+                <span>{S.error.btnRetry}</span>
               </Button>
               <a
                 href="/"
                 className="w-full text-center text-xs text-gray-500 hover:text-[#aa8c55] font-sans uppercase tracking-[0.2em] transition-colors mt-2"
               >
-                Về trang chủ
+                {S.error.btnHome}
               </a>
             </div>
           </div>

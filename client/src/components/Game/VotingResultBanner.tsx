@@ -1,5 +1,6 @@
 import { useGame } from '../../context/GameContext';
 import { Skull, Ghost } from 'lucide-react';
+import { S } from '../../constants/strings';
 
 export const VotingResultBanner = () => {
   const { votingResult } = useGame();
@@ -41,17 +42,15 @@ export const VotingResultBanner = () => {
         {/* Content */}
         <div className="flex-1">
           <h3 className={`font-['Cinzel_Decorative',serif] text-2xl tracking-[0.2em] uppercase mb-2 ${eliminatedPlayer ? 'text-[#ffdddd]' : 'text-[#aa8c55]'}`}>
-            {eliminatedPlayer ? 'Lệnh Hành Quyết' : 'Hội Đồng Bất Phân'}
+            {eliminatedPlayer ? S.votingResult.titleEliminated : S.votingResult.titleTie}
           </h3>
           <p className="text-gray-300 text-lg leading-relaxed italic border-l border-white/20 pl-4">
             {eliminatedPlayer ? (
-              <>
-                Linh hồn của <span className="font-['Cinzel_Decorative',serif] text-[#8a0303] text-xl mx-1 font-bold">{eliminatedPlayer.name}</span> đã bị thiêu rụi trên giàn hỏa thiêu. Màn đêm sẽ định đoạt phần còn lại.
-              </>
+              S.votingResult.storyEliminated(eliminatedPlayer.name)
             ) : isTie ? (
-              'Không một lời phán xét nào được thi hành. Thần linh quyết định tha mạng cho tất cả mọi người hôm nay, nhưng bóng tối vẫn đang chờ đợi.'
+              S.votingResult.storyTie
             ) : (
-              'Sự im lặng bao trùm quảng trường. Ngày hôm nay kết thúc trong yên lặng đáng sợ.'
+              S.votingResult.storyNoVote
             )}
           </p>
         </div>

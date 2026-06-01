@@ -4,6 +4,7 @@ import { useSocket } from '../../context/SocketContext';
 import { useGame } from '../../context/GameContext';
 import { ChatMessage } from './ChatMessage';
 import type { ChatLogs } from '../../types/game';
+import { S } from '../../constants/strings';
 
 export const ChatPanel = () => {
   const { id: roomId } = useParams();
@@ -36,9 +37,9 @@ export const ChatPanel = () => {
   };
 
   const tabs = useMemo(() => {
-    const t = [{ id: 'general', label: 'Quảng Trường' }];
-    if (myPlayer?.role === 'WEREWOLF') t.push({ id: 'wolves', label: 'Hang Sói' });
-    if (myPlayer && !myPlayer.isAlive) t.push({ id: 'ghost', label: 'Cõi Âm' });
+    const t = [{ id: 'general', label: S.chat.tabGeneral }];
+    if (myPlayer?.role === 'WEREWOLF') t.push({ id: 'wolves', label: S.chat.tabWolves });
+    if (myPlayer && !myPlayer.isAlive) t.push({ id: 'ghost', label: S.chat.tabGhost });
     return t;
   }, [myPlayer]);
 
@@ -119,7 +120,7 @@ export const ChatPanel = () => {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={isInputDisabled()}
-          placeholder={isInputDisabled() ? 'Im lặng là vàng...' : 'Thì thầm...'}
+          placeholder={isInputDisabled() ? S.chat.placeholderDisabled : S.chat.placeholderActive}
           className="flex-1 bg-[#030303] text-white rounded-none px-4 py-3 border border-white/10 focus:outline-none focus:border-[#aa8c55] disabled:opacity-50 text-lg font-['Cormorant_Garamond',serif] italic placeholder:text-gray-600 transition-colors"
         />
         <button
@@ -127,7 +128,7 @@ export const ChatPanel = () => {
           disabled={isInputDisabled() || !message.trim()}
           className="bg-transparent border border-[#aa8c55]/50 hover:bg-[#aa8c55]/20 text-[#aa8c55] px-6 py-2 rounded-none font-['Cinzel_Decorative',serif] tracking-widest uppercase transition-colors disabled:opacity-50 disabled:border-gray-700 disabled:text-gray-700 shrink-0"
         >
-          Gửi
+          {S.chat.btnSend}
         </button>
       </form>
     </div>

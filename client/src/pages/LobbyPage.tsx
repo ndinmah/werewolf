@@ -10,6 +10,7 @@ import { LobbyPlayerList } from '../components/Lobby/LobbyPlayerList';
 import { LobbyTimerSettings } from '../components/Lobby/LobbyTimerSettings';
 import { LobbyRoleDeck } from '../components/Lobby/LobbyRoleDeck';
 import { LoadingSpinner } from '../components/UI/LoadingSpinner';
+import { S } from '../constants/strings';
 
 export const LobbyPage = () => {
   const { id: roomId } = useParams<{ id: string }>();
@@ -32,7 +33,7 @@ export const LobbyPage = () => {
     const timer = setTimeout(() => {
       if (!settled) {
         settled = true;
-        showToast('Không thể kết nối đến phòng. Vui lòng thử lại.', 'error');
+        showToast(S.lobby.toastConnectError, 'error');
         navigate('/');
       }
     }, 5000);
@@ -63,7 +64,7 @@ export const LobbyPage = () => {
     });
 
     socket.on('KICKED', () => {
-      showToast('Bạn đã bị kick khỏi phòng bởi chủ phòng.', 'warning');
+      showToast(S.lobby.toastKicked, 'warning');
       navigate('/');
     });
 
@@ -73,7 +74,7 @@ export const LobbyPage = () => {
     };
   }, [socket, navigate, showToast]);
 
-  if (!room) return <LoadingSpinner text="Summoning ritual circle..." />;
+  if (!room) return <LoadingSpinner text={S.lobby.loading} />;
 
   const isHost = room.hostId === socket?.id;
 
@@ -82,11 +83,11 @@ export const LobbyPage = () => {
     const wolfCount = roles.filter((r) => r === 'WEREWOLF').length;
 
     if (wolfCount < 1) {
-      showToast('⚠️ Trận đấu phải có ít nhất 1 Ma Sói!', 'warning');
+      showToast(S.lobby.toastNoWolf, 'warning');
       return;
     }
     if (room.players.length < 2) {
-      showToast('⚠️ Trận đấu phải có ít nhất 2 người chơi!', 'warning');
+      showToast(S.lobby.toastMinPlayers, 'warning');
       return;
     }
 
@@ -156,7 +157,7 @@ export const LobbyPage = () => {
       {/* Giant Typography Background */}
       <div className="fixed inset-0 pointer-events-none flex items-center justify-center overflow-hidden opacity-[0.03] z-0 select-none">
         <h1 className="text-[20vw] leading-none font-black text-transparent bg-clip-text bg-linear-to-b from-white to-transparent tracking-tighter font-['Cinzel_Decorative',serif]">
-          LOBBY
+          {S.lobby.bgWatermark}
         </h1>
       </div>
 
@@ -165,17 +166,17 @@ export const LobbyPage = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6 border-b border-white/10 pb-6">
           <div className="flex flex-col">
-            <span className="text-[#aa8c55] tracking-[0.3em] uppercase text-sm font-light mb-2">Ritual Chamber</span>
+            <span className="text-[#aa8c55] tracking-[0.3em] uppercase text-sm font-light mb-2">{S.lobby.tagline}</span>
             <h1 className="text-4xl md:text-5xl font-bold text-white font-['Cinzel_Decorative',serif] drop-shadow-[0_0_10px_rgba(138,3,3,0.3)]">
-              Phòng chờ
+              {S.lobby.title}
             </h1>
             <div className="flex items-center gap-3 mt-4 text-gray-400">
-              <span className="text-sm uppercase tracking-widest font-sans">Mã phòng:</span>
+              <span className="text-sm uppercase tracking-widest font-sans">{S.lobby.roomCodeLabel}</span>
               <span className="text-[#aa8c55] font-['Cinzel_Decorative',serif] font-bold text-2xl tracking-widest">{room.id}</span>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(room.id);
-                  showToast('Đã chép mã nghi thức!', 'success');
+                  showToast(S.lobby.toastCopyCode, 'success');
                 }}
                 className="ml-2 p-1.5 border border-white/10 text-gray-500 hover:text-[#aa8c55] hover:border-[#aa8c55] transition-colors cursor-pointer"
                 title="Copy mã phòng"
@@ -190,13 +191,13 @@ export const LobbyPage = () => {
               onClick={handleStartGame}
               className="relative px-12 py-4 bg-[#8a0303]/10 border border-[#8a0303] text-[#ffdddd] text-xl font-['Cinzel_Decorative',serif] tracking-[0.2em] uppercase hover:bg-[#8a0303] hover:text-white transition-all duration-500 overflow-hidden group shadow-[0_0_20px_rgba(138,3,3,0.2)]"
             >
-              <span className="relative z-10">Bắt đầu nghi thức</span>
+              <span className="relative z-10">{S.lobby.btnStart}</span>
               <div className="absolute inset-0 w-0 bg-[#8a0303] group-hover:w-full transition-all duration-500 ease-in-out z-0"></div>
             </button>
           ) : (
             <div className="px-8 py-4 bg-white/5 border border-white/10 text-gray-400 text-sm tracking-[0.2em] uppercase flex items-center gap-3 font-sans">
               <Users className="w-4 h-4" />
-              <span>Chờ chủ phòng bắt đầu...</span>
+              <span>{S.lobby.waitingForHost}</span>
             </div>
           )}
         </div>
@@ -217,7 +218,7 @@ export const LobbyPage = () => {
                     if (res && !res.success) {
                       showToast(res.error || 'Lỗi không xác định', 'error');
                     } else {
-                      showToast(`Đã trục xuất ${player.name}`, 'success');
+                      showToast(S.lobby.toastKickSuccess(player.name), 'success');
                     }
                   },
                 );
@@ -228,9 +229,9 @@ export const LobbyPage = () => {
           {/* Settings Column */}
           <div className="flex flex-col gap-8 h-full">
             <div className="flex flex-col space-y-2">
-              <h2 className="text-xl font-['Cinzel_Decorative',serif] text-white tracking-widest uppercase">Cấu hình</h2>
+              <h2 className="text-xl font-['Cinzel_Decorative',serif] text-white tracking-widest uppercase">{S.lobby.settingsTitle}</h2>
               <p className="text-[#aa8c55] text-xs uppercase tracking-widest font-sans">
-                {isHost ? 'Bạn đang giữ quyền định đoạt.' : 'Chỉ chủ phòng mới có thể thay đổi.'}
+                {isHost ? S.lobby.settingsHostDesc : S.lobby.settingsGuestDesc}
               </p>
             </div>
             

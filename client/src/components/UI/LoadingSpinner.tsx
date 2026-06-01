@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { ModalOverlay } from './ModalOverlay';
+import { S } from '../../constants/strings';
 
 interface LoadingSpinnerProps {
   text?: string;
@@ -8,7 +9,7 @@ interface LoadingSpinnerProps {
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  text = 'Đang tải...',
+  text = S.game.loading,
   fullPage = true,
 }) => {
   const content = (

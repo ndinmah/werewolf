@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { useToast } from '../context/ToastContext';
 import { Sparkles, KeyRound } from 'lucide-react';
 import type { Room } from '../types/game';
+import { S } from '../constants/strings';
 
 export const HomePage = () => {
   const [playerName, setPlayerName] = useState('');
@@ -42,7 +43,7 @@ export const HomePage = () => {
         sessionStorage.setItem('werewolf_session', JSON.stringify({ roomId: response.room.id, playerName }));
         navigate(`/room/${response.room.id}`);
       } else {
-        showToast(response.error || 'Không thể vào phòng', 'error');
+        showToast(response.error || S.home.toastJoinError, 'error');
       }
     });
   };
@@ -61,7 +62,7 @@ export const HomePage = () => {
       {/* Giant Typography Background */}
       <div className="absolute inset-0 pointer-events-none flex items-center justify-start overflow-hidden opacity-5 z-0 select-none">
         <h1 className="text-[25vw] leading-none font-black text-transparent bg-clip-text bg-linear-to-b from-white to-transparent tracking-tighter font-['Cinzel_Decorative',serif] -rotate-90 origin-left translate-x-[20%]">
-          WEREWOLF
+          {S.home.title.join('')}
         </h1>
       </div>
 
@@ -70,16 +71,16 @@ export const HomePage = () => {
         <div className="flex flex-col items-start space-y-4">
           <div className="inline-block border-b border-[#8a0303] pb-2 mb-2">
             <span className="text-[#aa8c55] tracking-[0.3em] uppercase text-sm font-light">
-              Interactive Survival
+              {S.home.tagline}
             </span>
           </div>
           <h1 className="text-6xl md:text-8xl lg:text-9xl text-white font-['Cinzel_Decorative',serif] drop-shadow-[0_0_15px_rgba(138,3,3,0.5)]">
-            WERE
+            {S.home.title[0]}
             <br />
-            WOLF
+            {S.home.title[1]}
           </h1>
           <p className="text-xl md:text-2xl text-gray-400 max-w-md italic mt-6 leading-relaxed border-l-2 border-[#8a0303] pl-6 py-2">
-            "Trust no one. The night hides monsters wearing the faces of friends."
+            {S.home.quote}
           </p>
         </div>
       </div>
@@ -95,7 +96,7 @@ export const HomePage = () => {
             <div className="absolute bottom-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#aa8c55] to-transparent opacity-30"></div>
             
             <h2 className="text-3xl font-['Cinzel_Decorative',serif] text-white mb-10 text-center tracking-widest">
-              Join the Village
+              {S.home.panelTitle}
             </h2>
 
             <div className="space-y-8">
@@ -105,7 +106,7 @@ export const HomePage = () => {
                   type="text"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Enter thy name..."
+                  placeholder={S.home.namePlaceholder}
                   className="w-full bg-transparent border-0 border-b border-white/20 px-0 py-3 text-xl text-white placeholder-white/30 focus:ring-0 focus:border-[#8a0303] focus:outline-none transition-colors duration-300 peer"
                 />
                 <Sparkles className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 peer-focus:text-[#8a0303] transition-colors duration-300" />
@@ -117,7 +118,7 @@ export const HomePage = () => {
                   type="text"
                   value={roomId}
                   onChange={(e) => setRoomId(e.target.value.toUpperCase())}
-                  placeholder="Enter ritual code (optional)..."
+                  placeholder={S.home.roomCodePlaceholder}
                   className="w-full bg-transparent border-0 border-b border-white/20 px-0 py-3 text-xl text-white placeholder-white/30 focus:ring-0 focus:border-[#aa8c55] focus:outline-none transition-colors duration-300 peer uppercase"
                 />
                 <KeyRound className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 peer-focus:text-[#aa8c55] transition-colors duration-300" />
@@ -130,7 +131,7 @@ export const HomePage = () => {
                   disabled={!playerName.trim()}
                   className="relative w-full py-4 bg-[#8a0303]/10 border border-[#8a0303] text-[#ffdddd] text-xl font-['Cinzel_Decorative',serif] tracking-[0.2em] uppercase hover:bg-[#8a0303] hover:text-white transition-all duration-500 overflow-hidden group/btn disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="relative z-10">Create Ritual</span>
+                  <span className="relative z-10">{S.home.btnCreate}</span>
                   <div className="absolute inset-0 w-0 bg-[#8a0303] group-hover/btn:w-full transition-all duration-500 ease-in-out z-0"></div>
                 </button>
 
@@ -139,7 +140,7 @@ export const HomePage = () => {
                   disabled={!playerName.trim() || !roomId.trim()}
                   className="relative w-full py-4 bg-transparent border border-white/20 text-white/80 text-xl font-['Cinzel_Decorative',serif] tracking-[0.2em] uppercase hover:border-[#aa8c55] hover:text-[#aa8c55] transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Enter Village
+                  {S.home.btnJoin}
                 </button>
               </div>
             </div>
@@ -150,7 +151,7 @@ export const HomePage = () => {
             <div className="flex flex-col gap-4 animate-fade-in">
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-white/10"></div>
-                <h3 className="text-[#aa8c55] text-sm uppercase tracking-[0.2em] font-['Cinzel_Decorative',serif]">Active Rituals</h3>
+                <h3 className="text-[#aa8c55] text-sm uppercase tracking-[0.2em] font-['Cinzel_Decorative',serif]">{S.home.activeRitualsLabel}</h3>
                 <div className="h-px flex-1 bg-white/10"></div>
               </div>
               
@@ -160,13 +161,13 @@ export const HomePage = () => {
                     key={room.id}
                     onClick={() => {
                       setRoomId(room.id);
-                      showToast(`Ritual code selected: ${room.id}`, 'info');
+                      showToast(S.home.toastRoomSelected(room.id), 'info');
                     }}
                     className="group cursor-pointer flex justify-between items-center p-5 bg-white/2 border border-white/5 hover:border-[#8a0303]/50 hover:bg-[#8a0303]/10 transition-all duration-300"
                   >
                     <div>
                       <span className="font-['Cinzel_Decorative',serif] text-2xl text-white group-hover:text-[#ffdddd] transition-colors">{room.id}</span>
-                      <p className="text-[#aa8c55] text-sm mt-1 italic">{room.players.length} souls waiting</p>
+                      <p className="text-[#aa8c55] text-sm mt-1 italic">{S.home.soulsWaiting(room.players.length)}</p>
                     </div>
                     <div className="text-white/30 group-hover:text-[#8a0303] transition-colors duration-300">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>

@@ -3,6 +3,7 @@ import { Button } from '../../UI/Button';
 import { ModalOverlay } from '../../UI/ModalOverlay';
 import { Heart } from 'lucide-react';
 import type { Player } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface CupidSelectionModalProps {
   targets: Pick<Player, 'id' | 'name'>[];
@@ -28,12 +29,11 @@ export const CupidSelectionModal: React.FC<CupidSelectionModalProps> = ({
             <Heart className="w-10 h-10 text-[#fbcfe8] fill-[#be185d] animate-pulse" />
           </div>
           <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#fbcfe8] tracking-widest uppercase mb-4 drop-shadow-[0_0_10px_rgba(190,24,93,0.8)]">
-            Tơ Hồng Định Mệnh
+            {S.cupid.title}
           </h2>
           <div className="h-px w-32 bg-linear-to-r from-transparent via-[#be185d] to-transparent mx-auto mb-6"></div>
           <p className="text-gray-300 text-xl italic leading-relaxed">
-            "Hai sinh mệnh. Một cái chết. Hãy chọn lấy hai linh hồn để kết nối tơ duyên, và chứng kiến họ chết cùng
-            nhau."
+            {S.cupid.story}
           </p>
         </div>
 
@@ -85,7 +85,7 @@ export const CupidSelectionModal: React.FC<CupidSelectionModalProps> = ({
                 : 'bg-transparent border-white/20 text-gray-500 hover:bg-white/5'
             }`}
           >
-            {selectedLovers.length === 2 ? 'KẾT NỐI LINH HỒN' : `ĐÃ CHỌN ${selectedLovers.length}/2`}
+            {S.cupid.btnReady(selectedLovers.length)}
           </Button>
         </div>
       </div>

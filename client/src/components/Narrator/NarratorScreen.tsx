@@ -1,6 +1,7 @@
 import { useGame } from '../../context/GameContext';
 import { useCountdownTimer } from '../../hooks/useCountdownTimer';
 import { Sun, Skull, Heart } from 'lucide-react';
+import { S } from '../../constants/strings';
 
 export const NarratorScreen = () => {
   const { phase, gameState } = useGame();
@@ -44,20 +45,20 @@ export const NarratorScreen = () => {
         {/* Title */}
         <div className={`flex items-center justify-center gap-4 ${hasDeaths ? 'text-[#8a0303]' : 'text-[#aa8c55]'} font-['Cinzel_Decorative',serif] text-4xl tracking-widest uppercase mb-6`}>
           <Sun className="w-8 h-8 animate-spin-slow" />
-          <span>Bình Minh Ló Dạng</span>
+          <span>{S.narrator.title}</span>
         </div>
 
         {/* Story text */}
         <p className="text-gray-300 text-xl leading-relaxed mb-10 italic px-4 border-l-2 border-r-2 border-white/10">
           {hasDeaths
-            ? '"Mặt trời mọc không thể xóa nhòa vết máu trong đêm. Một linh hồn đã vĩnh viễn rời bỏ trần thế."'
-            : '"Ánh sáng thanh tẩy xua tan bóng tối. Không một ai phải đổ máu đêm qua. Phép màu đã xuất hiện."'}
+            ? S.narrator.storyWithDeaths
+            : S.narrator.storyNoDeaths}
         </p>
 
         {/* Victim Information */}
         {hasDeaths && (
           <div className="space-y-6 mb-10">
-            <p className="text-sm text-[#8a0303] font-sans font-bold uppercase tracking-[0.3em]">Danh sách tử nạn:</p>
+            <p className="text-sm text-[#8a0303] font-sans font-bold uppercase tracking-[0.3em]">{S.narrator.victimListLabel}</p>
             <div className="flex flex-wrap justify-center gap-6">
               {nightDeaths.map((victim) => (
                 <div
@@ -86,7 +87,7 @@ export const NarratorScreen = () => {
             ></div>
           </div>
           <p className="text-xs text-gray-500 uppercase tracking-[0.2em] font-sans">
-            {timeLeft != null ? `Hội đồng phán xét bắt đầu sau ${timeLeft} giây...` : 'Đang triệu tập hội đồng...'}
+            {timeLeft != null ? S.narrator.countdownLabel(timeLeft) : S.narrator.countdownLoading}
           </p>
         </div>
       </div>

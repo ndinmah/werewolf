@@ -1,6 +1,7 @@
 import React from 'react';
 import { Crosshair } from 'lucide-react';
 import { ModalOverlay } from '../../UI/ModalOverlay';
+import { S } from '../../../constants/strings';
 
 interface HunterShotBannerProps {
   hunterName: string;
@@ -20,14 +21,11 @@ export const HunterShotBanner: React.FC<HunterShotBannerProps> = ({ hunterName, 
           </div>
         </div>
         <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#ffdddd] uppercase tracking-[0.2em] mb-4 drop-shadow-[0_0_10px_rgba(138,3,3,0.8)]">
-          Đoạt Mệnh Lệnh!
+          {S.hunter.bannerTitle}
         </h2>
         <div className="h-px w-32 bg-[#8a0303] mx-auto mb-6"></div>
         <p className="text-gray-300 text-2xl leading-relaxed italic relative z-10">
-          Thợ săn{' '}
-          <span className="text-[#8a0303] font-['Cinzel_Decorative',serif] font-bold mx-2 text-3xl">{hunterName}</span>
-          trong phút hấp hối đã bóp cò, găm viên đạn bạc xuyên thẳng qua tim của
-          <span className="text-[#8a0303] font-['Cinzel_Decorative',serif] font-bold mx-2 text-3xl">{targetName}</span>!
+          {S.hunter.bannerStoryTemplate(hunterName, targetName)}
         </p>
       </div>
     </ModalOverlay>

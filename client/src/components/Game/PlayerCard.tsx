@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { Avatar } from '../UI/Avatar';
 import type { Player } from '../../types/game';
+import { S } from '../../constants/strings';
 
 export const PlayerCard = memo(({ player }: { player: Player }) => {
   const { seerVisions, myPlayer } = useGame();
@@ -32,7 +33,7 @@ export const PlayerCard = memo(({ player }: { player: Player }) => {
         {player.isLover ? (
           <span 
             className="px-1.5 py-0.5 bg-[#030303] border border-pink-500/30 text-pink-500 text-xs font-bold animate-pulse"
-            title="Người tình liên kết"
+            title={S.playerCard.tooltipLover}
           >
             ❤️
           </span>
@@ -40,7 +41,7 @@ export const PlayerCard = memo(({ player }: { player: Player }) => {
         {isWolfAlly ? (
           <span 
             className="px-1.5 py-0.5 bg-[#030303] border border-[#8a0303]/50 text-[#8a0303] text-xs font-bold shadow-[0_0_10px_rgba(138,3,3,0.5)]"
-            title="Đồng bọn Ma Sói"
+            title={S.playerCard.tooltipWolfAlly}
           >
             🐺
           </span>
@@ -52,7 +53,7 @@ export const PlayerCard = memo(({ player }: { player: Player }) => {
                 ? 'bg-[#030303] border-[#8a0303]/50 text-[#8a0303]' 
                 : 'bg-[#030303] border-[#aa8c55]/50 text-[#aa8c55]'
             }`}
-            title={myVision.isWerewolf ? 'Phe Sói' : 'Phe Dân'}
+            title={myVision.isWerewolf ? S.playerCard.tooltipSeerWolf : S.playerCard.tooltipSeerVillager}
           >
             {myVision.isWerewolf ? '🐺' : '✅'}
           </span>

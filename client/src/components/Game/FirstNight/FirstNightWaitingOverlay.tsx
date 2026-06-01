@@ -1,5 +1,6 @@
 import React from 'react';
 import { ModalOverlay } from '../../UI/ModalOverlay';
+import { S } from '../../../constants/strings';
 
 export const FirstNightWaitingOverlay: React.FC = () => {
   return (
@@ -14,11 +15,11 @@ export const FirstNightWaitingOverlay: React.FC = () => {
         </div>
         
         <h2 className="text-4xl md:text-5xl font-['Cinzel_Decorative',serif] text-indigo-200 mb-4 tracking-[0.15em] uppercase drop-shadow-[0_0_10px_rgba(99,102,241,0.5)]">
-          Đêm Đầu Tiên
+          {S.firstNightWaiting.title}
         </h2>
         <div className="h-px w-32 bg-linear-to-r from-transparent via-indigo-500/50 to-transparent mx-auto mb-6"></div>
         <p className="text-indigo-200/60 text-xl md:text-2xl italic max-w-xl leading-relaxed">
-          "Xin hãy khép hờ đôi mắt. Trong màn đêm sâu thẳm, những thế lực cổ xưa đang rục rịch tỉnh giấc..."
+          {S.firstNightWaiting.quote}
         </p>
       </div>
     </ModalOverlay>

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Button } from '../../UI/Button';
-import { Avatar } from '../../UI/Avatar';
 import { ModalOverlay } from '../../UI/ModalOverlay';
+import { Avatar } from '../../UI/Avatar';
 import type { Player } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface DefaultActionPanelProps {
   roleHeader: {
@@ -101,12 +102,12 @@ export const DefaultActionPanel: React.FC<DefaultActionPanelProps> = ({
                   <span className="flex gap-2 flex-wrap justify-center mt-1">
                     {fullPlayer?.isLover && (
                       <span className="text-[10px] font-sans bg-[#030303] border border-pink-500/30 text-pink-500 px-1.5 py-0.5 uppercase tracking-widest animate-pulse">
-                        ❤️
+                        {S.nightAction.badgeLover}
                       </span>
                     )}
                     {isSelf && (
                       <span className={`text-[10px] font-sans bg-[#030303] px-1.5 py-0.5 uppercase tracking-widest border ${isSelected ? 'border-white text-white' : 'border-white/30 text-gray-400'}`}>
-                        Ngươi
+                        {S.nightAction.badgeYou}
                       </span>
                     )}
                   </span>
@@ -114,7 +115,7 @@ export const DefaultActionPanel: React.FC<DefaultActionPanelProps> = ({
 
                 {isExcluded && (
                   <span className="text-[10px] text-[#8a0303] font-sans uppercase tracking-widest mt-2 border border-[#8a0303]/30 px-2 py-0.5 bg-[#030303]">
-                    Bất Khả Xâm Phạm
+                    {S.nightAction.badgeInviolable}
                   </span>
                 )}
               </div>
@@ -130,7 +131,7 @@ export const DefaultActionPanel: React.FC<DefaultActionPanelProps> = ({
             onClick={onConfirm}
             className={`min-w-[300px] ${!hasConfirmed && 'border-white text-white hover:bg-white hover:text-black'}`}
           >
-            {hasConfirmed ? 'HÀNH ĐỘNG ĐÃ NIÊM PHONG' : 'XÁC NHẬN MỤC TIÊU'}
+            {hasConfirmed ? S.defaultAction.btnDone : S.defaultAction.btnConfirm}
           </Button>
         </div>
       </div>

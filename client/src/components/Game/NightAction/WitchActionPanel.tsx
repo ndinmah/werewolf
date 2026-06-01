@@ -4,6 +4,7 @@ import { Button } from '../../UI/Button';
 import { Avatar } from '../../UI/Avatar';
 import { ModalOverlay } from '../../UI/ModalOverlay';
 import type { Player, WitchInfo } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface WitchActionPanelProps {
   roleHeader: {
@@ -77,10 +78,10 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
           <Skull className="w-10 h-10 text-[#8a0303] shrink-0 animate-bounce" />
           <div className="border-l border-[#8a0303]/30 pl-6">
             <p className="text-sm text-[#8a0303] font-['Cinzel_Decorative',serif] tracking-[0.2em] uppercase font-bold">
-              Dấu vết của quỷ:
+              {S.witch.wolfVictimLabel}
             </p>
             <p className="font-bold text-[#ffdddd] text-2xl tracking-wider">
-              {victimPlayer ? victimPlayer.name : '(Đêm nay bình yên)'}
+              {victimPlayer ? victimPlayer.name : S.witch.noPeacefulNight}
             </p>
           </div>
         </div>
@@ -101,18 +102,14 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
               <h3
                 className={`font-['Cinzel_Decorative',serif] text-2xl tracking-widest uppercase ${witchInfo.canHeal && victimPlayer ? 'text-[#aa8c55]' : 'text-gray-500'}`}
               >
-                Hồi Sinh Nhan
+                {S.witch.healTitle}
               </h3>
             </div>
 
             {witchInfo.canHeal && victimPlayer ? (
               <div className="flex flex-col justify-between h-full gap-6 relative z-10">
                 <p className="text-lg text-gray-300 leading-relaxed italic">
-                  Sử dụng bình tiên để cứu rỗi linh hồn{' '}
-                  <span className="font-['Cinzel_Decorative',serif] font-bold text-[#aa8c55] text-xl mx-1">
-                    {victimPlayer.name}
-                  </span>{' '}
-                  khỏi nanh vuốt cái chết.
+                  {S.witch.healStory(victimPlayer.name)}
                 </p>
                 <div className="flex gap-4">
                   <button
@@ -129,7 +126,7 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
                           : 'bg-transparent border-[#aa8c55]/50 text-[#aa8c55] hover:bg-[#aa8c55]/10'
                       }`}
                   >
-                    Ban Sự Sống
+                    {S.witch.btnHeal}
                   </button>
                   <button
                     type="button"
@@ -141,7 +138,7 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
                           : 'bg-transparent border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
                       }`}
                   >
-                    Mặc Kệ
+                    {S.witch.btnSkipHeal}
                   </button>
                 </div>
               </div>
@@ -149,8 +146,8 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
               <div className="flex flex-col justify-center items-center h-full text-center py-6">
                 <p className="text-lg text-gray-600 italic">
                   {!witchInfo.canHeal
-                    ? '"Lọ thuốc cứu mạng đã vỡ nát từ lâu..."'
-                    : '"Màn đêm tĩnh lặng, không một ai đổ máu."'}
+                    ? S.witch.healUsed
+                    : S.witch.healNotNeeded}
                 </p>
               </div>
             )}
@@ -170,14 +167,14 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
               <h3
                 className={`font-['Cinzel_Decorative',serif] text-2xl tracking-widest uppercase ${witchInfo.canPoison ? 'text-[#84cc16]' : 'text-gray-500'}`}
               >
-                Tịch Diệt Lộ
+                {S.witch.poisonTitle}
               </h3>
             </div>
 
             {witchInfo.canPoison ? (
               <div className="flex flex-col gap-6 h-full relative z-10">
                 <p className="text-lg text-gray-300 leading-relaxed italic">
-                  Nhỏ một giọt kịch độc để đoạt mạng bất kỳ kẻ nào ngáng đường. Cái chết là tuyệt đối.
+                  {S.witch.poisonStory}
                 </p>
                 <div className="flex gap-4">
                   <button
@@ -193,7 +190,7 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
                           : 'bg-transparent border-[#84cc16]/50 text-[#84cc16] hover:bg-[#84cc16]/10'
                       }`}
                   >
-                    Đầu Độc
+                    {S.witch.btnPoison}
                   </button>
                   <button
                     type="button"
@@ -208,13 +205,13 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
                           : 'bg-transparent border-white/10 text-gray-500 hover:border-white/30 hover:text-gray-300'
                       }`}
                   >
-                    Khoan Dung
+                    {S.witch.btnSkipPoison}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col justify-center items-center h-full text-center py-6">
-                <p className="text-lg text-gray-600 italic">"Chai thuốc độc chỉ còn lại cặn bã vô hại."</p>
+                <p className="text-lg text-gray-600 italic">{S.witch.poisonUsed}</p>
               </div>
             )}
           </div>
@@ -224,7 +221,7 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
         {witchUsePoison && witchInfo.canPoison && (
           <div className="border-t border-[#84cc16]/30 pt-6 flex flex-col gap-4 relative z-10 animate-fade-in">
             <p className="text-lg font-['Cinzel_Decorative',serif] text-[#84cc16] tracking-widest uppercase text-center">
-              Tế Đàn Tuyệt Mệnh
+              {S.witch.poisonTargetTitle}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 overflow-y-auto max-h-[30vh] pr-2 scrollbar-thin scrollbar-thumb-[#84cc16]/50 scrollbar-track-transparent pb-4">
               {targets
@@ -273,7 +270,7 @@ export const WitchActionPanel: React.FC<WitchActionPanelProps> = ({
             onClick={handleConfirmClick}
             className={`min-w-[300px] ${!hasConfirmed && (witchUsePoison ? 'border-[#84cc16] text-[#84cc16] hover:bg-[#84cc16]/10' : witchUseHeal ? 'border-[#aa8c55] text-[#aa8c55] hover:bg-[#aa8c55]/10' : 'border-[#a855f7] text-[#d8b4fe] hover:bg-[#a855f7]/10')}`}
           >
-            {hasConfirmed ? 'PHÉP THUẬT ĐÃ BAN' : 'THI TRIỂN QUYỀN NĂNG'}
+            {hasConfirmed ? S.witch.btnDone : S.witch.btnCast}
           </Button>
         </div>
       </div>

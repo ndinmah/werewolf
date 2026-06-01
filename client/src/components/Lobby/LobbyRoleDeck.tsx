@@ -2,6 +2,7 @@ import React from 'react';
 import { Minus, Plus, Scroll } from 'lucide-react';
 import { AVAILABLE_ROLES } from '../../constants/roles';
 import type { Role } from '../../types/game';
+import { S } from '../../constants/strings';
 
 interface LobbyRoleDeckProps {
   isHost: boolean;
@@ -23,7 +24,7 @@ export const LobbyRoleDeck: React.FC<LobbyRoleDeckProps> = ({
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-sm font-['Cinzel_Decorative',serif] uppercase tracking-[0.2em] text-[#aa8c55] flex items-center gap-2">
           <Scroll className="w-4 h-4" />
-          <span>Role Deck</span>
+          <span>{S.lobbyUI.roleDeckTitle}</span>
         </h3>
 
         {/* Strength Meter */}
@@ -37,9 +38,9 @@ export const LobbyRoleDeck: React.FC<LobbyRoleDeckProps> = ({
                   : 'bg-transparent border-[#8a0303]/50 text-[#8a0303]'
             }
           `}
-          title="Tổng điểm sức mạnh. Cân bằng nhất là 0."
+          title={S.lobbyUI.balanceTooltip}
         >
-          Cân bằng: {totalStrength > 0 ? `+${totalStrength}` : totalStrength}
+          {S.lobbyUI.balanceLabel(totalStrength)}
         </div>
       </div>
 
@@ -58,7 +59,7 @@ export const LobbyRoleDeck: React.FC<LobbyRoleDeckProps> = ({
                     {role.name}
                   </span>
                   <span className="text-[10px] text-gray-600 font-sans tracking-widest uppercase">
-                    ĐIỂM: {role.strength > 0 ? `+${role.strength}` : role.strength}
+                    {S.lobbyUI.scoreLabel(role.strength)}
                   </span>
                 </div>
               </div>

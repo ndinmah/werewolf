@@ -2,6 +2,7 @@ import React from 'react';
 import { ModalOverlay } from '../../UI/ModalOverlay';
 import { Heart } from 'lucide-react';
 import type { Player } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface LoverRevealOverlayProps {
   myPlayer: Player | undefined | null;
@@ -23,17 +24,17 @@ export const LoverRevealOverlay: React.FC<LoverRevealOverlayProps> = ({
           <Heart className="w-12 h-12 text-[#fbcfe8] fill-[#be185d] animate-pulse" />
         </div>
         
-        <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#fbcfe8] tracking-widest uppercase mb-4 drop-shadow-[0_0_10px_rgba(190,24,93,0.8)]">Duyên Định Mệnh</h2>
+        <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#fbcfe8] tracking-widest uppercase mb-4 drop-shadow-[0_0_10px_rgba(190,24,93,0.8)]">{S.loverReveal.title}</h2>
         <div className="h-px w-32 bg-linear-to-r from-transparent via-[#be185d] to-transparent mx-auto mb-6"></div>
         
         <p className="text-gray-300 text-xl mb-8 leading-relaxed italic relative z-10">
-          "Sinh cùng sinh, tử cùng tử." Sợi chỉ đỏ đã buộc chặt linh hồn hai người. Nếu không cùng phe, các ngươi phải giẫm lên xác của tất cả để tồn tại.
+          {S.loverReveal.story}
         </p>
 
         <div className="space-y-4 relative z-10">
           <div className="p-5 bg-[#030303] border border-[#be185d]/50 rounded-none relative overflow-hidden group">
             <div className="absolute inset-0 bg-linear-to-r from-transparent via-[#be185d]/10 to-transparent"></div>
-            <span className="font-['Cinzel_Decorative',serif] text-[#fbcfe8] text-2xl tracking-wider relative z-10">{myPlayer?.name} <span className="text-sm text-gray-400 font-sans tracking-widest uppercase ml-2">(Ngươi)</span></span>
+            <span className="font-['Cinzel_Decorative',serif] text-[#fbcfe8] text-2xl tracking-wider relative z-10">{myPlayer?.name} <span className="text-sm text-gray-400 font-sans tracking-widest uppercase ml-2">{S.loverReveal.youLabel}</span></span>
           </div>
 
           <div className="text-[#be185d] animate-pulse">
@@ -46,7 +47,7 @@ export const LoverRevealOverlay: React.FC<LoverRevealOverlayProps> = ({
             </div>
           ) : (
             <div className="p-5 bg-[#030303] border border-white/10 rounded-none border-dashed relative">
-              <span className="text-gray-500 italic text-xl">Không tìm thấy tri kỷ...</span>
+              <span className="text-gray-500 italic text-xl">{S.loverReveal.noPartner}</span>
             </div>
           )}
         </div>

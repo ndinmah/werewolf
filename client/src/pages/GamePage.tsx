@@ -19,6 +19,7 @@ import { getRoleEmoji, getRoleName } from '../constants/roles';
 
 import { getPhaseName } from '../constants/phases';
 import type { Role } from '../types/game';
+import { S } from '../constants/strings';
 
 export const GamePage = () => {
   const { id: roomId } = useParams();
@@ -56,7 +57,7 @@ export const GamePage = () => {
     }
   }, [gameState, navigate, roomId]);
 
-  if (!gameState) return <LoadingSpinner text="Đang tải..." />;
+  if (!gameState) return <LoadingSpinner text={S.game.loading} />;
 
   return (
     <div className="min-h-screen pt-20 px-4 container mx-auto max-w-7xl pb-10">
@@ -82,19 +83,19 @@ export const GamePage = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#8a0303] mb-4 tracking-[0.2em] uppercase drop-shadow-[0_0_10px_rgba(138,3,3,0.8)] relative z-10">LỜI NGUYỀN GIÀ LÀNG!</h2>
+            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#8a0303] mb-4 tracking-[0.2em] uppercase drop-shadow-[0_0_10px_rgba(138,3,3,0.8)] relative z-10">{S.events.elderCurse.title}</h2>
             <div className="h-px w-32 bg-linear-to-r from-transparent via-[#8a0303] to-transparent mx-auto mb-6 relative z-10"></div>
             <p className="text-gray-300 text-2xl italic leading-relaxed mb-8 relative z-10">
-              "Kẻ ngu ngốc đã sát hại đấng tối cao! Cơn thịnh nộ giáng xuống, tước đi mọi quyền năng của những kẻ mang dị năng."
+              {S.events.elderCurse.story}
             </p>
             <div className="text-gray-400 text-lg py-4 px-6 bg-[#030303] border border-[#8a0303]/30 mb-8 max-w-md mx-auto relative z-10 font-sans tracking-wide">
-              ⚠️ Tiên tri, Bảo vệ, Phù thủy, Thợ săn, Cupid đều đã thành Dân Thường.
+              {S.events.elderCurse.detail}
             </div>
             <button
               onClick={() => setShowCurseOverlay(false)}
               className="w-full max-w-xs bg-transparent hover:bg-[#8a0303]/20 text-[#ffdddd] font-['Cinzel_Decorative',serif] py-4 px-8 rounded-none border border-[#8a0303] shadow-[0_0_15px_rgba(138,3,3,0.3)] transition-all duration-300 hover:scale-105 active:scale-95 uppercase tracking-widest cursor-pointer relative z-10 text-xl"
             >
-              TUÂN LỆNH
+              {S.events.elderCurse.btnAck}
             </button>
           </div>
         </div>
@@ -121,10 +122,10 @@ export const GamePage = () => {
                 />
               </svg>
             </div>
-            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#06b6d4] mb-4 tracking-[0.2em] uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] relative z-10">KẾ THỪA DI CHÚC</h2>
+            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#06b6d4] mb-4 tracking-[0.2em] uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.8)] relative z-10">{S.events.doppelgangerInherit.title}</h2>
             <div className="h-px w-32 bg-linear-to-r from-transparent via-[#06b6d4] to-transparent mx-auto mb-6 relative z-10"></div>
             <p className="text-gray-300 text-2xl italic leading-relaxed mb-8 relative z-10">
-              "Bản gốc đã đổ máu. Lời nguyền nhân bản hoàn tất. Ngươi sẽ gánh vác sứ mệnh và tội lỗi của kẻ đi trước."
+              {S.events.doppelgangerInherit.story}
             </p>
             <div className="text-2xl font-['Cinzel_Decorative',serif] tracking-wider text-white py-6 px-8 bg-[#030303] border border-[#06b6d4]/50 mb-8 max-w-sm mx-auto flex flex-col items-center justify-center gap-2 relative z-10 shadow-[inset_0_0_15px_rgba(6,182,212,0.2)]">
               <span className="text-4xl mb-2">{getRoleEmoji(showInheritedOverlay)}</span>
@@ -134,7 +135,7 @@ export const GamePage = () => {
               onClick={() => setShowInheritedOverlay(null)}
               className="w-full max-w-xs bg-transparent hover:bg-[#06b6d4]/20 text-[#cffafe] font-['Cinzel_Decorative',serif] py-4 px-8 rounded-none border border-[#06b6d4] shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all duration-300 hover:scale-105 active:scale-95 uppercase tracking-widest cursor-pointer relative z-10 text-xl"
             >
-              CHẤP NHẬN SỐ PHẬN
+              {S.events.doppelgangerInherit.btnAck}
             </button>
           </div>
         </div>
@@ -155,11 +156,11 @@ export const GamePage = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 font-['Cormorant_Garamond',serif]">
         <div>
           <h1 className="text-2xl font-['Cinzel_Decorative',serif] text-gray-400 mb-1 tracking-widest uppercase">
-            Phòng: <span className="text-[#8a0303] font-bold drop-shadow-[0_0_5px_rgba(138,3,3,0.8)]">{roomId}</span>
+            {S.game.roomLabel} <span className="text-[#8a0303] font-bold drop-shadow-[0_0_5px_rgba(138,3,3,0.8)]">{roomId}</span>
           </h1>
           <div className="flex items-center gap-3 text-gray-300 text-xl italic">
             <p>
-              Ngày thứ {dayCount} — <span className="text-[#aa8c55] font-bold not-italic ml-1 drop-shadow-[0_0_5px_rgba(170,140,85,0.5)]">{getPhaseName(phase)}</span>
+              {S.game.dayLabel(dayCount)} — <span className="text-[#aa8c55] font-bold not-italic ml-1 drop-shadow-[0_0_5px_rgba(170,140,85,0.5)]">{getPhaseName(phase)}</span>
             </p>
             <PhaseTimer />
           </div>
@@ -167,7 +168,7 @@ export const GamePage = () => {
 
         <div className="bg-[#0a0a0a] px-6 py-4 rounded-none border border-white/10 flex items-center gap-6 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]">
           <div className="text-right flex flex-col items-end">
-            <p className="text-sm text-gray-500 uppercase tracking-[0.2em] font-sans">Định danh</p>
+            <p className="text-sm text-gray-500 uppercase tracking-[0.2em] font-sans">{S.game.playerIdentityLabel}</p>
             <p className="font-['Cinzel_Decorative',serif] text-2xl text-white tracking-widest">{myPlayer?.name}</p>
             {myPlayer?.role ? (
               <p className={`text-lg font-bold font-['Cormorant_Garamond',serif] italic ${myPlayer.role === 'WEREWOLF' ? 'text-[#8a0303]' : 'text-[#aa8c55]'}`}>
@@ -178,7 +179,7 @@ export const GamePage = () => {
               myPlayer?.role &&
               ['SEER', 'WITCH', 'BODYGUARD', 'CUPID', 'HUNTER'].includes(myPlayer.role) ? (
                 <span className="text-[11px] font-sans tracking-widest uppercase bg-[#030303] border border-[#8a0303]/50 text-[#8a0303] px-2 py-1 mt-2 flex items-center gap-1 shadow-[0_0_10px_rgba(138,3,3,0.3)]">
-                  🚫 Mất dị năng
+                  {S.game.lostPowerBadge}
                 </span>
               ) : null}
             {myPlayer?.role === 'ELDER' ? (
@@ -189,12 +190,12 @@ export const GamePage = () => {
                     : 'bg-[#030303] border-white/10 text-gray-600'
                 }`}
               >
-                🛡️ Hộ thể: {(gameState?.elderShields ?? 1) > 0 ? '1/1' : 'Vỡ nát'}
+                {(gameState?.elderShields ?? 1) > 0 ? S.game.elderShieldActive : S.game.elderShieldBroken}
               </span>
             ) : null}
             {myPlayer?.role === 'DOPPELGANGER' && gameState?.doppelgangerTargetId ? (
               <span className="text-[11px] font-sans tracking-widest uppercase bg-[#030303] border border-[#06b6d4]/50 text-[#06b6d4] px-2 py-1 mt-2 flex items-center gap-1 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
-                👥 Gốc: {gameState.players.find((p) => p.id === gameState.doppelgangerTargetId)?.name || 'Vô danh'}
+                {S.game.doppelgangerOriginLabel(gameState.players.find((p) => p.id === gameState.doppelgangerTargetId)?.name || S.game.unknownOrigin)}
               </span>
             ) : null}
           </div>

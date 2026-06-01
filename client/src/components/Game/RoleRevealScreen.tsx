@@ -5,6 +5,7 @@ import { Button } from '../UI/Button';
 import { PhaseTimer } from '../UI/PhaseTimer';
 import { ModalOverlay } from '../UI/ModalOverlay';
 import { getRoleMeta } from '../../constants/roles';
+import { S } from '../../constants/strings';
 
 interface RoleRevealScreenProps {
   onConfirm: () => void;
@@ -38,13 +39,13 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
   return (
     <ModalOverlay opacity="dark" className="flex-col font-['Cormorant_Garamond',serif]">
       <h2 className="text-3xl md:text-5xl font-['Cinzel_Decorative',serif] text-white tracking-[0.2em] mb-4 text-center uppercase animate-fade-in drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-        Định Mệnh Của Ngươi
+        {S.roleReveal.title}
       </h2>
       <div className="mb-8 flex justify-center scale-100">
         <PhaseTimer />
       </div>
       <p className="text-gray-400 text-lg md:text-xl mb-12 text-center max-w-md italic border-l border-r border-white/10 px-6">
-        "Chạm vào lá bài để mở khóa bản ngã thực sự của ngươi. Bí mật này không được phép tiết lộ."
+        {S.roleReveal.instruction}
       </p>
 
       {/* 3D Card Container */}
@@ -61,8 +62,8 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
               <div className="absolute inset-0 bg-white/5 rounded-full animate-ping opacity-20"></div>
               <HelpCircle className="w-12 h-12 text-gray-500 animate-pulse" />
             </div>
-            <p className="font-sans text-xs tracking-[0.3em] text-gray-400 font-bold uppercase">Click để xem</p>
-            <div className="absolute bottom-8 text-[10px] text-[#aa8c55] font-sans tracking-[0.4em] uppercase">Werewolf Ritual</div>
+            <p className="font-sans text-xs tracking-[0.3em] text-gray-400 font-bold uppercase">{S.roleReveal.cardFrontLabel}</p>
+            <div className="absolute bottom-8 text-[10px] text-[#aa8c55] font-sans tracking-[0.4em] uppercase">{S.roleReveal.cardFrontBrand}</div>
           </div>
 
           {/* Card Back (Role details) */}
@@ -101,7 +102,7 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
             </p>
 
             <div className="text-[10px] text-[#8a0303] font-sans uppercase tracking-[0.4em] relative z-10 font-bold">
-              Giữ bí mật tuyệt đối
+              {S.roleReveal.cardBackSecret}
             </div>
           </div>
 
@@ -116,7 +117,7 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
           onClick={onConfirm}
           className="min-w-[250px]"
         >
-          {phase !== 'roleReveal' ? 'Màn đêm buông xuống...' : 'Đã rõ định mệnh'}
+          {phase !== 'roleReveal' ? S.roleReveal.btnNightFalling : S.roleReveal.btnReady}
         </Button>
       </div>
     </ModalOverlay>

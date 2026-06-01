@@ -4,6 +4,7 @@ import { Button } from '../../UI/Button';
 import { Avatar } from '../../UI/Avatar';
 import { ModalOverlay } from '../../UI/ModalOverlay';
 import type { Player } from '../../../types/game';
+import { S } from '../../../constants/strings';
 
 interface HunterSelectionModalProps {
   targets: Pick<Player, 'id' | 'name'>[];
@@ -35,9 +36,9 @@ export const HunterSelectionModal: React.FC<HunterSelectionModalProps> = ({
             <Crosshair className="w-16 h-16" />
           </div>
           <div className="text-center md:text-left">
-            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#8a0303] tracking-widest uppercase">Phát Đạn Báo Thù</h2>
+            <h2 className="text-4xl font-['Cinzel_Decorative',serif] text-[#8a0303] tracking-widest uppercase">{S.hunter.selectionTitle}</h2>
             <p className="text-gray-400 mt-2 text-xl italic max-w-2xl">
-              "Ngươi sắp trút hơi thở cuối cùng, nhưng họng súng vẫn còn một viên đạn bạc. Hãy mang kẻ thủ ác xuống mồ cùng ngươi."
+              {S.hunter.selectionStory}
             </p>
           </div>
         </div>
@@ -79,7 +80,7 @@ export const HunterSelectionModal: React.FC<HunterSelectionModalProps> = ({
         <div className="flex justify-between items-center border-t border-[#8a0303]/20 pt-8 relative z-10 flex-col md:flex-row gap-4">
           <span className="text-sm font-sans text-gray-400 flex items-center gap-2 tracking-widest uppercase">
             <AlertTriangle className="w-5 h-5 text-[#8a0303] animate-pulse" />
-            <span>Nhanh lên, máu đang cạn dần!</span>
+            <span>{S.hunter.urgencyLabel}</span>
           </span>
           <div className="flex gap-4 w-full md:w-auto">
             <Button
@@ -89,7 +90,7 @@ export const HunterSelectionModal: React.FC<HunterSelectionModalProps> = ({
               variant="secondary"
               className={`flex-1 md:flex-none border-white/20 text-gray-400 hover:text-white hover:border-white/50`}
             >
-              CHẾT TRONG IM LẶNG
+              {S.hunter.btnSilent}
             </Button>
             <Button
               size="lg"
@@ -98,7 +99,7 @@ export const HunterSelectionModal: React.FC<HunterSelectionModalProps> = ({
               variant={hasConfirmed ? 'ghost' : 'primary'}
               className={`flex-1 md:flex-none min-w-[200px]`}
             >
-              {hasConfirmed ? 'ĐẠN ĐÃ LÊN NÒNG' : 'BÓP CÒ'}
+              {hasConfirmed ? S.hunter.btnDone : S.hunter.btnShoot}
             </Button>
           </div>
         </div>

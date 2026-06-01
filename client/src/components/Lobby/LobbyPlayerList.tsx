@@ -2,6 +2,7 @@ import React from 'react';
 import { Avatar } from '../UI/Avatar';
 import type { Player } from '../../types/game';
 import { Skull } from 'lucide-react';
+import { S } from '../../constants/strings';
 
 interface LobbyPlayerListProps {
   players: Player[];
@@ -24,7 +25,7 @@ export const LobbyPlayerList: React.FC<LobbyPlayerListProps> = ({
       <div className="absolute top-0 left-0 w-full h-px bg-linear-to-r from-transparent via-[#aa8c55] to-transparent opacity-30"></div>
       
       <h2 className="text-2xl font-['Cinzel_Decorative',serif] text-white mb-6 flex items-center justify-between tracking-widest">
-        <span>Souls Gathered ({players.length})</span>
+        <span>{S.lobbyUI.playerListTitle(players.length)}</span>
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
@@ -41,14 +42,14 @@ export const LobbyPlayerList: React.FC<LobbyPlayerListProps> = ({
               />
               <div className="flex flex-col">
                 <p className="font-bold text-white text-lg tracking-wide font-['Cinzel_Decorative',serif]">{player.name}</p>
-                {player.id === hostId && <span className="text-[10px] text-[#aa8c55] uppercase tracking-widest font-sans">Ritual Master</span>}
+                {player.id === hostId && <span className="text-[10px] text-[#aa8c55] uppercase tracking-widest font-sans">{S.lobbyUI.hostBadge}</span>}
               </div>
             </div>
             {isHost && player.id !== myPlayerId && (
               <button
                 onClick={() => onKick(player)}
                 className="p-2 rounded-none border border-[#8a0303]/30 text-[#8a0303] hover:text-[#ffdddd] hover:bg-[#8a0303] transition-all cursor-pointer group-hover/player:border-[#8a0303]"
-                title="Banish Soul"
+                title={S.lobbyUI.kickTooltip}
               >
                 <Skull className="w-4 h-4" />
               </button>
