@@ -6,7 +6,7 @@ const isProduction = import.meta.env.PROD;
 // Khi build xong (chạy qua tunnel), dùng undefined để tự động trỏ vào cùng domain của giao diện.
 const serverUrl = isProduction ? undefined : (import.meta.env.VITE_SERVER_URL || 'http://localhost:3001');
 
-const socket: Socket = io(serverUrl as any);
+const socket: Socket = serverUrl ? io(serverUrl) : io();
 
 const SocketContext = createContext<Socket | null>(null);
 

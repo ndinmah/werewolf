@@ -110,9 +110,6 @@ export const startNightWave1 = (roomId: string, io: Server, context: import('../
   alivePlayers.forEach((player) => {
     if (player.role && wave1Roles.includes(player.role)) {
       const handler = RoleRegistry.getHandler(player.role);
-      const isSpecialVillager = ['SEER', 'BODYGUARD'].includes(player.role);
-      const lostPowers = !!context.villagersLostPowers && isSpecialVillager;
-
       if (io.sockets.sockets.has(player.id)) {
         if (handler && handler.promptNightAction) {
           const socket = io.sockets.sockets.get(player.id);
@@ -140,7 +137,6 @@ export const startNightWave2 = (roomId: string, io: Server, context: import('../
   }
 
   const witch = context.players.find((p) => p.role === 'WITCH' && p.isAlive);
-  const lostPowers = !!context.villagersLostPowers;
 
   if (witch && io.sockets.sockets.has(witch.id)) {
     const handler = RoleRegistry.getHandler('WITCH');

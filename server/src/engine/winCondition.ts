@@ -12,7 +12,7 @@ export const checkWinCondition = (
   players: Player[],
   dayDeath?: SlimPlayer | null,
   lovers?: string[],
-  hunterShotPlayer?: SlimPlayer | null
+  _hunterShotPlayer?: SlimPlayer | null
 ): { isGameOver: boolean; winner: Faction | null } => {
   // Nếu Tanner bị vote treo cổ vào ban ngày, Tanner thắng lập tức
   if (dayDeath && dayDeath.role === 'TANNER') {
