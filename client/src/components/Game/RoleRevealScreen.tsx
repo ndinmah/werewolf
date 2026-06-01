@@ -66,7 +66,14 @@ export const RoleRevealScreen = ({ onConfirm }: RoleRevealScreenProps) => {
           </div>
 
           {/* Card Back (Role details) */}
-          <div className={`absolute inset-0 w-full h-full rounded-none border ${borderFaction} bg-[#0a0a0a] flex flex-col items-center justify-between p-8 backface-hidden transform-[rotateY(180deg)] shadow-[0_0_50px_rgba(0,0,0,0.9)]`}>
+          <div 
+            className={`absolute inset-0 w-full h-full rounded-none border ${borderFaction} bg-[#0a0a0a] flex flex-col items-center justify-between p-8 backface-hidden transform-[rotateY(180deg)] shadow-[0_0_50px_rgba(0,0,0,0.9)]`}
+            style={{
+              backgroundImage: `linear-gradient(to bottom, rgba(10, 10, 10, 0.7), rgba(10, 10, 10, 0.95)), url(${meta.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
             {/* Inner border */}
             <div className={`absolute top-2 left-2 right-2 bottom-2 border ${borderFaction} opacity-50 pointer-events-none`}></div>
             

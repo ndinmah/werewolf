@@ -176,7 +176,11 @@ export const WerewolfActionPanel: React.FC<WerewolfActionPanelProps> = ({
             onClick={onConfirm}
             className="min-w-[300px]"
           >
-            {hasConfirmed ? 'ĐÃ NHUỐM MÁU (CHỜ ĐỒNG LOẠI)' : 'CẮN XÉ'}
+            {hasConfirmed
+              ? players.filter((p) => p.role === 'WEREWOLF' && p.isAlive).length > 1
+                ? 'ĐÃ NHUỐM MÁU (CHỜ ĐỒNG LOẠI)'
+                : 'ĐÃ NHUỐM MÁU (CHỜ CÁC THẾ LỰC KHÁC)'
+              : 'CẮN XÉ'}
           </Button>
         </div>
       </div>

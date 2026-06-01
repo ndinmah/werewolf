@@ -13,6 +13,7 @@ export interface RoleMeta {
   factionColor: string;
   desc: string;
   iconComponent: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  image: string;
   animateIcon?: boolean;
   cardBg: string;
   nightAction?: {
@@ -25,6 +26,7 @@ export interface RoleMeta {
 export const ROLE_METADATA: Record<Role, RoleMeta> = {
   WEREWOLF: {
     id: 'WEREWOLF',
+    image: '/images/roles/werewolf.png',
     name: 'Ma Sói',
     emoji: '🐺',
     color: 'text-[#8a0303]',
@@ -44,6 +46,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   SEER: {
     id: 'SEER',
+    image: '/images/roles/seer.png',
     name: 'Tiên Tri',
     emoji: '🔮',
     color: 'text-[#a855f7]',
@@ -62,6 +65,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   BODYGUARD: {
     id: 'BODYGUARD',
+    image: '/images/roles/bodyguard.png',
     name: 'Bảo Vệ',
     emoji: '🛡️',
     color: 'text-[#84cc16]',
@@ -80,6 +84,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   HUNTER: {
     id: 'HUNTER',
+    image: '/images/roles/hunter.png',
     name: 'Thợ Săn',
     emoji: '🏹',
     color: 'text-[#aa8c55]',
@@ -94,6 +99,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   WITCH: {
     id: 'WITCH',
+    image: '/images/roles/witch.png',
     name: 'Phù Thủy',
     emoji: '🧙‍♀️',
     color: 'text-[#be185d]',
@@ -112,6 +118,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   CUPID: {
     id: 'CUPID',
+    image: '/images/roles/cupid.png',
     name: 'Cupid',
     emoji: '💘',
     color: 'text-[#f43f5e]',
@@ -125,6 +132,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   VILLAGER: {
     id: 'VILLAGER',
+    image: '/images/roles/villager.png',
     name: 'Dân Làng',
     emoji: '🧑',
     color: 'text-[#3b82f6]',
@@ -138,6 +146,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   TANNER: {
     id: 'TANNER',
+    image: '/images/roles/tanner.png',
     name: 'Kẻ Chán Đời',
     emoji: '🤡',
     color: 'text-[#ea580c]',
@@ -151,6 +160,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   ELDER: {
     id: 'ELDER',
+    image: '/images/roles/elder.png',
     name: 'Già Làng',
     emoji: '🎖️',
     color: 'text-[#aa8c55]',
@@ -164,6 +174,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   CURSED: {
     id: 'CURSED',
+    image: '/images/roles/cursed.png',
     name: 'Kẻ Bị Nguyền Rủa',
     emoji: '💀',
     color: 'text-[#71717a]',
@@ -177,6 +188,7 @@ export const ROLE_METADATA: Record<Role, RoleMeta> = {
   },
   DOPPELGANGER: {
     id: 'DOPPELGANGER',
+    image: '/images/roles/doppelganger.png',
     name: 'Kẻ Nhân Bản',
     emoji: '👥',
     color: 'text-[#06b6d4]',

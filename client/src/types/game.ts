@@ -108,7 +108,6 @@ export interface NightActionPrompt {
   witchInfo?: WitchInfo;
 }
 
-
 export interface HunterPrompt {
   targetablePlayers: Pick<Player, 'id' | 'name'>[];
 }
@@ -143,4 +142,3 @@ export interface LoverRevealInfo {
 export interface CupidPrompt {
   targetablePlayers: Pick<Player, 'id' | 'name'>[];
 }
-

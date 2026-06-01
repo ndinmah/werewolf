@@ -76,5 +76,10 @@ export const FirstNightModal = () => {
   }
 
   // 4. Default: Spectators or other roles waiting
+  // Nhường quyền render cho NightActionModal nếu có prompt cho role khác (VD: DOPPELGANGER)
+  if (nightActionPrompt && !['CUPID', 'WEREWOLF'].includes(nightActionPrompt.role)) {
+    return null;
+  }
+
   return <FirstNightWaitingOverlay />;
 };

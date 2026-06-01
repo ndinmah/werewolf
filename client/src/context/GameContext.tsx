@@ -97,8 +97,8 @@ function gameReducer(state: GameReducerState, action: GameAction): GameReducerSt
       return {
         ...state,
         gameState: update,
-        nightActionPrompt: update.phase !== 'night' ? null : state.nightActionPrompt,
-        nightStatus: update.phase !== 'night' ? null : state.nightStatus,
+        nightActionPrompt: (update.phase !== 'night' && update.phase !== 'firstNight') ? null : state.nightActionPrompt,
+        nightStatus: (update.phase !== 'night' && update.phase !== 'firstNight') ? null : state.nightStatus,
         votingResult: update.phase !== 'voting' ? null : state.votingResult,
         hunterPrompt: update.phase !== 'hunterRetaliation' ? null : state.hunterPrompt,
         // Reset shot result khi bắt đầu phase retaliation mới
@@ -144,11 +144,22 @@ function gameReducer(state: GameReducerState, action: GameAction): GameReducerSt
         ...state,
         nightStatus: action.payload,
       };
-    case 'SEER_RESULT':
+    case 'SEER_RESULT': {
+      const newVision = action.payload;
+      const existingIndex = state.seerVisions.findIndex(v => v.targetId === newVision.targetId);
+      if (existingIndex >= 0) {
+        const updatedVisions = [...state.seerVisions];
+        updatedVisions[existingIndex] = newVision;
+        return {
+          ...state,
+          seerVisions: updatedVisions,
+        };
+      }
       return {
         ...state,
-        seerVisions: [...state.seerVisions, action.payload],
+        seerVisions: [...state.seerVisions, newVision],
       };
+    }
     case 'VOTING_RESULT':
       return {
         ...state,
