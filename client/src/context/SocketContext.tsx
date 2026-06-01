@@ -1,7 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const socket: Socket = io(import.meta.env.VITE_SERVER_URL || 'http://localhost:3001');
+const isProduction = import.meta.env.PROD;
+// Trong môi trường development (npm run dev), dùng localhost:3001.
+// Khi build xong (chạy qua tunnel), dùng undefined để tự động trỏ vào cùng domain của giao diện.
+const serverUrl = isProduction ? undefined : (import.meta.env.VITE_SERVER_URL || 'http://localhost:3001');
+
+const socket: Socket = io(serverUrl as any);
 
 const SocketContext = createContext<Socket | null>(null);
 

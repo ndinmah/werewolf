@@ -11,6 +11,8 @@
     "install:all": "npm install",
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "tunnel": ".\\cloudflared.exe tunnel --config config.yml run werewolf-game",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "lint:fix": "npm run lint:fix --workspaces --if-present"

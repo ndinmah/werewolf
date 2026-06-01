@@ -1,0 +1,7 @@
+tunnel: werewolf-game
+credentials-file: C:\Users\Manh\.cloudflared\92cc949c-c682-4216-8838-33d8f1fe94d7.json
+
+ingress:
+  - hostname: werewolf.ndinmah.xyz
+    service: http://localhost:3001
+  - service: http_status:404
