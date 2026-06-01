@@ -77,6 +77,18 @@ export const leaveRoom = (roomId: string, playerId: string): Room | null => {
   return null;
 };
 
+export const updatePlayerId = (roomId: string, oldId: string, newId: string): Room | null => {
+  const room = rooms.get(roomId);
+  if (room) {
+    room.players = room.players.map((p) => p.id === oldId ? { ...p, id: newId } : p);
+    if (room.hostId === oldId) {
+      room.hostId = newId;
+    }
+    return room;
+  }
+  return null;
+};
+
 export const updateRoomSettings = (roomId: string, settings: Partial<RoomSettings>): Room | null => {
   const room = rooms.get(roomId);
   if (room) {

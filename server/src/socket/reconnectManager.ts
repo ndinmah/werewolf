@@ -1,5 +1,5 @@
 import type { Server, Socket } from 'socket.io';
-import { getRoom } from './roomManager.ts';
+import { getRoom, updatePlayerId } from './roomManager.ts';
 import { getGameData } from '../engine/gameStateManager.ts';
 import { findPendingHunter } from '../engine/gameHelpers.ts';
 import { SOCKET_EVENTS } from '../constants/events.ts';
@@ -31,11 +31,8 @@ export const handlePlayerReconnect = (
       }
 
       const oldId = existingPlayer.id;
-      existingPlayer.id = playerId;
-
-      if (room.hostId === oldId) {
-        room.hostId = playerId;
-      }
+      const updatedRoom = updatePlayerId(roomId, oldId, playerId);
+      if (!updatedRoom) return false;
 
       const mPlayer = gameData.actor.getSnapshot().context.players.find((p) => p.name === playerName);
       if (mPlayer) {
@@ -45,11 +42,11 @@ export const handlePlayerReconnect = (
 
       socket.join(roomId);
 
-      io.to(roomId).emit(SOCKET_EVENTS.ROOM_UPDATED, room);
+      io.to(roomId).emit(SOCKET_EVENTS.ROOM_UPDATED, updatedRoom);
 
       const myVisions = gameData.seerVisions?.[playerId] || [];
       socket.emit(SOCKET_EVENTS.RECONNECT_SUCCESS, {
-        room,
+        room: updatedRoom,
         gameState: gameData.actor.getSnapshot().context,
         chatLogs: gameData.chatLogs,
         seerVisions: myVisions,
