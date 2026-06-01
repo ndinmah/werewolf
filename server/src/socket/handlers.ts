@@ -264,6 +264,12 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
         if (callback) callback({ success: false, error: chatError });
         return;
       }
+
+      if (!['general', 'wolves', 'ghost'].includes(channel)) {
+        if (callback) callback({ success: false, error: 'Kênh chat không hợp lệ' });
+        return;
+      }
+
       const sanitizedContent = escapeHtml(content.trim());
 
       const gameData = getGameData(roomId);
@@ -564,6 +570,8 @@ export const setupHandlers = (io: Server, socket: Socket): void => {
           const updatedRoom = leaveRoom(r.id, playerId);
           if (updatedRoom) {
             io.to(r.id).emit('ROOM_UPDATED', updatedRoom);
+          } else {
+            destroyGameActor(r.id);
           }
           io.emit('ROOM_LIST', getRooms());
         }

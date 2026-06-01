@@ -164,7 +164,7 @@ export const gameMachine = setup({
       addLoverDeaths(deadIds, context.lovers, context.players, nightDeaths);
 
       // Cập nhật người chơi chết và người chơi hóa Sói
-      const updatedPlayers = context.players.map((p) => {
+      let updatedPlayers = context.players.map((p) => {
         if (transformedIds.has(p.id)) {
           return { ...p, role: 'WEREWOLF' as const, faction: 'WEREWOLF' as const };
         }
@@ -173,6 +173,25 @@ export const gameMachine = setup({
         }
         return p;
       });
+
+      // Recalculate Lover Factions in case of transformation (Cursed becoming Wolf)
+      if (context.lovers && context.lovers.length === 2) {
+        const [l1, l2] = context.lovers;
+        const p1 = updatedPlayers.find(p => p.id === l1);
+        const p2 = updatedPlayers.find(p => p.id === l2);
+        
+        if (p1 && p2) {
+          // Determine base factions without THIRD_PARTY override
+          const role1 = p1.role ? ROLES[p1.role as keyof typeof ROLES] : null;
+          const role2 = p2.role ? ROLES[p2.role as keyof typeof ROLES] : null;
+          
+          if (role1 && role2 && role1.faction !== role2.faction) {
+            updatedPlayers = updatedPlayers.map(p => 
+              (p.id === l1 || p.id === l2) ? { ...p, faction: 'THIRD_PARTY' as const } : p
+            );
+          }
+        }
+      }
 
       // Xác định các player vừa chết bằng helper dùng chung để xử lý onDeath hook ở action sau
       const newlyDeadPlayerIds = getNewlyDeadPlayerIds(context.players, updatedPlayers);
@@ -276,6 +295,10 @@ export const gameMachine = setup({
                 faction: originalRoleConfig.faction as Faction,
               };
               playersChanged = true;
+              
+              if (originalRole === 'ELDER') {
+                additionalUpdates = { ...additionalUpdates, elderShields: 1 };
+              }
             }
           }
         });
@@ -291,6 +314,25 @@ export const gameMachine = setup({
           }
         }
       });
+
+      if (playersChanged && context.lovers && context.lovers.length === 2) {
+        const [l1, l2] = context.lovers;
+        const p1 = updatedPlayers.find(p => p.id === l1);
+        const p2 = updatedPlayers.find(p => p.id === l2);
+        
+        if (p1 && p2) {
+          const role1 = p1.role ? ROLES[p1.role as keyof typeof ROLES] : null;
+          const role2 = p2.role ? ROLES[p2.role as keyof typeof ROLES] : null;
+          
+          if (role1 && role2 && role1.faction !== role2.faction) {
+            updatedPlayers.forEach((p, idx) => {
+              if (p.id === l1 || p.id === l2) {
+                updatedPlayers[idx] = { ...p, faction: 'THIRD_PARTY' as const };
+              }
+            });
+          }
+        }
+      }
 
       return {
         ...additionalUpdates,
@@ -535,6 +577,11 @@ export const gameMachine = setup({
     },
     HunterResolve: {
       always: [
+        {
+          target: 'HunterRetaliation',
+          guard: ({ context }) => !!context.pendingRetaliation,
+          actions: ['notifyPlayers'],
+        },
         {
           target: 'GameOver',
           guard: 'checkWinCondition',

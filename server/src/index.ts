@@ -5,13 +5,15 @@ import cors from 'cors';
 import { setupHandlers } from './socket/handlers.ts';
 
 const app = express();
-app.use(cors());
+const corsOrigin = process.env.ALLOWED_ORIGIN || '*';
+
+app.use(cors({ origin: corsOrigin }));
 
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: '*',
+    origin: corsOrigin,
     methods: ['GET', 'POST']
   }
 });

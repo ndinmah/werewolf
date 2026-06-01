@@ -14,7 +14,7 @@ class WitchHandler implements RoleHandler {
       const victim = context.players.find((p) => p.id === werewolfTarget);
       const elderShields = context.elderShields !== undefined ? context.elderShields : 1;
       const bodyguardTarget = gameData.nightActions?.['BODYGUARD']?.targetId || null;
-      
+
       const isElderAndHasShield = victim && victim.role === 'ELDER' && elderShields > 0;
       const isBodyguardProtected = werewolfTarget === bodyguardTarget;
       const isCursed = victim && victim.role === 'CURSED';
@@ -53,8 +53,11 @@ class WitchHandler implements RoleHandler {
     gameData: GameData,
     _io: Server,
   ): boolean {
+    if (context.villagersLostPowers) {
+      gameData.nightActionSubmitted?.add(player.id);
+      return true;
+    }
     if (payload.role !== 'WITCH') return false;
-    if (context.villagersLostPowers) return false; // Không có chức năng
 
     const healTargetId = payload.healTargetId || null;
     const poisonTargetId = payload.poisonTargetId || null;
@@ -68,14 +71,14 @@ class WitchHandler implements RoleHandler {
 
     if (healTargetId) {
       const werewolfTarget = gameData.nightActions?.['WEREWOLF']?.targetId || null;
-      
+
       // Hợp lệ hóa mục tiêu cứu
       let filteredWerewolfTarget = werewolfTarget;
       if (werewolfTarget) {
         const victim = context.players.find((p) => p.id === werewolfTarget);
         const elderShields = context.elderShields !== undefined ? context.elderShields : 1;
         const bodyguardTarget = gameData.nightActions?.['BODYGUARD']?.targetId || null;
-        
+
         const isElderAndHasShield = victim && victim.role === 'ELDER' && elderShields > 0;
         const isBodyguardProtected = werewolfTarget === bodyguardTarget;
         const isCursed = victim && victim.role === 'CURSED';

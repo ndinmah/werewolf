@@ -29,7 +29,7 @@ class WerewolfHandler implements RoleHandler {
     }, 10000);
   }
 
-  promptNightAction(roomId: string, player: Player, context: GameContext, gameData: GameData, socket: Socket): void {
+  promptNightAction(_roomId: string, player: Player, context: GameContext, _gameData: GameData, socket: Socket): void {
     const alivePlayers = context.players.filter(p => p.isAlive);
     socket.emit('NIGHT_ACTION_PROMPT', {
       role: 'WEREWOLF',

@@ -26,8 +26,11 @@ class BodyguardHandler implements RoleHandler {
     gameData: GameData,
     _io: Server,
   ): boolean {
+    if (context.villagersLostPowers) {
+      gameData.nightActionSubmitted?.add(player.id);
+      return true;
+    }
     if (payload.role !== 'BODYGUARD') return false;
-    if (context.villagersLostPowers) return false;
     const targetId = payload.targetId;
     if (!targetId) return false;
     if (gameData.nightActionSubmitted.has(player.id)) return false;

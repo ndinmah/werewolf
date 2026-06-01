@@ -50,17 +50,17 @@ export const createGameActor = (roomId: string, io: Server) => {
       notifyPlayers: ({ context }) => {
         notifyPlayers(roomId, context, io);
       },
-      runFirstNightStart: () => {
-        startFirstNight(roomId, io);
+      runFirstNightStart: ({ context }) => {
+        startFirstNight(roomId, io, context);
       },
       startRoleRevealTimer: assign(() => {
         return startTimerAction(roomId, 10 * 1000);
       }),
-      runNightWave1Start: () => {
-        startNightWave1(roomId, io);
+      runNightWave1Start: ({ context }) => {
+        startNightWave1(roomId, io, context);
       },
-      runNightWave2Start: () => {
-        startNightWave2(roomId, io);
+      runNightWave2Start: ({ context }) => {
+        startNightWave2(roomId, io, context);
       },
       startNightWave1Timer: assign(() => {
         return startTimerAction(roomId, 35 * 1000, () => {

@@ -21,11 +21,14 @@ class ElderHandler implements RoleHandler {
       !!actions?.['WITCH_POISON']?.targetId &&
       actions['WITCH_POISON'].targetId === deadPlayer.id;
 
-    // Lời nguyền của Già làng kích hoạt nếu chết do:
-    // 1. Biểu quyết treo cổ (cause === 'vote')
-    // 2. Thợ săn bắn trả (cause === 'hunter')
+    const wasVoted = cause === 'vote' && context.dayDeath?.id === deadPlayer.id;
+    const wasShot = cause === 'hunter' && context.hunterShotPlayer?.id === deadPlayer.id;
+
+    // Lời nguyền của Già làng kích hoạt nếu chết trực tiếp do:
+    // 1. Biểu quyết treo cổ (wasVoted)
+    // 2. Thợ săn bắn trả (wasShot)
     // 3. Phù thủy đầu độc ban đêm (wasPoisonedByWitch)
-    if (cause === 'vote' || cause === 'hunter' || wasPoisonedByWitch) {
+    if (wasVoted || wasShot || wasPoisonedByWitch) {
       return {
         villagersLostPowers: true,
       };

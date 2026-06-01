@@ -39,6 +39,18 @@ class CupidHandler implements RoleHandler {
     }
   }
 
+  promptNightAction(_roomId: string, player: Player, context: GameContext, _gameData: GameData, socket: import('socket.io').Socket): void {
+    const alivePlayers = context.players.filter(p => p.isAlive);
+    socket.emit('NIGHT_ACTION_PROMPT', {
+      role: 'CUPID',
+      targetablePlayers: alivePlayers.map(p => ({
+        id: p.id,
+        name: p.name,
+        isAlive: p.isAlive
+      })),
+    });
+  }
+
   submitNightAction(
     roomId: string,
     player: Player,

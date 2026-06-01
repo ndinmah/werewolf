@@ -15,20 +15,18 @@ import '../roles/handlers/ElderHandler.ts';
 import '../roles/handlers/CursedHandler.ts';
 import '../roles/handlers/DoppelgangerHandler.ts';
 
-export const startFirstNight = (roomId: string, io: Server): void => {
+export const startFirstNight = (roomId: string, io: Server, context: import('../types/game.ts').GameContext): void => {
   const gameData = getGameData(roomId);
   if (!gameData) return;
 
-  const snapshot = gameData.actor.getSnapshot();
-  const context = snapshot.context;
-  const alivePlayers = context.players.filter(p => p.isAlive);
+  const alivePlayers = context.players.filter((p) => p.isAlive);
 
   gameData.nightActions = {};
   gameData.nightActionSubmitted = new Set();
   gameData.votes = {};
 
   // Tìm các role cần hành động trong First Night dựa trên firstNightPriority > 0
-  const firstNightRoles = [...new Set(alivePlayers.map(p => p.role))]
+  const firstNightRoles = [...new Set(alivePlayers.map((p) => p.role))]
     .filter((roleId): roleId is keyof typeof ROLES => {
       if (typeof roleId !== 'string' || !ROLES[roleId as keyof typeof ROLES]) return false;
       const roleConfig = ROLES[roleId as keyof typeof ROLES] as unknown as { firstNightPriority?: number };
@@ -67,10 +65,10 @@ export const promptNextFirstNightRole = (roomId: string, io: Server): void => {
   const currentRole = pendingNightRoles[currentNightRoleIndex] as keyof typeof ROLES;
   const snapshot = gameData.actor.getSnapshot();
   const context = snapshot.context;
-  const alivePlayers = context.players.filter(p => p.isAlive);
+  const alivePlayers = context.players.filter((p) => p.isAlive);
 
-  const rolePlayers = alivePlayers.filter(p => p.role === currentRole);
-  const connectedRolePlayers = rolePlayers.filter(p => io.sockets.sockets.has(p.id));
+  const rolePlayers = alivePlayers.filter((p) => p.role === currentRole);
+  const connectedRolePlayers = rolePlayers.filter((p) => io.sockets.sockets.has(p.id));
 
   if (connectedRolePlayers.length === 0) {
     gameData.currentNightRoleIndex = currentNightRoleIndex + 1;
@@ -95,13 +93,11 @@ export const advanceFirstNightRole = (roomId: string, io: Server): void => {
   promptNextFirstNightRole(roomId, io);
 };
 
-export const startNightWave1 = (roomId: string, io: Server): void => {
+export const startNightWave1 = (roomId: string, io: Server, context: import('../types/game.ts').GameContext): void => {
   const gameData = getGameData(roomId);
   if (!gameData) return;
 
-  const snapshot = gameData.actor.getSnapshot();
-  const context = snapshot.context;
-  const alivePlayers = context.players.filter(p => p.isAlive);
+  const alivePlayers = context.players.filter((p) => p.isAlive);
 
   gameData.nightActions = {};
   gameData.nightActionSubmitted = new Set();
@@ -111,13 +107,13 @@ export const startNightWave1 = (roomId: string, io: Server): void => {
 
   const wave1Roles = ['WEREWOLF', 'SEER', 'BODYGUARD'];
 
-  alivePlayers.forEach(player => {
+  alivePlayers.forEach((player) => {
     if (player.role && wave1Roles.includes(player.role)) {
       const handler = RoleRegistry.getHandler(player.role);
       const isSpecialVillager = ['SEER', 'BODYGUARD'].includes(player.role);
       const lostPowers = !!context.villagersLostPowers && isSpecialVillager;
 
-      if (io.sockets.sockets.has(player.id) && !lostPowers) {
+      if (io.sockets.sockets.has(player.id)) {
         if (handler && handler.promptNightAction) {
           const socket = io.sockets.sockets.get(player.id);
           if (socket) {
@@ -131,25 +127,22 @@ export const startNightWave1 = (roomId: string, io: Server): void => {
   io.to(roomId).emit('NIGHT_STATUS_UPDATE', {
     currentRoleName: 'các vai trò đặc biệt',
     waitingFor: [],
-    done: []
+    done: [],
   });
 };
 
-export const startNightWave2 = (roomId: string, io: Server): void => {
+export const startNightWave2 = (roomId: string, io: Server, context: import('../types/game.ts').GameContext): void => {
   const gameData = getGameData(roomId);
   if (!gameData) return;
-
-  const snapshot = gameData.actor.getSnapshot();
-  const context = snapshot.context;
 
   if (!gameData.nightActions?.['WEREWOLF']) {
     computeWerewolfTarget(context, gameData);
   }
 
-  const witch = context.players.find(p => p.role === 'WITCH' && p.isAlive);
+  const witch = context.players.find((p) => p.role === 'WITCH' && p.isAlive);
   const lostPowers = !!context.villagersLostPowers;
 
-  if (witch && io.sockets.sockets.has(witch.id) && !lostPowers) {
+  if (witch && io.sockets.sockets.has(witch.id)) {
     const handler = RoleRegistry.getHandler('WITCH');
     if (handler && handler.promptNightAction) {
       const socket = io.sockets.sockets.get(witch.id);
@@ -162,16 +155,11 @@ export const startNightWave2 = (roomId: string, io: Server): void => {
   io.to(roomId).emit('NIGHT_STATUS_UPDATE', {
     currentRoleName: 'Phù Thủy',
     waitingFor: [],
-    done: []
+    done: [],
   });
 };
 
-export const submitNightAction = (
-  roomId: string,
-  actorId: string,
-  payload: NightActionInput,
-  io: Server
-): boolean => {
+export const submitNightAction = (roomId: string, actorId: string, payload: NightActionInput, io: Server): boolean => {
   const gameData = getGameData(roomId);
   if (!gameData) return false;
 
@@ -179,7 +167,7 @@ export const submitNightAction = (
   const context = snapshot.context;
   const phase = snapshot.value;
 
-  const actor = context.players.find(p => p.id === actorId);
+  const actor = context.players.find((p) => p.id === actorId);
   if (!actor || !actor.isAlive || !actor.role) return false;
 
   const currentRole = actor.role;
@@ -205,6 +193,8 @@ export const submitNightAction = (
     return false;
   }
 
+  if (!snapshot.matches('NightPhase')) return false;
+
   const nightWave = context.nightWave;
   if (!nightWave) return false;
 
@@ -226,20 +216,27 @@ export const submitCupidAction = (
   actorId: string,
   lover1Id: string,
   lover2Id: string,
-  io: Server
+  io: Server,
 ): boolean => {
   const gameData = getGameData(roomId);
   if (!gameData) return false;
 
   const snapshot = gameData.actor.getSnapshot();
   const context = snapshot.context;
-  
-  const actor = context.players.find(p => p.id === actorId);
+
+  const actor = context.players.find((p) => p.id === actorId);
   if (!actor || actor.role !== 'CUPID') return false;
 
   const handler = RoleRegistry.getHandler('CUPID');
   if (handler && handler.submitNightAction) {
-    const valid = handler.submitNightAction(roomId, actor, { role: 'CUPID', lover1Id, lover2Id }, context, gameData, io);
+    const valid = handler.submitNightAction(
+      roomId,
+      actor,
+      { role: 'CUPID', lover1Id, lover2Id },
+      context,
+      gameData,
+      io,
+    );
     if (valid && snapshot.value === 'FirstNightPhase' && gameData.currentNightRoleIndex !== undefined) {
       // Delay 5s để client hiện animation lovers reveal trước khi chuyển role
       setTimeout(() => {
@@ -260,7 +257,7 @@ export const submitWitchAction = (
   actorId: string,
   healTargetId: string | null,
   poisonTargetId: string | null,
-  io: Server
+  io: Server,
 ): boolean => {
   return submitNightAction(roomId, actorId, { healTargetId, poisonTargetId }, io);
 };
@@ -278,7 +275,7 @@ export const resolveNight = (roomId: string, io: Server): void => {
   // 2. BODYGUARD bảo vệ (xóa khỏi deaths) -> chặn Sói cắn
   // 3. WITCH cứu/độc (xóa khỏi deaths / thêm vào deaths) -> Độc của phù thủy không bị chặn bởi bảo vệ
   const resolveOrder = ['WEREWOLF', 'BODYGUARD', 'WITCH', 'HUNTER', 'ELDER', 'CUPID', 'SEER', 'CURSED', 'DOPPELGANGER'];
-  
+
   // Chạy các handler theo thứ tự định sẵn
   for (const roleId of resolveOrder) {
     const handler = RoleRegistry.getHandler(roleId as import('../types/game.ts').Role);
@@ -297,10 +294,10 @@ export const resolveNight = (roomId: string, io: Server): void => {
 
   const nightDeaths: Player[] = [];
   const transformedIds: string[] = [];
-  
+
   // Xử lý khiên của Già Làng trước Ma Sói
   let nextElderShields = context.elderShields !== undefined ? context.elderShields : 1;
-  const elder = context.players.find(p => p.role === 'ELDER' && p.isAlive);
+  const elder = context.players.find((p) => p.role === 'ELDER' && p.isAlive);
   if (elder) {
     const werewolfTargetId = gameData.nightActions?.['WEREWOLF']?.targetId;
     const isElderBitten = werewolfTargetId === elder.id;
@@ -320,8 +317,8 @@ export const resolveNight = (roomId: string, io: Server): void => {
   }
 
   // Xử lý Hóa Sói của Kẻ Bị Nguyền Rủa
-  const cursedPlayers = context.players.filter(p => p.role === 'CURSED' && p.isAlive);
-  cursedPlayers.forEach(cursed => {
+  const cursedPlayers = context.players.filter((p) => p.role === 'CURSED' && p.isAlive);
+  cursedPlayers.forEach((cursed) => {
     const werewolfTargetId = gameData.nightActions?.['WEREWOLF']?.targetId;
     const isCursedBitten = werewolfTargetId === cursed.id;
     const wasProtected = gameData.nightActions?.['BODYGUARD']?.targetId === cursed.id;
@@ -332,37 +329,18 @@ export const resolveNight = (roomId: string, io: Server): void => {
         deaths.delete(cursed.id);
         transformedIds.push(cursed.id);
         io.to(roomId).emit('CURSED_TRANSFORMED', { playerId: cursed.id });
-
-        // Cập nhật lại Seer vision cache: nếu Tiên Tri đã soi người này, kết quả giờ thành Sói
-        if (gameData.seerVisions) {
-          for (const seerId in gameData.seerVisions) {
-            const vision = gameData.seerVisions[seerId].find(v => v.targetId === cursed.id);
-            if (vision) {
-              vision.isWerewolf = true;
-              // Bắn event để client của Tiên Tri (nếu đang online) có thể cập nhật ngay lập tức
-              const seerSocket = io.sockets.sockets.get(seerId);
-              if (seerSocket) {
-                seerSocket.emit('SEER_RESULT', {
-                  targetId: cursed.id,
-                  targetName: cursed.name,
-                  isWerewolf: true
-                });
-              }
-            }
-          }
-        }
       }
     }
   });
 
-  deaths.forEach(id => {
-    const p = context.players.find(x => x.id === id);
+  deaths.forEach((id) => {
+    const p = context.players.find((x) => x.id === id);
     if (p) {
       nightDeaths.push({
         id: p.id,
         name: p.name,
         role: p.role,
-        isAlive: false
+        isAlive: false,
       });
     }
   });
@@ -372,7 +350,7 @@ export const resolveNight = (roomId: string, io: Server): void => {
     nightDeaths,
     elderShields: nextElderShields,
     transformedIds,
-    nightActions: gameData.nightActions
+    nightActions: gameData.nightActions,
   });
 };
 
